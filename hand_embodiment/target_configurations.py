@@ -11,6 +11,11 @@ MIA_CONFIG = {
             "middle": ["jMCP3"],
             "ring": ["jMCP4"],
             "little": ["jMCP5"],
+        },
+    "base_frame": "wrist",
+    "ee_frames":
+        {
+            "index": "index_tip"
         }
 }
 manobase2miabase = pt.transform_from(
