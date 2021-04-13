@@ -3,6 +3,9 @@ import pytransform3d.transformations as pt
 import pytransform3d.rotations as pr
 
 
+manobase2miabase = pt.transform_from(
+    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-1.634, 1.662, -0.182])),
+    p=np.array([0.002, 0.131, -0.024]))
 MIA_CONFIG = {
     "joint_names":
         {
@@ -16,11 +19,9 @@ MIA_CONFIG = {
     "ee_frames":
         {
             "index": "index_tip"
-        }
+        },
+    "manobase2handbase": manobase2miabase
 }
-manobase2miabase = pt.transform_from(
-    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-1.634, 1.662, -0.182])),
-    p=np.array([0.002, 0.131, -0.024]))
 
 
 def kinematic_model_hook_mia(kin):

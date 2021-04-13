@@ -4,9 +4,9 @@ import pytransform3d.transformations as pt
 
 
 class HandEmbodiment:
-    def __init__(self, hand_state, manobase2handbase, target_kin, target_config):
+    def __init__(self, hand_state, target_kin, target_config):
         self.hand_state = hand_state
-        self.manobase2handbase = manobase2handbase
+        self.manobase2handbase = target_config["manobase2handbase"]
         self.mano_index_kin = make_finger_kinematics(self.hand_state, "index")
         self.target_kin = target_kin
         # TODO for each finger

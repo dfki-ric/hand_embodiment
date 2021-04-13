@@ -38,7 +38,7 @@ fig.add_geometry(hand_state.hand_mesh)
 kin = load_kinematic_model("mia")
 kinematic_model_hook_mia(kin)
 
-emb = HandEmbodiment(hand_state, manobase2miabase, kin, MIA_CONFIG)
+emb = HandEmbodiment(hand_state, kin, MIA_CONFIG)
 
 import time
 start = time.time()
