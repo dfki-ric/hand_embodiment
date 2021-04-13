@@ -48,6 +48,8 @@ def make_finger_kinematics(hand_state, finger_name, action_weight=0.2):
 class HandStateEstimator:
     """Estimates pose of hand and finger configuration.
 
+    We estimate the pose parameters of a MANO hand model.
+
     Parameters
     ----------
     left : bool, optional (default: False)
