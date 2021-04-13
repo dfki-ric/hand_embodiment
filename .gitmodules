@@ -1,0 +1,3 @@
+[submodule "hand_embodiment/model/mia_hand_description"]
+	path = hand_embodiment/model/mia_hand_description
+	url = git@github.com:aprilprojecteu/mia_hand_description.git
