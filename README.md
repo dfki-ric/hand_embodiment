@@ -15,6 +15,23 @@ cd hand_embodiment
 pip install -e .
 ```
 
+## Idea
+
+The general idea of this software package is to use the MANO hand model of
+the mocap library to represent human hand configurations and then transfer
+the state of the MANO model to robotic hands. This allows us to quickly
+change the motion capture approach because we have an independent
+representation of the hand's state. Furthermore, we can easily change
+the target system because we just need to implement the mapping from
+MANO to the target hand.
+
+The currently implemented motion capture approaches are:
+* marker-based motion capture with the Qualisys system
+
+The currently implemented target systems are:
+* Mia hand from Prensilia
+* Shadow hand (not yet, TODO)
+
 ## Examples
 
 ![MoCap to MANO](doc/source/_static/mocap_to_mano.png)
