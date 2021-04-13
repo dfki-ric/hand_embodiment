@@ -13,6 +13,6 @@ pip install -e .
 
 ## Examples
 
-![MoCap to MANO](mocap_to_mano.png)
+![MoCap to MANO](doc/source/_static/mocap_to_mano.png)
 
 Motion capture data fitted to the MANO hand model.
