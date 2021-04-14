@@ -45,7 +45,7 @@ def make_finger_kinematics(hand_state, finger_name, action_weight=0.2):
         hand_state, pppf[finger_name], vipf[finger_name], jipf[finger_name], action_weight)
 
 
-class HandStateEstimator:
+class ManoStateEstimator:
     """Estimates pose of hand and finger configuration.
 
     We estimate the pose parameters of a MANO hand model.

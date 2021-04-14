@@ -6,7 +6,7 @@ from mocap import qualisys
 from mocap import pandas_utils
 from mocap.cleaning import interpolate_nan, median_filter
 from mocap import conversion
-from hand_embodiment.record_markers import ManoHand, HandStateEstimator
+from hand_embodiment.record_markers import ManoHand, ManoStateEstimator
 
 
 pattern = "data/Qualisys_pnp/*.tsv"
@@ -43,7 +43,7 @@ marker_pos = [hand_top[t], hand_left[t], hand_right[t], thumb[t], index[t], midd
 markers = scatter(fig, np.vstack([v for v in marker_pos]), s=0.005)
 
 action_weight = 0.02
-hse = HandStateEstimator(left=False, action_weight=action_weight, verbose=1)
+hse = ManoStateEstimator(left=False, action_weight=action_weight, verbose=1)
 hand = ManoHand(hse)
 hand.add_artist(fig)
 
