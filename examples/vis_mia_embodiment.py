@@ -35,8 +35,7 @@ hand_state.pose[:] = mano_pose
 hand_state.recompute_mesh(manobase2miabase)
 fig.add_geometry(hand_state.hand_mesh)
 
-kin = load_kinematic_model("mia")
-kinematic_model_hook_mia(kin)
+kin = load_kinematic_model(MIA_CONFIG)
 
 emb = HandEmbodiment(hand_state, kin, MIA_CONFIG)
 

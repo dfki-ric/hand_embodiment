@@ -283,12 +283,11 @@ class OnManoPoseSlider(OnMano):
                 p=self.pose[:3]))
 
 
-kin = load_kinematic_model("mia")
+kin = load_kinematic_model(MIA_CONFIG)
 BASE_FRAME = "wrist"
 
 fig = Figure("Mia", 1920, 1080, ax_s=0.2)
 
-kinematic_model_hook_mia(kin)
 index_chain = kin.create_chain(MIA_CONFIG["joint_names"]["index"], BASE_FRAME, "index_tip")
 
 graph = pv.Graph(kin.tm, BASE_FRAME, show_frames=True, show_connections=False,
