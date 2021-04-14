@@ -7,7 +7,21 @@ from pkg_resources import resource_filename
 def kinematic_model_hook_mia(kin):
     """Extends kinematic model to include links for embodiment mapping."""
     kin.tm.add_transform(
+        "thumb_tip", "MCP1",
+        np.array([
+            [1, 0, 0, 0.025],
+            [0, 1, 0, 0.08],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
         "index_tip", "MCP2",
+        np.array([
+            [8.44588589e-02, -5.11060069e-01, -8.55385473e-01, -1.93295715e-02],
+            [1.73649242e-01, 8.52865505e-01, -4.92408744e-01, 0.09],
+            [9.81179210e-01, -1.06948758e-01, 1.60777241e-01, 5.84254784e-04],
+            [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]))
+    kin.tm.add_transform(
+        "middle_tip", "MCP3",
         np.array([
             [8.44588589e-02, -5.11060069e-01, -8.55385473e-01, -1.93295715e-02],
             [1.73649242e-01, 8.52865505e-01, -4.92408744e-01, 0.09],
@@ -30,7 +44,9 @@ MIA_CONFIG = {
     "base_frame": "wrist",
     "ee_frames":
         {
-            "index": "index_tip"
+            "thumb": "thumb_tip",
+            "index": "index_tip",
+            "middle": "middle_tip"
         },
     "handbase2robotbase": manobase2miabase,
     "model":
