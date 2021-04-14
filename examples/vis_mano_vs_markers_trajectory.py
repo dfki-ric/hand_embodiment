@@ -29,7 +29,9 @@ thumb = conversion.array_from_dataframe(hand_trajectory, ["Thumb X", "Thumb Y", 
 
 def animation_callback(t, markers, hand, hse, hand_top, hand_left, hand_right, thumb, index, middle):
     markers.set_data([hand_top[t], hand_left[t], hand_right[t], middle[t], index[t], thumb[t]])
-    hse.estimate([hand_top[t], hand_left[t], hand_right[t]], [thumb[t], index[t], middle[t]])
+    hse.estimate(
+        [hand_top[t], hand_left[t], hand_right[t]],
+        {"thumb": thumb[t], "index": index[t], "middle": middle[t]})
     hand.set_data()
     return markers, hand
 

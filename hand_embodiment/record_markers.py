@@ -64,15 +64,20 @@ class ManoStateEstimator:
     def __init__(self, left=False, action_weight=0.02, verbose=0):
         self.hand_state = HandState(left=left)
         self.verbose = verbose
-        self.finger_estimators = [
-            make_finger_kinematics(self.hand_state, "thumb", action_weight),
-            make_finger_kinematics(self.hand_state, "index", action_weight),
-            make_finger_kinematics(self.hand_state, "middle", action_weight),
-        ]
+        self.finger_estimators = {
+            "thumb": make_finger_kinematics(
+                self.hand_state, "thumb", action_weight),
+            "index": make_finger_kinematics(
+                self.hand_state, "index", action_weight),
+            "middle": make_finger_kinematics(
+                self.hand_state, "middle", action_weight),
+        }
 
         self.current_hand_markers2world = np.eye(4)
         self.mano2world = pt.concat(MANO2HAND_MARKERS, self.current_hand_markers2world)
-        self.finger_markers_in_mano = [np.eye(4)] * 3
+        self.finger_markers_in_mano = {
+            finger_name: np.eye(4)
+            for finger_name in self.finger_estimators.keys()}
 
     def estimate(self, hand_markers, finger_markers):
         """Estimate hand state from positions of hand markers and finger markers.
@@ -82,21 +87,21 @@ class ManoStateEstimator:
         hand_markers : list
             Markers on hand in order 'hand_top', 'hand_left', 'hand_right'.
 
-        finger_markers : list
-            Markers on fingers in order 'thumb', 'index', 'middle'.
+        finger_markers : dict (str to array-like)
+            Positions of markers on fingers.
         """
         self.current_hand_markers2world = estimate_hand_pose(*hand_markers)
         self.mano2world = pt.concat(MANO2HAND_MARKERS, self.current_hand_markers2world)
 
-        for finger_idx in range(len(self.finger_markers_in_mano)):
-            self.finger_markers_in_mano[finger_idx] = pt.invert_transform(self.mano2world).dot(pt.vector_to_point(finger_markers[finger_idx]))[:3]
+        for finger_name in self.finger_estimators.keys():
+            self.finger_markers_in_mano[finger_name] = pt.invert_transform(self.mano2world).dot(pt.vector_to_point(finger_markers[finger_name]))[:3]
 
         if self.verbose:
             start = datetime.datetime.now()
 
-        for finger_idx in range(len(self.finger_estimators)):
-            fe = self.finger_estimators[finger_idx]
-            finger_pose = fe.inverse(self.finger_markers_in_mano[finger_idx])
+        for finger_name in self.finger_estimators.keys():
+            fe = self.finger_estimators[finger_name]
+            finger_pose = fe.inverse(self.finger_markers_in_mano[finger_name])
             self.hand_state.pose[fe.finger_pose_param_indices] = finger_pose
 
         """# joblib parallelization, not faster because of overhead for data transfer
@@ -106,9 +111,9 @@ class ManoStateEstimator:
             return finger_estimator.finger_pose_param_indices, finger_pose
 
         results = joblib.Parallel(n_jobs=-1)(
-            joblib.delayed(estimate_finger_pose)(self.finger_estimators[finger_idx],
-                                                 self.finger_markers_in_mano[finger_idx])
-            for finger_idx in range(len(self.finger_estimators)))
+            joblib.delayed(estimate_finger_pose)(self.finger_estimators[finger_name],
+                                                 self.finger_markers_in_mano[finger_name])
+            for finger_name in self.finger_estimators.keys())
         for pose_indices, pose in results:
             self.hand_state.pose[pose_indices] = pose
         #"""
