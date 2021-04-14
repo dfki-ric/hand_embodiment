@@ -10,8 +10,8 @@ from hand_embodiment.record_markers import ManoHand, ManoStateEstimator
 
 
 pattern = "data/Qualisys_pnp/*.tsv"
-demo_idx = 3
-skip_frames = 30
+demo_idx = 2
+skip_frames = 15
 filename = list(sorted(glob.glob(pattern)))[demo_idx]
 trajectory = qualisys.read_qualisys_tsv(filename=filename)
 
