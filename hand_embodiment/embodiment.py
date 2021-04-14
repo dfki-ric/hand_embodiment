@@ -1,5 +1,5 @@
 import numpy as np
-from .hand_state_estimator import make_finger_kinematics
+from .record_markers import make_finger_kinematics
 from .load_model import load_kinematic_model
 import pytransform3d.transformations as pt
 

@@ -6,8 +6,7 @@ import pytransform3d.visualizer as pv
 import pytransform3d.transformations as pt
 import pytransform3d.rotations as pr
 from mocap.mano import HandState
-from hand_embodiment.hand_state_estimator import make_finger_kinematics
-from hand_embodiment.load_model import load_kinematic_model
+from hand_embodiment.record_markers import make_finger_kinematics
 from hand_embodiment.target_configurations import MIA_CONFIG, manobase2miabase
 from hand_embodiment.embodiment import HandEmbodiment
 
