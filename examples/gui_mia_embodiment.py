@@ -119,11 +119,11 @@ def make_mia_widgets(fig, graph, tm):
     fig.tab1.add_child(collision_objects_checkbox)
 
 
-def make_mano_widgets(fig, hand_state, graph, tm, index_chain):
+def make_mano_widgets(fig, hand_state, graph, tm, embodiment):
     em = fig.window.theme.font_size
 
     fig.tab2.add_child(gui.Label("MANO transformation"))
-    mano_pos_state = OnManoPoseSlider(fig, hand_state, graph, tm, index_chain)
+    mano_pos_state = OnManoPoseSlider(fig, hand_state, graph, tm, embodiment)
     for i in range(3):
         pose_control_layout = gui.Horiz()
         pose_control_layout.add_child(gui.Label(f"{i + 1}"))
@@ -235,7 +235,7 @@ class OnMano(On):
 
 
 class OnManoPoseSlider(OnMano):
-    def __init__(self, fig, hand_state, graph, tm, index_chain):
+    def __init__(self, fig, hand_state, graph, tm, embodiment):
         super(OnManoPoseSlider, self).__init__(fig, hand_state, graph, tm)
         self.pose = np.array([0.002, 0.131, -0.024, -1.634, 1.662, -0.182])
         self.hand_state.pose[:] = np.array([
@@ -256,7 +256,7 @@ class OnManoPoseSlider(OnMano):
             0, 0, 0,
             0, 0, 0
         ])
-        self.index_chain = index_chain
+        self.embodiment = embodiment
         self.mano_index_kin = make_finger_kinematics(hand_state, "index")
         self.q = np.zeros(len(MIA_CONFIG["joint_names"]["index"]))
 
@@ -268,10 +268,7 @@ class OnManoPoseSlider(OnMano):
     def joint_changed(self, value, i):
         self.hand_state.pose[i] = value
 
-        index_tip_in_manobase = self.mano_index_kin.forward(self.hand_state.pose[self.mano_index_kin.finger_pose_param_indices])
-        index_tip_in_miabase = pt.transform(manobase2miabase, pt.vector_to_point(index_tip_in_manobase))
-        self.q = self.index_chain.inverse_position(index_tip_in_miabase[:3], self.q)
-        print(self.q)
+        self.embodiment.solve()
 
         self.update_pose()
         self.redraw()
@@ -296,6 +293,6 @@ graph = pv.Graph(
 graph.add_artist(fig)
 
 make_mia_widgets(fig, graph, emb.target_kin.tm)
-make_mano_widgets(fig, hand_state, graph, emb.target_kin.tm, emb.target_finger_chains["index"])
+make_mano_widgets(fig, hand_state, graph, emb.target_kin.tm, emb)
 
 fig.show()
