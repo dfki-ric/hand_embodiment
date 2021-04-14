@@ -26,13 +26,14 @@ class HandEmbodiment:
         self.target_kin = load_kinematic_model(target_config)
         self.target_finger_chains = {}
         self.joint_angles = {}
+        self.base_frame = target_config["base_frame"]
         for finger_name in use_fingers:
             assert finger_name in target_config["joint_names"]
             assert finger_name in target_config["ee_frames"]
             self.target_finger_chains[finger_name] = \
                 self.target_kin.create_chain(
                     target_config["joint_names"][finger_name],
-                    target_config["base_frame"],
+                    self.base_frame,
                     target_config["ee_frames"][finger_name])
             self.joint_angles[finger_name] = \
                 np.zeros(len(target_config["joint_names"][finger_name]))
@@ -50,6 +51,13 @@ class HandEmbodiment:
                     finger_tip_in_handbase[:3], self.joint_angles[finger_name])
             result[finger_name] = pt.translate_transform(np.eye(4), finger_tip_in_handbase), self.joint_angles
         return result
+
+    def hand_base_pose(self, handbase2world):
+        world2robotbase = pt.concat(
+            pt.invert_transform(handbase2world, check=False),
+            self.handbase2robotbase)
+        self.target_kin.tm.add_transform(
+            "world", self.base_frame, world2robotbase)
 
 
 def load_kinematic_model(hand_config):
