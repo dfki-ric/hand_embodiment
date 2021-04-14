@@ -32,6 +32,10 @@ The currently implemented target systems are:
 * Mia hand from Prensilia
 * Shadow hand (not yet, TODO)
 
+## Data
+
+Some examples need motion capture data. Ask me about it.
+
 ## Examples
 
 ![MoCap to MANO](doc/source/_static/mocap_to_mano.png)
