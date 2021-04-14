@@ -26,6 +26,8 @@ default_mano_pose = np.array([
 
 mano_pose = np.copy(default_mano_pose)
 mano_pose[5] = 1.0
+mano_pose[14] = 1.0
+mano_pose[40] = -0.5
 
 fig = pv.figure()
 
