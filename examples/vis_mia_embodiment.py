@@ -45,7 +45,7 @@ index_tip2miabase, q = emb.solve()
 
 print(time.time() - start)
 
-pose = emb.target_finger_chains["index"].forward(q)
+pose = emb.target_finger_chains["index"].forward(q["index"])
 fig.plot_sphere(0.005, index_tip2miabase, c=(0, 0, 0))
 fig.plot_sphere(0.005, pose, c=(1, 0, 0))
 
