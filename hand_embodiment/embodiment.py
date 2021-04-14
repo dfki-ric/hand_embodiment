@@ -1,16 +1,17 @@
 import numpy as np
 from .hand_state_estimator import make_finger_kinematics
+from .load_model import load_kinematic_model
 import pytransform3d.transformations as pt
 
 
 class HandEmbodiment:
-    def __init__(self, hand_state, target_kin, target_config):
+    def __init__(self, hand_state, target_config):
         self.hand_state = hand_state
         self.manobase2handbase = target_config["manobase2handbase"]
         self.mano_index_kin = make_finger_kinematics(self.hand_state, "index")
-        self.target_kin = target_kin
+        self.target_kin = load_kinematic_model(target_config)
         # TODO for each finger
-        self.index_chain = target_kin.create_chain(
+        self.index_chain = self.target_kin.create_chain(
             target_config["joint_names"]["index"],
             target_config["base_frame"],
             target_config["ee_frames"]["index"])

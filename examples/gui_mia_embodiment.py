@@ -8,7 +8,8 @@ import pytransform3d.rotations as pr
 from mocap.mano import HandState
 from hand_embodiment.hand_state_estimator import make_finger_kinematics
 from hand_embodiment.load_model import load_kinematic_model
-from hand_embodiment.target_configurations import MIA_CONFIG, manobase2miabase, kinematic_model_hook_mia
+from hand_embodiment.target_configurations import MIA_CONFIG, manobase2miabase
+from hand_embodiment.embodiment import HandEmbodiment
 
 
 class Figure:
@@ -283,22 +284,19 @@ class OnManoPoseSlider(OnMano):
                 p=self.pose[:3]))
 
 
-kin = load_kinematic_model(MIA_CONFIG)
-BASE_FRAME = "wrist"
-
 fig = Figure("Mia", 1920, 1080, ax_s=0.2)
-
-index_chain = kin.create_chain(MIA_CONFIG["joint_names"]["index"], BASE_FRAME, "index_tip")
-
-graph = pv.Graph(kin.tm, BASE_FRAME, show_frames=True, show_connections=False,
-                 show_visuals=True, show_collision_objects=True, show_name=False,
-                 s=0.02)
-graph.add_artist(fig)
 
 hand_state = HandState(left=False)
 fig.add_hand_mesh(hand_state.hand_mesh, hand_state.material)
+emb = HandEmbodiment(hand_state, MIA_CONFIG)
 
-make_mia_widgets(fig, graph, kin.tm)
-make_mano_widgets(fig, hand_state, graph, kin.tm, index_chain)
+graph = pv.Graph(
+    emb.target_kin.tm, MIA_CONFIG["base_frame"], show_frames=True,
+    show_connections=False, show_visuals=True, show_collision_objects=True,
+    show_name=False, s=0.02)
+graph.add_artist(fig)
+
+make_mia_widgets(fig, graph, emb.target_kin.tm)
+make_mano_widgets(fig, hand_state, graph, emb.target_kin.tm, emb.index_chain)
 
 fig.show()

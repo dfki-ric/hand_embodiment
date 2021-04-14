@@ -35,9 +35,7 @@ hand_state.pose[:] = mano_pose
 hand_state.recompute_mesh(manobase2miabase)
 fig.add_geometry(hand_state.hand_mesh)
 
-kin = load_kinematic_model(MIA_CONFIG)
-
-emb = HandEmbodiment(hand_state, kin, MIA_CONFIG)
+emb = HandEmbodiment(hand_state, MIA_CONFIG)
 
 import time
 start = time.time()
@@ -50,9 +48,10 @@ pose = emb.index_chain.forward(q)
 fig.plot_sphere(0.005, index_tip2miabase, c=(0, 0, 0))
 fig.plot_sphere(0.005, pose, c=(1, 0, 0))
 
-graph = pv.Graph(kin.tm, MIA_CONFIG["base_frame"], show_frames=False, show_connections=False,
-                 show_visuals=True, show_collision_objects=False, show_name=False,
-                 s=0.02)
+graph = pv.Graph(
+    emb.target_kin.tm, MIA_CONFIG["base_frame"], show_frames=False,
+    show_connections=False, show_visuals=True, show_collision_objects=False,
+    show_name=False, s=0.02)
 graph.add_artist(fig)
 
 fig.show()
