@@ -41,3 +41,7 @@ Some examples need motion capture data. Ask me about it.
 ![MoCap to MANO](doc/source/_static/mocap_to_mano.png)
 
 Motion capture data fitted to the MANO hand model.
+
+![MANO to Mia](doc/source/_static/mia_embodiment.png)
+
+Transfer of the MANO state to the Mia hand.
