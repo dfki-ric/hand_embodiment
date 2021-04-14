@@ -119,11 +119,12 @@ def make_mia_widgets(fig, graph, tm):
     fig.tab1.add_child(collision_objects_checkbox)
 
 
-def make_mano_widgets(fig, hand_state, graph, tm, embodiment):
+def make_mano_widgets(fig, hand_state, graph, tm, embodiment, show_mano):
     em = fig.window.theme.font_size
 
     fig.tab2.add_child(gui.Label("MANO transformation"))
-    mano_pos_state = OnManoPoseSlider(fig, hand_state, graph, tm, embodiment)
+    mano_pos_state = OnManoPoseSlider(
+        fig, hand_state, graph, tm, embodiment, show_mano)
     for i in range(3):
         pose_control_layout = gui.Horiz()
         pose_control_layout.add_child(gui.Label(f"{i + 1}"))
@@ -223,20 +224,23 @@ class OnCollisionObjectsCheckbox(On):
 
 
 class OnMano(On):
-    def __init__(self, fig, hand_state, graph, tm):
+    def __init__(self, fig, hand_state, graph, tm, show_mano):
         super(OnMano, self).__init__(fig, graph, tm)
         self.fig = fig
         self.hand_state = hand_state
+        self.show_mano = show_mano
 
     def redraw(self):
-        self.fig.main_scene.remove_geometry("MANO")
-        self.fig.add_hand_mesh(self.hand_state.hand_mesh, self.hand_state.material)
+        if self.show_mano:
+            self.fig.main_scene.remove_geometry("MANO")
+            self.fig.add_hand_mesh(self.hand_state.hand_mesh, self.hand_state.material)
         super(OnMano, self).redraw()
 
 
 class OnManoPoseSlider(OnMano):
-    def __init__(self, fig, hand_state, graph, tm, embodiment):
-        super(OnManoPoseSlider, self).__init__(fig, hand_state, graph, tm)
+    def __init__(self, fig, hand_state, graph, tm, embodiment, show_mano):
+        super(OnManoPoseSlider, self).__init__(
+            fig, hand_state, graph, tm, show_mano)
         self.pose = np.array([0.002, 0.131, -0.024, -1.634, 1.662, -0.182])
         self.hand_state.pose[:] = np.array([
             0, 0, 0,
@@ -280,10 +284,12 @@ class OnManoPoseSlider(OnMano):
                 p=self.pose[:3]))
 
 
+show_mano = True
 fig = Figure("Mia", 1920, 1080, ax_s=0.2)
 
 hand_state = HandState(left=False)
-fig.add_hand_mesh(hand_state.hand_mesh, hand_state.material)
+if show_mano:
+    fig.add_hand_mesh(hand_state.hand_mesh, hand_state.material)
 emb = HandEmbodiment(hand_state, MIA_CONFIG)
 
 graph = pv.Graph(
@@ -293,6 +299,6 @@ graph = pv.Graph(
 graph.add_artist(fig)
 
 make_mia_widgets(fig, graph, emb.target_kin.tm)
-make_mano_widgets(fig, hand_state, graph, emb.target_kin.tm, emb)
+make_mano_widgets(fig, hand_state, graph, emb.target_kin.tm, emb, show_mano)
 
 fig.show()
