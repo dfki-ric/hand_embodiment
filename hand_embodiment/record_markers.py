@@ -1,4 +1,4 @@
-import datetime
+import time
 
 import numpy as np
 from mocap.mano import HandState, hand_vertices
@@ -101,7 +101,7 @@ class ManoStateEstimator:
                 pt.vector_to_point(finger_markers[finger_name]))[:3]
 
         if self.verbose:
-            start = datetime.datetime.now()
+            start = time.time()
 
         for finger_name in self.finger_estimators.keys():
             fe = self.finger_estimators[finger_name]
@@ -123,8 +123,10 @@ class ManoStateEstimator:
         #"""
 
         if self.verbose:
-            stop = datetime.datetime.now()
-            print(stop - start)
+            stop = time.time()
+            duration = stop - start
+            print(f"[{type(self).__name__}] Time for optimization: "
+                  f"{duration:.4f} s")
 
         self.hand_state.recompute_mesh(self.mano2world)
 

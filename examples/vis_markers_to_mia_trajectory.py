@@ -52,7 +52,8 @@ markers = scatter(fig, np.vstack([v for v in marker_pos]), s=0.005)
 action_weight = 0.02
 hse = ManoStateEstimator(left=False, action_weight=action_weight, verbose=1)
 emb = HandEmbodiment(
-    hse.hand_state, MIA_CONFIG, mano_finger_kinematics=hse.finger_estimators)
+    hse.hand_state, MIA_CONFIG, mano_finger_kinematics=hse.finger_estimators,
+    verbose=1)
 emb.hand_base_pose(hse.mano2world)
 mia = pv.Graph(
     emb.target_kin.tm, "world", show_frames=False,

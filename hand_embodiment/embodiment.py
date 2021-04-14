@@ -1,3 +1,4 @@
+import time
 import numpy as np
 
 from .kinematics import Kinematics
@@ -9,7 +10,7 @@ class HandEmbodiment:
     def __init__(
             self, hand_state, target_config,
             use_fingers=("thumb", "index", "middle"),
-            mano_finger_kinematics=None):
+            mano_finger_kinematics=None, verbose=0):
         self.use_fingers = use_fingers
         self.hand_state = hand_state
         if mano_finger_kinematics is None:
@@ -38,8 +39,14 @@ class HandEmbodiment:
             self.joint_angles[finger_name] = \
                 np.zeros(len(target_config["joint_names"][finger_name]))
 
+        self.verbose = verbose
+
     def solve(self):
         result = {}
+
+        if self.verbose:
+            start = time.time()
+
         for finger_name in self.use_fingers:
             finger_tip_in_manobase = self.mano_finger_kinematics[finger_name].forward(
                 self.hand_state.pose[self.mano_finger_kinematics[finger_name].finger_pose_param_indices])
@@ -50,6 +57,13 @@ class HandEmbodiment:
                 self.target_finger_chains[finger_name].inverse_position(
                     finger_tip_in_handbase[:3], self.joint_angles[finger_name])
             result[finger_name] = pt.translate_transform(np.eye(4), finger_tip_in_handbase), self.joint_angles
+
+        if self.verbose:
+            stop = time.time()
+            duration = stop - start
+            print(f"[{type(self).__name__}] Time for optimization: "
+                  f"{duration:.4f} s")
+
         return result
 
     def hand_base_pose(self, handbase2world):
