@@ -41,13 +41,15 @@ emb = HandEmbodiment(hand_state, MIA_CONFIG)
 import time
 start = time.time()
 
-index_tip2miabase, q = emb.solve()
+result = emb.solve()
 
 print(time.time() - start)
 
-pose = emb.target_finger_chains["index"].forward(q["index"])
-fig.plot_sphere(0.005, index_tip2miabase, c=(0, 0, 0))
-fig.plot_sphere(0.005, pose, c=(1, 0, 0))
+for finger_name in emb.use_fingers:
+    finger_tip2miabase, q = result[finger_name]
+    pose = emb.target_finger_chains[finger_name].forward(q[finger_name])
+    fig.plot_sphere(0.005, finger_tip2miabase, c=(0, 0, 0))
+    fig.plot_sphere(0.005, pose, c=(1, 0, 0))
 
 graph = pv.Graph(
     emb.target_kin.tm, MIA_CONFIG["base_frame"], show_frames=False,

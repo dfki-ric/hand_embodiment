@@ -10,6 +10,7 @@ class HandEmbodiment:
             self, hand_state, target_config,
             use_fingers=("thumb", "index", "middle"),
             mano_finger_kinematics=None):
+        self.use_fingers = use_fingers
         self.hand_state = hand_state
         if mano_finger_kinematics is None:
             self.mano_finger_kinematics = {}
@@ -37,13 +38,18 @@ class HandEmbodiment:
                 np.zeros(len(target_config["joint_names"][finger_name]))
 
     def solve(self):
-        # TODO for each finger
-        index_tip_in_manobase = self.mano_finger_kinematics["index"].forward(
-            self.hand_state.pose[self.mano_finger_kinematics["index"].finger_pose_param_indices])
-        index_tip_in_handbase = pt.transform(
-            self.handbase2robotbase, pt.vector_to_point(index_tip_in_manobase))
-        self.joint_angles["index"] = self.target_finger_chains["index"].inverse_position(index_tip_in_handbase[:3], self.joint_angles["index"])
-        return pt.translate_transform(np.eye(4), index_tip_in_handbase), self.joint_angles
+        result = {}
+        for finger_name in self.use_fingers:
+            finger_tip_in_manobase = self.mano_finger_kinematics[finger_name].forward(
+                self.hand_state.pose[self.mano_finger_kinematics[finger_name].finger_pose_param_indices])
+            finger_tip_in_handbase = pt.transform(
+                self.handbase2robotbase,
+                pt.vector_to_point(finger_tip_in_manobase))
+            self.joint_angles[finger_name] = \
+                self.target_finger_chains[finger_name].inverse_position(
+                    finger_tip_in_handbase[:3], self.joint_angles[finger_name])
+            result[finger_name] = pt.translate_transform(np.eye(4), finger_tip_in_handbase), self.joint_angles
+        return result
 
 
 def load_kinematic_model(hand_config):
