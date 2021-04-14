@@ -13,7 +13,8 @@ from hand_embodiment.target_configurations import MIA_CONFIG
 
 pattern = "data/Qualisys_pnp/*.tsv"
 demo_idx = 2
-skip_frames = 30
+skip_frames = 15
+show_mano = False
 filename = list(sorted(glob.glob(pattern)))[demo_idx]
 trajectory = qualisys.read_qualisys_tsv(filename=filename)
 
@@ -37,9 +38,12 @@ def animation_callback(t, markers, hand, mia, hse, hand_top, hand_left, hand_rig
         {"thumb": thumb[t], "index": index[t], "middle": middle[t]})
     emb.solve()
     emb.hand_base_pose(hse.mano2world)
-    hand.set_data()
     mia.set_data()
-    return markers, hand, mia
+    if show_mano:
+        hand.set_data()
+        return markers, hand, mia
+    else:
+        return markers, mia
 
 
 fig = pv.figure()
@@ -62,7 +66,8 @@ mia = pv.Graph(
     show_name=False, s=0.02)
 mia.add_artist(fig)
 hand = ManoHand(hse)
-hand.add_artist(fig)
+if show_mano:
+    hand.add_artist(fig)
 
 fig.view_init()
 fig.animate(animation_callback, len(hand_top), loop=True, fargs=(markers, hand, mia, hse, hand_top, hand_left, hand_right, thumb, index, middle, emb))
