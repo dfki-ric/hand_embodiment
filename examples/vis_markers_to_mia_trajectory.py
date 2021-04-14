@@ -12,12 +12,13 @@ from hand_embodiment.target_configurations import MIA_CONFIG
 
 
 pattern = "data/Qualisys_pnp/*.tsv"
-filenames = [list(sorted(glob.glob(pattern)))[2]]
-trajectories = [qualisys.read_qualisys_tsv(filename=filename) for filename in filenames]
+demo_idx = 2
+skip_frames = 30
+filename = list(sorted(glob.glob(pattern)))[demo_idx]
+trajectory = qualisys.read_qualisys_tsv(filename=filename)
 
-trajectory = trajectories[0]
 hand_trajectory = pandas_utils.extract_markers(trajectory, ["Hand left", "Hand right", "Hand top", "Middle", "Index", "Thumb"])
-hand_trajectory = hand_trajectory.iloc[2000:8900]  # place and pick
+hand_trajectory = hand_trajectory.iloc[::skip_frames]
 
 hand_trajectory = median_filter(interpolate_nan(hand_trajectory), 3).iloc[2:]
 
