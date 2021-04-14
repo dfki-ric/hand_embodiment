@@ -1,6 +1,7 @@
 import numpy as np
+
+from .kinematics import Kinematics
 from .record_markers import make_finger_kinematics
-from .load_model import load_kinematic_model
 import pytransform3d.transformations as pt
 
 
@@ -25,3 +26,12 @@ class HandEmbodiment:
             self.manobase2handbase, pt.vector_to_point(index_tip_in_manobase))
         self.q = self.index_chain.inverse_position(index_tip_in_handbase[:3], self.q)
         return pt.translate_transform(np.eye(4), index_tip_in_handbase), self.q
+
+
+def load_kinematic_model(hand_config):
+    model = hand_config["model"]
+    with open(model["urdf"], "r") as f:
+        kin = Kinematics(urdf=f.read(), package_dir=model["package_dir"])
+    if "kinematic_model_hook" in model:
+        model["kinematic_model_hook"](kin)
+    return kin
