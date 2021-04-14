@@ -42,7 +42,8 @@ def make_finger_kinematics(hand_state, finger_name, action_weight=0.2):
     vipf = MANO_CONFIG["vertex_index_per_finger"]
     jipf = MANO_CONFIG["joint_indices_per_finger"]
     return ManoFingerKinematics(
-        hand_state, pppf[finger_name], vipf[finger_name], jipf[finger_name], action_weight)
+        hand_state, pppf[finger_name], vipf[finger_name], jipf[finger_name],
+        action_weight)
 
 
 class ManoStateEstimator:
@@ -74,7 +75,8 @@ class ManoStateEstimator:
         }
 
         self.current_hand_markers2world = np.eye(4)
-        self.mano2world = pt.concat(MANO2HAND_MARKERS, self.current_hand_markers2world)
+        self.mano2world = pt.concat(
+            MANO2HAND_MARKERS, self.current_hand_markers2world)
         self.finger_markers_in_mano = {
             finger_name: np.eye(4)
             for finger_name in self.finger_estimators.keys()}
@@ -94,7 +96,9 @@ class ManoStateEstimator:
         self.mano2world = pt.concat(MANO2HAND_MARKERS, self.current_hand_markers2world)
 
         for finger_name in self.finger_estimators.keys():
-            self.finger_markers_in_mano[finger_name] = pt.invert_transform(self.mano2world).dot(pt.vector_to_point(finger_markers[finger_name]))[:3]
+            self.finger_markers_in_mano[finger_name] = pt.invert_transform(
+                self.mano2world).dot(
+                pt.vector_to_point(finger_markers[finger_name]))[:3]
 
         if self.verbose:
             start = datetime.datetime.now()
@@ -158,19 +162,24 @@ class ManoFingerKinematics:
     action_weight : float, optional (default: 0.02)
         Default weight of action penalty in error function for fingers.
     """
-    def __init__(self, hand_state, finger_pose_param_indices, finger_vertex_index, finger_joint_indices, action_weight):
+    def __init__(self, hand_state, finger_pose_param_indices,
+                 finger_vertex_index, finger_joint_indices, action_weight):
         self.finger_pose_param_indices = finger_pose_param_indices
         self.finger_vertex_index = finger_vertex_index
         self.finger_joint_indices = np.asarray([0] + list(finger_joint_indices), dtype=int)
 
         # TODO mapping might be correct by accident
-        self.finger_vertex_indices = np.unique(np.nonzero(hand_state.pose_parameters["weights"][:, np.unique(finger_pose_param_indices // 3)])[0])
-        self.finger_vertex_indices = self.finger_vertex_indices[abs(self.finger_vertex_indices - self.finger_vertex_index) < 2]
+        self.finger_vertex_indices = np.unique(np.nonzero(
+            hand_state.pose_parameters["weights"][:, np.unique(finger_pose_param_indices // 3)])[0])
+        self.finger_vertex_indices = self.finger_vertex_indices[
+            abs(self.finger_vertex_indices - self.finger_vertex_index) < 2]
 
-        self.finger_pose_params, self.finger_opt_vertex_index = self.reduce_pose_parameters(hand_state)
+        self.finger_pose_params, self.finger_opt_vertex_index = \
+            self.reduce_pose_parameters(hand_state)
         self.finger_error = FingerError(self.forward, action_weight)
 
-        self.current_pose = np.zeros_like(self.finger_pose_param_indices, dtype=float)
+        self.current_pose = np.zeros_like(
+            self.finger_pose_param_indices, dtype=float)
 
         self._optimizer_pose = np.zeros(len(self.current_pose) + 3)
 
@@ -216,7 +225,8 @@ class FingerError:
 
     def __call__(self, finger_pose, desired_finger_pos):
         tip_position = self.forward_kinematics(finger_pose)
-        return np.linalg.norm(desired_finger_pos - tip_position) + self.action_weight * np.linalg.norm(finger_pose)
+        return (np.linalg.norm(desired_finger_pos - tip_position) +
+                self.action_weight * np.linalg.norm(finger_pose))
 
 
 class ManoHand(pv.Artist):
