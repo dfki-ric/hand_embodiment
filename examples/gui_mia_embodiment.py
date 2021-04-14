@@ -296,6 +296,6 @@ graph = pv.Graph(
 graph.add_artist(fig)
 
 make_mia_widgets(fig, graph, emb.target_kin.tm)
-make_mano_widgets(fig, hand_state, graph, emb.target_kin.tm, emb.index_chain)
+make_mano_widgets(fig, hand_state, graph, emb.target_kin.tm, emb.target_finger_chains["index"])
 
 fig.show()

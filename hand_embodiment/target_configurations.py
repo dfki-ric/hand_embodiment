@@ -32,7 +32,7 @@ MIA_CONFIG = {
         {
             "index": "index_tip"
         },
-    "manobase2handbase": manobase2miabase,
+    "handbase2robotbase": manobase2miabase,
     "model":
         {
             "urdf": resource_filename(
