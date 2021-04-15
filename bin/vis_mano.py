@@ -37,6 +37,12 @@ def parse_args():
         help="Highlight joints (they will be bigger).")
     parser.add_argument(
         "--show-mesh", action="store_true", help="Show mesh.")
+    parser.add_argument(
+        "--show-reference", action="store_true",
+        help="Show coordinate frame for size reference.")
+    parser.add_argument(
+        "--zero-pose", action="store_true",
+        help="Set all pose parameters to 0.")
 
     return parser.parse_args()
 
@@ -82,10 +88,15 @@ def main():
     args = parse_args()
 
     hand_state = HandState(left=False)
-    hand_state.pose[:] = POSE
+
+    if args.zero_pose:
+        pose = np.zeros_like(POSE)
+    else:
+        pose = POSE
+    hand_state.pose[:] = pose
     hand_state.mesh_updated = True
 
-    pose = POSE.reshape(-1, 3)
+    pose = pose.reshape(-1, 3)
     J = joint_poses(pose, hand_state.pose_parameters["J"],
                     hand_state.pose_parameters["kintree_table"])
 
@@ -110,6 +121,39 @@ def main():
         fig.plot_transform(J[i], s=s)
     if args.show_mesh:
         fig.add_geometry(hand_state.hand_mesh)
+    if args.show_reference:
+        s = 0.2
+        coordinate_system = o3d.geometry.LineSet()
+        points = []
+        lines = []
+        colors = []
+        for d in range(3):
+            color = [0, 0, 0]
+            color[d] = 1
+
+            start = [0, 0, 0]
+            start[d] = -s
+            end = [0, 0, 0]
+            end[d] = s
+
+            points.extend([start, end])
+            lines.append([len(points) - 2, len(points) - 1])
+            colors.append(color)
+            for i, step in enumerate(np.arange(-s, s + 0.01, 0.01)):
+                length = 0.02 if i % 5 == 0 else 0.01
+                start = [0, 0, 0]
+                start[d] = step
+                start[(d + 2) % 3] = -length
+                end = [0, 0, 0]
+                end[d] = step
+                end[(d + 2) % 3] = length
+                points.extend([start, end])
+                lines.append([len(points) - 2, len(points) - 1])
+                colors.append(color)
+            coordinate_system.points = o3d.utility.Vector3dVector(points)
+            coordinate_system.lines = o3d.utility.Vector2iVector(lines)
+            coordinate_system.colors = o3d.utility.Vector3dVector(colors)
+        fig.add_geometry(coordinate_system)
     fig.show()
 
 
