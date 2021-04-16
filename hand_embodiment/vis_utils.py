@@ -20,7 +20,7 @@ def make_coordinate_system(s):
         lines.append([len(points) - 2, len(points) - 1])
         colors.append(color)
         for i, step in enumerate(np.arange(-s, s + 0.01, 0.01)):
-            length = 0.02 if i % 5 == 0 else 0.01
+            length = 0.05 if i % 5 == 0 else 0.01
             start = [0, 0, 0]
             start[d] = step
             start[(d + 2) % 3] = -length
