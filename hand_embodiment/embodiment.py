@@ -7,12 +7,37 @@ import pytransform3d.transformations as pt
 
 
 class HandEmbodiment:
+    """Solves embodiment mapping from MANO model to robotic hand.
+
+    Parameters
+    ----------
+    hand_state : HandState
+        State of the MANO mesh, defined internally by pose and shape
+        parameters, and whether it is a left or right hand. It also
+        stores the mesh.
+
+    target_config : dict
+        Configuration for the target system.
+
+    use_fingers : tuple of str, optional (default: ('thumb', 'index', 'middle'))
+        Fingers for which we compute the embodiment mapping.
+
+    mano_finger_kinematics : list, optional (default: None)
+        If finger kinematics are already available, e.g., from the record
+        mapping, these can be passed here. Otherwise they will be created.
+
+    initial_handbase2world : array-like, shape (4, 4), optional (default: None)
+        Initial transform from hand base to world coordinates.
+
+    verbose : int, optional (default: 0)
+        Verbosity level
+    """
     def __init__(
             self, hand_state, target_config,
             use_fingers=("thumb", "index", "middle"),
             mano_finger_kinematics=None, initial_handbase2world=None,
             verbose=0):
-        self.use_fingers = use_fingers
+        self.finger_names = use_fingers
         self.hand_state = hand_state
         if mano_finger_kinematics is None:
             self.mano_finger_kinematics = {}
@@ -51,16 +76,19 @@ class HandEmbodiment:
         if return_desired_positions:
             desired_positions = {}
 
-        for finger_name in self.use_fingers:
+        for finger_name in self.finger_names:
+            # MANO forward kinematics
             finger_tip_in_manobase = self.mano_finger_kinematics[finger_name].forward(
                 self.hand_state.pose[self.mano_finger_kinematics[finger_name].finger_pose_param_indices])
-            # desired position:
             finger_tip_in_handbase = pt.transform(
                 self.handbase2robotbase,
                 pt.vector_to_point(finger_tip_in_manobase))[:3]
+
+            # Hand inverse kinematics
             self.joint_angles[finger_name] = \
                 self.target_finger_chains[finger_name].inverse_position(
                     finger_tip_in_handbase, self.joint_angles[finger_name])
+
             if return_desired_positions:
                 desired_positions[finger_name] = finger_tip_in_handbase
 
