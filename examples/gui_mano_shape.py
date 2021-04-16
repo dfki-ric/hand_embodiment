@@ -3,7 +3,9 @@ import numpy as np
 import open3d as o3d
 from open3d.visualization import gui
 from mocap.mano import HandState
+from mocap import mano
 import pytransform3d.transformations as pt
+import pytransform3d.rotations as pr
 
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.vis_utils import make_coordinate_system
@@ -23,6 +25,8 @@ class Figure:
         self.layout = gui.TabControl()
         self.tab1 = gui.Vert(0, gui.Margins(0.5 * em, 0.5 * em, 0.5 * em, 0.5 * em))
         self.layout.add_tab("MANO shape", self.tab1)
+        self.tab2 = gui.Vert(0, gui.Margins(0.5 * em, 0.5 * em, 0.5 * em, 0.5 * em))
+        self.layout.add_tab("MANO Transf.", self.tab2)
 
         self.scene_widget = gui.SceneWidget()
         self.scene_widget.scene = o3d.visualization.rendering.Open3DScene(self.window.renderer)
@@ -91,6 +95,26 @@ def make_mano_widgets(fig, hand_state):
         pose_control_layout.add_child(slider)
         fig.tab1.add_child(pose_control_layout)
 
+    fig.tab2.add_child(gui.Label("MANO transformation"))
+    for i in range(3):
+        pose_control_layout = gui.Horiz()
+        pose_control_layout.add_child(gui.Label(f"{i + 1}"))
+        slider = gui.Slider(gui.Slider.DOUBLE)
+        slider.set_limits(-0.5, 0.5)
+        slider.double_value = 0
+        slider.set_on_value_changed(partial(mano_change.pos_changed, i=i))
+        pose_control_layout.add_child(slider)
+        fig.tab2.add_child(pose_control_layout)
+    for i in range(3):
+        pose_control_layout = gui.Horiz()
+        pose_control_layout.add_child(gui.Label(f"{i + 4}"))
+        slider = gui.Slider(gui.Slider.DOUBLE)
+        slider.set_limits(-np.pi, np.pi)
+        slider.double_value = 0
+        slider.set_on_value_changed(partial(mano_change.pos_changed, i=i + 3))
+        pose_control_layout.add_child(slider)
+        fig.tab2.add_child(pose_control_layout)
+
 
 class OnMano:
     def __init__(self, fig, hand_state):
@@ -105,10 +129,31 @@ class OnMano:
 class OnManoChange(OnMano):
     def __init__(self, fig, hand_state):
         super(OnManoChange, self).__init__(fig, hand_state)
+        self.pose = np.zeros(6)
 
     def shape_changed(self, value, i):
-        self.hand_state.set_shape_parameter(i, value)
+        self.hand_state.betas[i] = value
+        self.update_mesh()
         self.redraw()
+
+    def pos_changed(self, value, i):
+        self.pose[i] = value
+        self.update_mesh()
+        self.redraw()
+
+    def update_mesh(self):
+        self.hand_state.pose_parameters["J"], self.hand_state.pose_parameters["v_template"] = \
+            mano.apply_shape_parameters(betas=self.hand_state.betas, **self.hand_state.shape_parameters)
+        mesh2world = pt.transform_from(
+            R=pr.active_matrix_from_intrinsic_euler_xyz(self.pose[3:]),
+            p=self.pose[:3])
+        self.hand_state.vertices[:, :] = mano.hand_vertices(
+            pose=self.hand_state.pose, **self.hand_state.pose_parameters)
+        self.hand_state.vertices[:, :] = pt.transform(
+            mesh2world, pt.vectors_to_points(self.hand_state.vertices))[:, :3]
+        self.hand_state._mesh.vertices = o3d.utility.Vector3dVector(self.hand_state.vertices)
+        self.hand_state._mesh.compute_vertex_normals()
+        self.hand_state._mesh.compute_triangle_normals()
 
 
 fig = Figure("MANO shape", 1920, 1080, ax_s=0.2)
@@ -142,12 +187,13 @@ markers_in_mano = pt.transform(world2mano, pt.vectors_to_points(markers_in_world
 
 for p in markers_in_mano:
     marker = o3d.geometry.TriangleMesh.create_sphere(radius=0.005)
-    marker.compute_vertex_normals()
     n_vertices = len(marker.vertices)
     colors = np.zeros((n_vertices, 3))
     colors[:] = (0.3, 0.3, 0.3)
     marker.vertex_colors = o3d.utility.Vector3dVector(colors)
     marker.translate(p)
+    marker.compute_vertex_normals()
+    marker.compute_triangle_normals()
     fig.add_geometry(marker)
 
 coordinate_system = make_coordinate_system(s=0.2)
