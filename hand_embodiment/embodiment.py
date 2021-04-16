@@ -79,7 +79,8 @@ class HandEmbodiment:
         for finger_name in self.finger_names:
             # MANO forward kinematics
             finger_tip_in_manobase = self.mano_finger_kinematics[finger_name].forward(
-                self.hand_state.pose[self.mano_finger_kinematics[finger_name].finger_pose_param_indices])
+                #self.hand_state.pose[self.mano_finger_kinematics[finger_name].finger_pose_param_indices])
+                None, return_cached_result=True)
             finger_tip_in_handbase = pt.transform(
                 self.handbase2robotbase,
                 pt.vector_to_point(finger_tip_in_manobase))[:3]

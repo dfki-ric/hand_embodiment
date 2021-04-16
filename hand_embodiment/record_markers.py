@@ -185,6 +185,8 @@ class ManoFingerKinematics:
 
         self._optimizer_pose = np.zeros(len(self.current_pose) + 3)
 
+        self.last_forward_result = None
+
     def reduce_pose_parameters(self, hand_state):  # TODO we should introduce our own vertex at marker's position
         finger_opt_vertex_index = np.where(self.finger_vertex_indices == self.finger_vertex_index)[0][0]
         pose_dir_joint_indices = np.hstack([np.arange(i, i + 9) for i in self.finger_joint_indices[1:]]).astype(int)
@@ -197,11 +199,15 @@ class ManoFingerKinematics:
         }
         return pose_params, finger_opt_vertex_index
 
-    def forward(self, pose):
+    def forward(self, pose=None, return_cached_result=False):
         """Compute position at the tip of the finger for given joint parameters."""
+        if return_cached_result and self.last_forward_result is not None:
+            return self.last_forward_result
+
         self._optimizer_pose[3:] = pose
         vertices = hand_vertices(pose=self._optimizer_pose, **self.finger_pose_params)
-        return vertices[self.finger_opt_vertex_index]
+        self.last_forward_result = vertices[self.finger_opt_vertex_index]
+        return self.last_forward_result
 
     def inverse(self, position):
         """Estimate finger joint parameters from position."""
