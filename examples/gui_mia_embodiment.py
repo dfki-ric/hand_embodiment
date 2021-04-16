@@ -32,6 +32,7 @@ class Figure:
 
         self.scene_widget = gui.SceneWidget()
         self.scene_widget.scene = o3d.visualization.rendering.Open3DScene(self.window.renderer)
+        self.scene_widget.scene.set_background((0.8, 0.8, 0.8, 1))
         self.bounds = o3d.geometry.AxisAlignedBoundingBox(-ax_s * np.ones(3), ax_s * np.ones(3))
         self.scene_widget.setup_camera(60, self.bounds, self.bounds.get_center())
 
