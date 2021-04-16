@@ -201,7 +201,8 @@ class ManoFingerKinematics:
 
     def forward(self, pose=None, return_cached_result=False):
         """Compute position at the tip of the finger for given joint parameters."""
-        if return_cached_result and self.last_forward_result is not None:
+        if return_cached_result:
+            assert self.last_forward_result is not None
             return self.last_forward_result
 
         self._optimizer_pose[3:] = pose

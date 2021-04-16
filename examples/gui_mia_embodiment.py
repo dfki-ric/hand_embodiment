@@ -273,7 +273,7 @@ class OnManoPoseSlider(OnMano):
     def joint_changed(self, value, i):
         self.hand_state.pose[i] = value
 
-        self.embodiment.solve()
+        self.embodiment.solve(use_cached_forward_kinematics=False)
 
         self.update_pose()
         self.redraw()
@@ -294,7 +294,7 @@ if show_mano:
 emb = HandEmbodiment(hand_state, MIA_CONFIG)
 
 graph = pv.Graph(
-    emb.target_kin.tm, MIA_CONFIG["base_frame"], show_frames=True,
+    emb.target_kin.tm, "world", show_frames=True,
     show_connections=False, show_visuals=True, show_collision_objects=True,
     show_name=False, s=0.02)
 graph.add_artist(fig)

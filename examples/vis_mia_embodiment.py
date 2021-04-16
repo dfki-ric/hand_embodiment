@@ -42,12 +42,15 @@ emb = HandEmbodiment(hand_state, MIA_CONFIG)
 import time
 start = time.time()
 
-joint_angles, desired_positions = emb.solve(return_desired_positions=True)
+joint_angles, desired_positions = emb.solve(
+    return_desired_positions=True,
+    use_cached_forward_kinematics=False)
 
 print(time.time() - start)
 
-for finger_name in emb.finger_names:
-    pose = emb.target_finger_chains[finger_name].forward(joint_angles[finger_name])
+for finger_name in emb.finger_names_:
+    pose = emb.finger_forward_kinematics(
+        finger_name, joint_angles[finger_name])
     fig.plot_sphere(0.005, pt.translate_transform(
         np.eye(4), desired_positions[finger_name]), c=(0, 0, 0))
     fig.plot_sphere(0.005, pose, c=(1, 0, 0))

@@ -31,13 +31,18 @@ class HandEmbodiment:
 
     verbose : int, optional (default: 0)
         Verbosity level
+
+    Attributes
+    ----------
+    finger_names_ : tuple of str
+        Fingers for which we compute the embodiment mapping.
     """
     def __init__(
             self, hand_state, target_config,
             use_fingers=("thumb", "index", "middle"),
             mano_finger_kinematics=None, initial_handbase2world=None,
             verbose=0):
-        self.finger_names = use_fingers
+        self.finger_names_ = use_fingers
         self.hand_state = hand_state
         if mano_finger_kinematics is None:
             self.mano_finger_kinematics = {}
@@ -69,18 +74,24 @@ class HandEmbodiment:
 
         self.verbose = verbose
 
-    def solve(self, handbase2world=None, return_desired_positions=False):
+    def solve(self, handbase2world=None, return_desired_positions=False,
+              use_cached_forward_kinematics=True):
         if self.verbose:
             start = time.time()
 
         if return_desired_positions:
             desired_positions = {}
 
-        for finger_name in self.finger_names:
+        for finger_name in self.finger_names_:
             # MANO forward kinematics
-            finger_tip_in_manobase = self.mano_finger_kinematics[finger_name].forward(
-                #self.hand_state.pose[self.mano_finger_kinematics[finger_name].finger_pose_param_indices])
-                None, return_cached_result=True)
+            if use_cached_forward_kinematics:  # because it has been computed during embodiment mapping
+                finger_tip_in_manobase = self.mano_finger_kinematics[finger_name].forward(
+                    None, return_cached_result=True)
+            else:
+                finger_tip_in_manobase = self.mano_finger_kinematics[finger_name].forward(
+                    self.hand_state.pose[
+                        self.mano_finger_kinematics[
+                            finger_name].finger_pose_param_indices])
             finger_tip_in_handbase = pt.transform(
                 self.handbase2robotbase,
                 pt.vector_to_point(finger_tip_in_manobase))[:3]
@@ -115,6 +126,9 @@ class HandEmbodiment:
                 self.handbase2robotbase)
         self.target_kin.tm.add_transform(
             "world", self.base_frame, world2robotbase)
+
+    def finger_forward_kinematics(self, finger_name, joint_angles):
+        return self.target_finger_chains[finger_name].forward(joint_angles)
 
 
 def load_kinematic_model(hand_config):
