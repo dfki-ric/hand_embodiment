@@ -36,6 +36,19 @@ class HandEmbodiment:
     ----------
     finger_names_ : tuple of str
         Fingers for which we compute the embodiment mapping.
+
+    hand_state_ : mocap.mano.HandState
+        MANO hand state. This state should be updated by the record mapping
+        so that we can perform a subsequent embodiment mapping based on the
+        current state.
+
+    transform_manager_ : pytransform3d.transform_manager.TransformManager
+        Exposes transform manager that represents the target system.
+        It holds information about all links, joints, visual objects, and
+        collision objects of the target system (robotic hand). It is used
+        to compute forward and inverse kinematics and can be used for
+        visualization. This representation of the target system's state will
+        be updated with each embodiment mapping.
     """
     def __init__(
             self, hand_state, target_config,
@@ -43,12 +56,12 @@ class HandEmbodiment:
             mano_finger_kinematics=None, initial_handbase2world=None,
             verbose=0):
         self.finger_names_ = use_fingers
-        self.hand_state = hand_state
+        self.hand_state_ = hand_state
         if mano_finger_kinematics is None:
             self.mano_finger_kinematics = {}
             for finger_name in use_fingers:
                 self.mano_finger_kinematics[finger_name] = \
-                    make_finger_kinematics(self.hand_state, finger_name)
+                    make_finger_kinematics(self.hand_state_, finger_name)
         else:
             self.mano_finger_kinematics = mano_finger_kinematics
         self.handbase2robotbase = target_config["handbase2robotbase"]
@@ -77,6 +90,11 @@ class HandEmbodiment:
     def solve(self, handbase2world=None, return_desired_positions=False,
               use_cached_forward_kinematics=False):
         """Solve embodiment.
+
+        Internally we rely on the attribute hand_state_ to be updated
+        before this function is called. The hand state will contain all
+        necessary information to perform the embodiment of finger
+        configurations.
 
         Parameters
         ----------
@@ -115,7 +133,7 @@ class HandEmbodiment:
                     None, return_cached_result=True)
             else:
                 finger_tip_in_handbase = self.mano_finger_kinematics[finger_name].forward(
-                    self.hand_state.pose[
+                    self.hand_state_.pose[
                         self.mano_finger_kinematics[
                             finger_name].finger_pose_param_indices])
             finger_tip_in_robotbase = pt.transform(
@@ -154,20 +172,11 @@ class HandEmbodiment:
             "world", self.base_frame, world2robotbase)
 
     @property
-    def transform_manager(self):
-        """Expose transform manager that represents the target system.
-
-        Returns
-        -------
-        tm : pytransform3d.transform_manager.TransformManager
-            This transformation manager holds information about all links,
-            joints, visual objects, and collision objects of the target
-            system (robotic hand). It is used to compute forward and inverse
-            kinematics and can be used for visualization.
-        """
+    def transform_manager_(self):
         return self.target_kin.tm
 
     def finger_forward_kinematics(self, finger_name, joint_angles):
+        """Forward kinematics for a finger of the target system."""
         return self.target_finger_chains[finger_name].forward(joint_angles)
 
 

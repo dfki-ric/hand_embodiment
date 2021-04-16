@@ -255,4 +255,4 @@ class ManoHand(pv.Artist):
         geometries : list
             List of geometries that can be added to the visualizer.
         """
-        return [self.hse.hand_state.hand_mesh]
+        return [self.hse.hand_state_.hand_mesh]
