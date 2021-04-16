@@ -127,6 +127,20 @@ class HandEmbodiment:
         self.target_kin.tm.add_transform(
             "world", self.base_frame, world2robotbase)
 
+    @property
+    def transform_manager(self):
+        """Expose transform manager that represents the target system.
+
+        Returns
+        -------
+        tm : pytransform3d.transform_manager.TransformManager
+            This transformation manager holds information about all links,
+            joints, visual objects, and collision objects of the target
+            system (robotic hand). It is used to compute forward and inverse
+            kinematics and can be used for visualization.
+        """
+        return self.target_kin.tm
+
     def finger_forward_kinematics(self, finger_name, joint_angles):
         return self.target_finger_chains[finger_name].forward(joint_angles)
 

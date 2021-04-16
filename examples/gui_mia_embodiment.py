@@ -294,12 +294,12 @@ if show_mano:
 emb = HandEmbodiment(hand_state, MIA_CONFIG)
 
 graph = pv.Graph(
-    emb.target_kin.tm, "world", show_frames=True,
+    emb.transform_manager, "world", show_frames=True,
     show_connections=False, show_visuals=True, show_collision_objects=True,
     show_name=False, s=0.02)
 graph.add_artist(fig)
 
-make_mia_widgets(fig, graph, emb.target_kin.tm)
-make_mano_widgets(fig, hand_state, graph, emb.target_kin.tm, emb, show_mano)
+make_mia_widgets(fig, graph, emb.transform_manager)
+make_mano_widgets(fig, hand_state, graph, emb.transform_manager, emb, show_mano)
 
 fig.show()
