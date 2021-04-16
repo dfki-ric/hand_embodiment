@@ -75,7 +75,33 @@ class HandEmbodiment:
         self.verbose = verbose
 
     def solve(self, handbase2world=None, return_desired_positions=False,
-              use_cached_forward_kinematics=True):
+              use_cached_forward_kinematics=False):
+        """Solve embodiment.
+
+        Parameters
+        ----------
+        handbase2world : array-like, shape (4, 4), optional (default: None)
+            Transform from MANO base to world.
+
+        return_desired_positions : bool, optional (default: False)
+            Return desired position for each finger in robot's base frame.
+
+        use_cached_forward_kinematics : bool, optional (defalt: False)
+            If the underlying MANO model was previously fitted from data,
+            you can use the cached results. If you want to use this option
+            you should provide the constructor argument
+            'mano_finger_kinematics'.
+
+        Returns
+        -------
+        joint_angles : dict
+            Maps finger names to corresponding joint angles in the order that
+            is given in the target configuration.
+
+        desires_positions : dict, optional
+            Maps finger names to desired finger tip positions in robot base
+            frame.
+        """
         if self.verbose:
             start = time.time()
 
@@ -85,24 +111,24 @@ class HandEmbodiment:
         for finger_name in self.finger_names_:
             # MANO forward kinematics
             if use_cached_forward_kinematics:  # because it has been computed during embodiment mapping
-                finger_tip_in_manobase = self.mano_finger_kinematics[finger_name].forward(
+                finger_tip_in_handbase = self.mano_finger_kinematics[finger_name].forward(
                     None, return_cached_result=True)
             else:
-                finger_tip_in_manobase = self.mano_finger_kinematics[finger_name].forward(
+                finger_tip_in_handbase = self.mano_finger_kinematics[finger_name].forward(
                     self.hand_state.pose[
                         self.mano_finger_kinematics[
                             finger_name].finger_pose_param_indices])
-            finger_tip_in_handbase = pt.transform(
+            finger_tip_in_robotbase = pt.transform(
                 self.handbase2robotbase,
-                pt.vector_to_point(finger_tip_in_manobase))[:3]
+                pt.vector_to_point(finger_tip_in_handbase))[:3]
 
             # Hand inverse kinematics
             self.joint_angles[finger_name] = \
                 self.target_finger_chains[finger_name].inverse_position(
-                    finger_tip_in_handbase, self.joint_angles[finger_name])
+                    finger_tip_in_robotbase, self.joint_angles[finger_name])
 
             if return_desired_positions:
-                desired_positions[finger_name] = finger_tip_in_handbase
+                desired_positions[finger_name] = finger_tip_in_robotbase
 
         self._update_hand_base_pose(handbase2world)
 

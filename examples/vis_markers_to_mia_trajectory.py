@@ -36,7 +36,7 @@ def animation_callback(t, markers, hand, mia, hse, hand_top, hand_left, hand_rig
     hse.estimate(
         [hand_top[t], hand_left[t], hand_right[t]],
         {"thumb": thumb[t], "index": index[t], "middle": middle[t]})
-    emb.solve(hse.mano2world)
+    emb.solve(hse.mano2world, use_cached_forward_kinematics=True)
     mia.set_data()
     if show_mano:
         hand.set_data()
