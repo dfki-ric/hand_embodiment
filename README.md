@@ -1,5 +1,7 @@
 # Hand Embodiment
 
+![Overview](doc/source/_static/overview.svg)
+
 Embodiment mapping for robotic hands from human hand motions
 
 ## Installation
