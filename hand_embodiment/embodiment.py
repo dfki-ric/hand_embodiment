@@ -44,22 +44,25 @@ class HandEmbodiment:
 
         self.verbose = verbose
 
-    def solve(self, handbase2world=None):
-        result = {}
-
+    def solve(self, handbase2world=None, return_desired_positions=False):
         if self.verbose:
             start = time.time()
+
+        if return_desired_positions:
+            desired_positions = {}
 
         for finger_name in self.use_fingers:
             finger_tip_in_manobase = self.mano_finger_kinematics[finger_name].forward(
                 self.hand_state.pose[self.mano_finger_kinematics[finger_name].finger_pose_param_indices])
+            # desired position:
             finger_tip_in_handbase = pt.transform(
                 self.handbase2robotbase,
-                pt.vector_to_point(finger_tip_in_manobase))
+                pt.vector_to_point(finger_tip_in_manobase))[:3]
             self.joint_angles[finger_name] = \
                 self.target_finger_chains[finger_name].inverse_position(
-                    finger_tip_in_handbase[:3], self.joint_angles[finger_name])
-            result[finger_name] = pt.translate_transform(np.eye(4), finger_tip_in_handbase), self.joint_angles
+                    finger_tip_in_handbase, self.joint_angles[finger_name])
+            if return_desired_positions:
+                desired_positions[finger_name] = finger_tip_in_handbase
 
         self._update_hand_base_pose(handbase2world)
 
@@ -69,7 +72,10 @@ class HandEmbodiment:
             print(f"[{type(self).__name__}] Time for optimization: "
                   f"{duration:.4f} s")
 
-        return result
+        if return_desired_positions:
+            return self.joint_angles, desired_positions
+        else:
+            return self.joint_angles
 
     def _update_hand_base_pose(self, handbase2world):
         if handbase2world is None:

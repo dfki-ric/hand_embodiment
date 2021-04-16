@@ -1,5 +1,6 @@
 import numpy as np
 import pytransform3d.visualizer as pv
+import pytransform3d.transformations as pt
 from mocap.mano import HandState
 from hand_embodiment.embodiment import HandEmbodiment
 from hand_embodiment.target_configurations import MIA_CONFIG, manobase2miabase
@@ -41,14 +42,14 @@ emb = HandEmbodiment(hand_state, MIA_CONFIG)
 import time
 start = time.time()
 
-result = emb.solve()
+joint_angles, desired_positions = emb.solve(return_desired_positions=True)
 
 print(time.time() - start)
 
 for finger_name in emb.use_fingers:
-    finger_tip2miabase, q = result[finger_name]
-    pose = emb.target_finger_chains[finger_name].forward(q[finger_name])
-    fig.plot_sphere(0.005, finger_tip2miabase, c=(0, 0, 0))
+    pose = emb.target_finger_chains[finger_name].forward(joint_angles[finger_name])
+    fig.plot_sphere(0.005, pt.translate_transform(
+        np.eye(4), desired_positions[finger_name]), c=(0, 0, 0))
     fig.plot_sphere(0.005, pose, c=(1, 0, 0))
 
 graph = pv.Graph(
