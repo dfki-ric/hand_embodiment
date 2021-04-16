@@ -36,8 +36,7 @@ def animation_callback(t, markers, hand, mia, hse, hand_top, hand_left, hand_rig
     hse.estimate(
         [hand_top[t], hand_left[t], hand_right[t]],
         {"thumb": thumb[t], "index": index[t], "middle": middle[t]})
-    emb.solve()
-    emb.hand_base_pose(hse.mano2world)
+    emb.solve(hse.mano2world)
     mia.set_data()
     if show_mano:
         hand.set_data()
@@ -58,8 +57,7 @@ action_weight = 0.02
 hse = ManoStateEstimator(left=False, action_weight=action_weight, verbose=1)
 emb = HandEmbodiment(
     hse.hand_state, MIA_CONFIG, mano_finger_kinematics=hse.finger_estimators,
-    verbose=1)
-emb.hand_base_pose(hse.mano2world)
+    initial_handbase2world=hse.mano2world, verbose=1)
 mia = pv.Graph(
     emb.target_kin.tm, "world", show_frames=False,
     show_connections=False, show_visuals=True, show_collision_objects=False,

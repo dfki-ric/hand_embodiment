@@ -10,7 +10,8 @@ class HandEmbodiment:
     def __init__(
             self, hand_state, target_config,
             use_fingers=("thumb", "index", "middle"),
-            mano_finger_kinematics=None, verbose=0):
+            mano_finger_kinematics=None, initial_handbase2world=None,
+            verbose=0):
         self.use_fingers = use_fingers
         self.hand_state = hand_state
         if mano_finger_kinematics is None:
@@ -39,9 +40,11 @@ class HandEmbodiment:
             self.joint_angles[finger_name] = \
                 np.zeros(len(target_config["joint_names"][finger_name]))
 
+        self._update_hand_base_pose(initial_handbase2world)
+
         self.verbose = verbose
 
-    def solve(self):
+    def solve(self, handbase2world=None):
         result = {}
 
         if self.verbose:
@@ -58,6 +61,8 @@ class HandEmbodiment:
                     finger_tip_in_handbase[:3], self.joint_angles[finger_name])
             result[finger_name] = pt.translate_transform(np.eye(4), finger_tip_in_handbase), self.joint_angles
 
+        self._update_hand_base_pose(handbase2world)
+
         if self.verbose:
             stop = time.time()
             duration = stop - start
@@ -66,10 +71,13 @@ class HandEmbodiment:
 
         return result
 
-    def hand_base_pose(self, handbase2world):
-        world2robotbase = pt.concat(
-            pt.invert_transform(handbase2world, check=False),
-            self.handbase2robotbase)
+    def _update_hand_base_pose(self, handbase2world):
+        if handbase2world is None:
+            world2robotbase = np.eye(4)
+        else:
+            world2robotbase = pt.concat(
+                pt.invert_transform(handbase2world, check=False),
+                self.handbase2robotbase)
         self.target_kin.tm.add_transform(
             "world", self.base_frame, world2robotbase)
 
