@@ -6,7 +6,7 @@ from mocap import qualisys
 from mocap import pandas_utils
 from mocap.cleaning import interpolate_nan, median_filter
 from mocap import conversion
-from hand_embodiment.record_markers import ManoHand, ManoStateEstimator
+from hand_embodiment.record_markers import ManoHand, MarkerBasedRecordMapping
 from hand_embodiment.embodiment import HandEmbodiment
 from hand_embodiment.target_configurations import MIA_CONFIG
 
@@ -54,7 +54,7 @@ marker_pos = [hand_top[t], hand_left[t], hand_right[t], thumb[t], index[t], midd
 markers = scatter(fig, np.vstack([v for v in marker_pos]), s=0.005)
 
 action_weight = 0.02
-hse = ManoStateEstimator(left=False, action_weight=action_weight, verbose=1)
+hse = MarkerBasedRecordMapping(left=False, action_weight=action_weight, verbose=1)
 emb = HandEmbodiment(
     hse.hand_state_, MIA_CONFIG, mano_finger_kinematics=hse.mano_finger_kinematics_,
     initial_handbase2world=hse.mano2world_, verbose=1)

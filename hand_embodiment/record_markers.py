@@ -46,10 +46,11 @@ def make_finger_kinematics(hand_state, finger_name, action_weight=0.2):
         action_weight)
 
 
-class ManoStateEstimator:
-    """Estimates pose of hand and finger configuration.
+class MarkerBasedRecordMapping:
+    """Estimates pose of hand and finger configuration based on markers.
 
-    We estimate the pose parameters of a MANO hand model.
+    We estimate the pose parameters of a MANO hand model from a marker-based
+    motion capture system such as the Qualisys system.
 
     Parameters
     ----------
