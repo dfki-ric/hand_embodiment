@@ -61,25 +61,38 @@ class ManoStateEstimator:
 
     verbose : int, optional (default: 0)
         Verbosity level
+
+    Attributes
+    ----------
+    hand_state_ : mocap.mano.HandState
+        MANO hand state. This state will be updated by the record mapping
+        and should be used to perform a subsequent embodiment mapping based
+        on the current state.
+
+    mano_finger_kinematics_ : dict (str to ManoFingerKinematics)
+        Maps finger names to their kinematic chain in the MANO model.
+
+    mano2world_ : array-like, shape (4, 4)
+        MANO base pose in world frame.
     """
     def __init__(self, left=False, action_weight=0.02, verbose=0):
-        self.hand_state = HandState(left=left)
+        self.hand_state_ = HandState(left=left)
         self.verbose = verbose
-        self.finger_estimators = {
+        self.mano_finger_kinematics_ = {
             "thumb": make_finger_kinematics(
-                self.hand_state, "thumb", action_weight),
+                self.hand_state_, "thumb", action_weight),
             "index": make_finger_kinematics(
-                self.hand_state, "index", action_weight),
+                self.hand_state_, "index", action_weight),
             "middle": make_finger_kinematics(
-                self.hand_state, "middle", action_weight),
+                self.hand_state_, "middle", action_weight),
         }
 
         self.current_hand_markers2world = np.eye(4)
-        self.mano2world = pt.concat(
+        self.mano2world_ = pt.concat(
             MANO2HAND_MARKERS, self.current_hand_markers2world)
         self.finger_markers_in_mano = {
             finger_name: np.eye(4)
-            for finger_name in self.finger_estimators.keys()}
+            for finger_name in self.mano_finger_kinematics_.keys()}
 
     def estimate(self, hand_markers, finger_markers):
         """Estimate hand state from positions of hand markers and finger markers.
@@ -93,20 +106,20 @@ class ManoStateEstimator:
             Positions of markers on fingers.
         """
         self.current_hand_markers2world = estimate_hand_pose(*hand_markers)
-        self.mano2world = pt.concat(MANO2HAND_MARKERS, self.current_hand_markers2world)
+        self.mano2world_ = pt.concat(MANO2HAND_MARKERS, self.current_hand_markers2world)
 
-        for finger_name in self.finger_estimators.keys():
+        for finger_name in self.mano_finger_kinematics_.keys():
             self.finger_markers_in_mano[finger_name] = pt.invert_transform(
-                self.mano2world).dot(
+                self.mano2world_).dot(
                 pt.vector_to_point(finger_markers[finger_name]))[:3]
 
         if self.verbose:
             start = time.time()
 
-        for finger_name in self.finger_estimators.keys():
-            fe = self.finger_estimators[finger_name]
+        for finger_name in self.mano_finger_kinematics_.keys():
+            fe = self.mano_finger_kinematics_[finger_name]
             finger_pose = fe.inverse(self.finger_markers_in_mano[finger_name])
-            self.hand_state.pose[fe.finger_pose_param_indices] = finger_pose
+            self.hand_state_.pose[fe.finger_pose_param_indices] = finger_pose
 
         """# joblib parallelization, not faster because of overhead for data transfer
         import joblib
@@ -128,7 +141,7 @@ class ManoStateEstimator:
             print(f"[{type(self).__name__}] Time for optimization: "
                   f"{duration:.4f} s")
 
-        self.hand_state.recompute_mesh(self.mano2world)
+        self.hand_state_.recompute_mesh(self.mano2world_)
 
 
 def estimate_hand_pose(hand_top, hand_left, hand_right):
