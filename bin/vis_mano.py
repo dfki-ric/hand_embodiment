@@ -6,6 +6,7 @@ import pytransform3d.transformations as pt
 from pytransform3d import visualizer as pv
 from mocap.mano import HandState
 
+from hand_embodiment.vis_utils import make_coordinate_system
 
 POSE = np.array([
     0, 0, 0,
@@ -122,37 +123,7 @@ def main():
     if args.show_mesh:
         fig.add_geometry(hand_state.hand_mesh)
     if args.show_reference:
-        s = 0.2
-        coordinate_system = o3d.geometry.LineSet()
-        points = []
-        lines = []
-        colors = []
-        for d in range(3):
-            color = [0, 0, 0]
-            color[d] = 1
-
-            start = [0, 0, 0]
-            start[d] = -s
-            end = [0, 0, 0]
-            end[d] = s
-
-            points.extend([start, end])
-            lines.append([len(points) - 2, len(points) - 1])
-            colors.append(color)
-            for i, step in enumerate(np.arange(-s, s + 0.01, 0.01)):
-                length = 0.02 if i % 5 == 0 else 0.01
-                start = [0, 0, 0]
-                start[d] = step
-                start[(d + 2) % 3] = -length
-                end = [0, 0, 0]
-                end[d] = step
-                end[(d + 2) % 3] = length
-                points.extend([start, end])
-                lines.append([len(points) - 2, len(points) - 1])
-                colors.append(color)
-            coordinate_system.points = o3d.utility.Vector3dVector(points)
-            coordinate_system.lines = o3d.utility.Vector2iVector(lines)
-            coordinate_system.colors = o3d.utility.Vector3dVector(colors)
+        coordinate_system = make_coordinate_system(s=0.2)
         fig.add_geometry(coordinate_system)
     fig.show()
 
