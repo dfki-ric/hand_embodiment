@@ -1,5 +1,6 @@
 import numpy as np
 from pytransform3d import visualizer as pv
+from pytransform3d import transformations as pt
 from mocap.visualization import scatter
 import glob
 from mocap import qualisys
@@ -53,8 +54,13 @@ t = 0
 marker_pos = [hand_top[t], hand_left[t], hand_right[t], thumb[t], index[t], middle[t]]
 markers = scatter(fig, np.vstack([v for v in marker_pos]), s=0.005)
 
+mano2hand_markers = pt.transform_from_exponential_coordinates([0.048, 1.534, -0.092, -0.052, -0.031, 0.045])
+betas = np.array([-2.424, -1.212, -1.869, -1.616, -4.091, -1.768, -0.808, 2.323, 1.111, 1.313])
+
 action_weight = 0.02
-hse = MarkerBasedRecordMapping(left=False, action_weight=action_weight, verbose=1)
+hse = MarkerBasedRecordMapping(
+    left=False, action_weight=action_weight,
+    mano2hand_markers=mano2hand_markers, shape_parameters=betas, verbose=1)
 emb = HandEmbodiment(
     hse.hand_state_, MIA_CONFIG, mano_finger_kinematics=hse.mano_finger_kinematics_,
     initial_handbase2world=hse.mano2world_, verbose=1)

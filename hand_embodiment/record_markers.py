@@ -1,17 +1,17 @@
 import time
 
 import numpy as np
-from mocap.mano import HandState, hand_vertices
+from mocap.mano import HandState, hand_vertices, apply_shape_parameters
 from pytransform3d import transformations as pt, rotations as pr, visualizer as pv
 from scipy.optimize import minimize
 
 
 # TODO this probably has to be redefined and we have to make sure that this
 #      is the same for all tests
-MANO2HAND_MARKERS = pt.transform_from(
+MANO2HAND_MARKERS = pt.invert_transform(pt.transform_from(
     R=pr.active_matrix_from_intrinsic_euler_xyz(np.deg2rad([-5, 97, 0])),
-    p=np.array([0.0, -0.03, 0.065])
-)
+    p=np.array([0.0, -0.03, 0.065])))
+
 
 MANO_CONFIG = {
     "pose_parameters_per_finger":
@@ -60,6 +60,12 @@ class MarkerBasedRecordMapping:
     action_weight : float, optional (default: 0.02)
         Default weight of action penalty in error function for fingers.
 
+    mano2hand_markers : array-like, shape (4, 4)
+        Transform from MANO model to hand markers.
+
+    shape_parameters : array-like, shape (10,)
+        Shape parameters for MANO hand.
+
     verbose : int, optional (default: 0)
         Verbosity level
 
@@ -76,8 +82,12 @@ class MarkerBasedRecordMapping:
     mano2world_ : array-like, shape (4, 4)
         MANO base pose in world frame.
     """
-    def __init__(self, left=False, action_weight=0.02, verbose=0):
+    def __init__(self, left=False, action_weight=0.02, mano2hand_markers=None,
+                 shape_parameters=None, verbose=0):
         self.hand_state_ = HandState(left=left)
+        if shape_parameters is not None:
+            self.hand_state_.pose_parameters["J"], self.hand_state_.pose_parameters["v_template"] = \
+                apply_shape_parameters(betas=shape_parameters, **self.hand_state_.shape_parameters)
         self.verbose = verbose
         self.mano_finger_kinematics_ = {
             "thumb": make_finger_kinematics(
@@ -88,9 +98,13 @@ class MarkerBasedRecordMapping:
                 self.hand_state_, "middle", action_weight),
         }
 
+        if mano2hand_markers is None:
+            self.mano2hand_markers = MANO2HAND_MARKERS
+        else:
+            self.mano2hand_markers = mano2hand_markers
         self.current_hand_markers2world = np.eye(4)
         self.mano2world_ = pt.concat(
-            MANO2HAND_MARKERS, self.current_hand_markers2world)
+            self.mano2hand_markers, self.current_hand_markers2world)
         self.finger_markers_in_mano = {
             finger_name: np.eye(4)
             for finger_name in self.mano_finger_kinematics_.keys()}
@@ -107,7 +121,8 @@ class MarkerBasedRecordMapping:
             Positions of markers on fingers.
         """
         self.current_hand_markers2world = estimate_hand_pose(*hand_markers)
-        self.mano2world_ = pt.concat(MANO2HAND_MARKERS, self.current_hand_markers2world)
+        self.mano2world_ = pt.concat(
+            self.mano2hand_markers, self.current_hand_markers2world)
 
         for finger_name in self.mano_finger_kinematics_.keys():
             self.finger_markers_in_mano[finger_name] = pt.invert_transform(

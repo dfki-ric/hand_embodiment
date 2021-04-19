@@ -80,17 +80,17 @@ class Figure:
         self.main_scene.add_geometry("MANO", mesh, material)
 
 
-def make_mano_widgets(fig, hand_state):
+def make_mano_widgets(fig, hand_state, initial_pose, initial_shape):
     em = fig.window.theme.font_size
 
     fig.tab1.add_child(gui.Label("MANO shape"))
-    mano_change = OnManoChange(fig, hand_state)
+    mano_change = OnManoChange(fig, hand_state, initial_pose, initial_shape)
     for i in range(hand_state.n_shape_parameters):
         pose_control_layout = gui.Horiz()
         pose_control_layout.add_child(gui.Label(f"{(i + 1):02d}"))
         slider = gui.Slider(gui.Slider.DOUBLE)
         slider.set_limits(-10, 10)
-        slider.double_value = 0
+        slider.double_value = initial_shape[i]
         slider.set_on_value_changed(partial(mano_change.shape_changed, i=i))
         pose_control_layout.add_child(slider)
         fig.tab1.add_child(pose_control_layout)
@@ -100,8 +100,8 @@ def make_mano_widgets(fig, hand_state):
         pose_control_layout = gui.Horiz()
         pose_control_layout.add_child(gui.Label(f"{i + 1}"))
         slider = gui.Slider(gui.Slider.DOUBLE)
-        slider.set_limits(-0.5, 0.5)
-        slider.double_value = 0
+        slider.set_limits(initial_pose[i] - 0.5, initial_pose[i] + 0.5)
+        slider.double_value = initial_pose[i]
         slider.set_on_value_changed(partial(mano_change.pos_changed, i=i))
         pose_control_layout.add_child(slider)
         fig.tab2.add_child(pose_control_layout)
@@ -109,8 +109,8 @@ def make_mano_widgets(fig, hand_state):
         pose_control_layout = gui.Horiz()
         pose_control_layout.add_child(gui.Label(f"{i + 4}"))
         slider = gui.Slider(gui.Slider.DOUBLE)
-        slider.set_limits(-np.pi, np.pi)
-        slider.double_value = 0
+        slider.set_limits(-0.2, 0.2)
+        slider.double_value = initial_pose[i + 3]
         slider.set_on_value_changed(partial(mano_change.pos_changed, i=i + 3))
         pose_control_layout.add_child(slider)
         fig.tab2.add_child(pose_control_layout)
@@ -127,11 +127,13 @@ class OnMano:
 
 
 class OnManoChange(OnMano):
-    def __init__(self, fig, hand_state):
+    def __init__(self, fig, hand_state, initial_pose, initial_shape):
         super(OnManoChange, self).__init__(fig, hand_state)
-        self.pose = np.zeros(6)
+        self.pose = initial_pose.copy()
+        self.shape = initial_shape.copy()
 
     def shape_changed(self, value, i):
+        self.shape[i] = value
         self.hand_state.betas[i] = value
         self.update_mesh()
         self.redraw()
@@ -144,9 +146,7 @@ class OnManoChange(OnMano):
     def update_mesh(self):
         self.hand_state.pose_parameters["J"], self.hand_state.pose_parameters["v_template"] = \
             mano.apply_shape_parameters(betas=self.hand_state.betas, **self.hand_state.shape_parameters)
-        mesh2world = pt.transform_from(
-            R=pr.active_matrix_from_intrinsic_euler_xyz(self.pose[3:]),
-            p=self.pose[:3])
+        mesh2world = pt.transform_from_exponential_coordinates(self.pose)
         self.hand_state.vertices[:, :] = mano.hand_vertices(
             pose=self.hand_state.pose, **self.hand_state.pose_parameters)
         self.hand_state.vertices[:, :] = pt.transform(
@@ -177,7 +177,7 @@ middle = conversion.array_from_dataframe(hand_trajectory, ["Middle X", "Middle Y
 index = conversion.array_from_dataframe(hand_trajectory, ["Index X", "Index Y", "Index Z"])
 thumb = conversion.array_from_dataframe(hand_trajectory, ["Thumb X", "Thumb Y", "Thumb Z"])
 t = 0
-mbrm = MarkerBasedRecordMapping(left=False)
+mbrm = MarkerBasedRecordMapping(left=False, mano2hand_markers=np.eye(4))  # TODO initialize transform
 mbrm.estimate(
     [hand_top[t], hand_left[t], hand_right[t]],
     {"thumb": thumb[t], "index": index[t], "middle": middle[t]})
@@ -199,6 +199,11 @@ for p in markers_in_mano:
 coordinate_system = make_coordinate_system(s=0.2)
 fig.add_geometry(coordinate_system)
 
-make_mano_widgets(fig, hand_state)
+initial_pose = pt.transform_from(
+            R=pr.active_matrix_from_intrinsic_euler_xyz(np.deg2rad([-5, 97, 0])),
+            p=[0.0, -0.03, 0.065])
+initial_pose = pt.exponential_coordinates_from_transform(initial_pose)
+initial_shape = np.array([-2.424, -1.212, -1.869, -1.616, -4.091, -1.768, -0.808, 2.323, 1.111, 1.313])
+make_mano_widgets(fig, hand_state, initial_pose, initial_shape)
 
 fig.show()
