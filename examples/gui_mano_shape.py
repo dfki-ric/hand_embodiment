@@ -24,9 +24,9 @@ class Figure:
         em = self.window.theme.font_size
         self.layout = gui.TabControl()
         self.tab1 = gui.Vert(0, gui.Margins(0.5 * em, 0.5 * em, 0.5 * em, 0.5 * em))
-        self.layout.add_tab("MANO shape", self.tab1)
+        self.layout.add_tab("MANO Shape", self.tab1)
         self.tab2 = gui.Vert(0, gui.Margins(0.5 * em, 0.5 * em, 0.5 * em, 0.5 * em))
-        self.layout.add_tab("MANO Transf.", self.tab2)
+        self.layout.add_tab("Transform", self.tab2)
 
         self.scene_widget = gui.SceneWidget()
         self.scene_widget.scene = o3d.visualization.rendering.Open3DScene(self.window.renderer)
@@ -95,23 +95,16 @@ def make_mano_widgets(fig, hand_state, initial_pose, initial_shape):
         pose_control_layout.add_child(slider)
         fig.tab1.add_child(pose_control_layout)
 
-    fig.tab2.add_child(gui.Label("MANO transformation"))
-    for i in range(3):
+    fig.tab2.add_child(gui.Label("MANO to Hand Markers / Exponential Coordinates"))
+    names = ["o_1", "o_2", "o_3", "v_1", "v_2", "v_3"]
+    ranges = [1.5, 1.5, 1.5, 0.1, 0.1, 0.1]
+    for i, (name, r) in enumerate(zip(names, ranges)):
         pose_control_layout = gui.Horiz()
-        pose_control_layout.add_child(gui.Label(f"{i + 1}"))
+        pose_control_layout.add_child(gui.Label(name))
         slider = gui.Slider(gui.Slider.DOUBLE)
-        slider.set_limits(initial_pose[i] - 0.5, initial_pose[i] + 0.5)
+        slider.set_limits(initial_pose[i] - r, initial_pose[i] + r)
         slider.double_value = initial_pose[i]
         slider.set_on_value_changed(partial(mano_change.pos_changed, i=i))
-        pose_control_layout.add_child(slider)
-        fig.tab2.add_child(pose_control_layout)
-    for i in range(3):
-        pose_control_layout = gui.Horiz()
-        pose_control_layout.add_child(gui.Label(f"{i + 4}"))
-        slider = gui.Slider(gui.Slider.DOUBLE)
-        slider.set_limits(-0.2, 0.2)
-        slider.double_value = initial_pose[i + 3]
-        slider.set_on_value_changed(partial(mano_change.pos_changed, i=i + 3))
         pose_control_layout.add_child(slider)
         fig.tab2.add_child(pose_control_layout)
 
