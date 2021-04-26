@@ -272,7 +272,7 @@ class OnManoPoseSlider(OnMano):
 
 
 show_mano = True
-hand = "shadow_hand"
+hand = "mia"
 
 if hand == "shadow_hand":
     hand_config = SHADOW_HAND_CONFIG
