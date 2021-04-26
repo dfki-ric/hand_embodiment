@@ -74,3 +74,34 @@ MIA_CONFIG = {
             "kinematic_model_hook": kinematic_model_hook_mia
         }
 }
+
+
+SHADOW_HAND_CONFIG = {
+    "joint_names":  # TODO
+        {
+            "thumb": [],
+            "index": [],
+            "middle": [],
+            "ring": [],
+            "little": [],
+        },
+    "base_frame": "rh_forearm",  # TODO
+    "ee_frames":  # TODO
+        {
+            "thumb": None,
+            "index": None,
+            "middle": None,
+            "ring": None,
+            "little": None
+        },
+    "handbase2robotbase": np.eye(4),  # TODO
+    "model":
+        {
+            "urdf": resource_filename(
+                "hand_embodiment",
+                "model/sr_common/sr_description/urdf/shadow_hand.urdf"),
+            "package_dir": resource_filename(
+                "hand_embodiment", "model/sr_common/"),
+            "kinematic_model_hook": lambda x: x  # TODO
+        }
+}
