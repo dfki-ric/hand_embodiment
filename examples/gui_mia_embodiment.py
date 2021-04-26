@@ -7,7 +7,7 @@ import pytransform3d.transformations as pt
 import pytransform3d.rotations as pr
 from mocap.mano import HandState
 from hand_embodiment.record_markers import make_finger_kinematics
-from hand_embodiment.target_configurations import MIA_CONFIG
+from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
 from hand_embodiment.embodiment import HandEmbodiment
 
 
@@ -24,7 +24,7 @@ class Figure:
         em = self.window.theme.font_size
         self.layout = gui.TabControl()
         self.tab1 = gui.Vert(0, gui.Margins(0.5 * em, 0.5 * em, 0.5 * em, 0.5 * em))
-        self.layout.add_tab("Mia", self.tab1)
+        self.layout.add_tab("Control URDF", self.tab1)
         self.tab2 = gui.Vert(0, gui.Margins(0.5 * em, 0.5 * em, 0.5 * em, 0.5 * em))
         self.layout.add_tab("MANO Transf.", self.tab2)
         self.tab3 = gui.Vert(0, gui.Margins(0.5 * em, 0.5 * em, 0.5 * em, 0.5 * em))
@@ -120,12 +120,12 @@ def make_mia_widgets(fig, graph, tm):
     fig.tab1.add_child(collision_objects_checkbox)
 
 
-def make_mano_widgets(fig, hand_state, graph, tm, embodiment, show_mano):
+def make_mano_widgets(fig, hand_state, graph, tm, embodiment, show_mano, hand_config):
     em = fig.window.theme.font_size
 
     fig.tab2.add_child(gui.Label("MANO transformation"))
     mano_pos_state = OnManoPoseSlider(
-        fig, hand_state, graph, tm, embodiment, show_mano)
+        fig, hand_state, graph, tm, embodiment, show_mano, hand_config)
     for i in range(3):
         pose_control_layout = gui.Horiz()
         pose_control_layout.add_child(gui.Label(f"{i + 1}"))
@@ -239,10 +239,13 @@ class OnMano(On):
 
 
 class OnManoPoseSlider(OnMano):
-    def __init__(self, fig, hand_state, graph, tm, embodiment, show_mano):
+    def __init__(self, fig, hand_state, graph, tm, embodiment, show_mano, hand_config):
         super(OnManoPoseSlider, self).__init__(
             fig, hand_state, graph, tm, show_mano)
-        self.pose = np.array([0.002, 0.131, -0.024, -1.634, 1.662, -0.182])
+        mano2robot = hand_config["handbase2robotbase"]
+        euler = pr.intrinsic_euler_xyz_from_active_matrix(mano2robot[:3, :3])
+        pos = mano2robot[:3, 3]
+        self.pose = np.hstack((pos, euler))
         self.hand_state.pose[:] = np.array([
             0, 0, 0,
             -0.068, 0, 0.068,
@@ -286,12 +289,21 @@ class OnManoPoseSlider(OnMano):
 
 
 show_mano = True
-fig = Figure("Mia", 1920, 1080, ax_s=0.2)
+hand = "shadow_hand"
+
+if hand == "shadow_hand":
+    hand_config = SHADOW_HAND_CONFIG
+elif hand == "mia":
+    hand_config = MIA_CONFIG
+else:
+    raise Exception(f"Unknown hand: '{hand}'")
+
+fig = Figure(hand, 1920, 1080, ax_s=0.2)
 
 hand_state = HandState(left=False)
 if show_mano:
     fig.add_hand_mesh(hand_state.hand_mesh, hand_state.material)
-emb = HandEmbodiment(hand_state, MIA_CONFIG)
+emb = HandEmbodiment(hand_state, hand_config)
 
 graph = pv.Graph(
     emb.transform_manager_, "world", show_frames=True,
@@ -300,6 +312,6 @@ graph = pv.Graph(
 graph.add_artist(fig)
 
 make_mia_widgets(fig, graph, emb.transform_manager_)
-make_mano_widgets(fig, hand_state, graph, emb.transform_manager_, emb, show_mano)
+make_mano_widgets(fig, hand_state, graph, emb.transform_manager_, emb, show_mano, hand_config)
 
 fig.show()

@@ -76,6 +76,9 @@ MIA_CONFIG = {
 }
 
 
+manobase2shadowbase = pt.transform_from(
+    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-3.08, 1.427, 2.923])),
+    p=np.array([0.01, -0.01, 0.36]))
 SHADOW_HAND_CONFIG = {
     "joint_names":
         {  # wrist: rh_WRJ2, rh_WRJ1
@@ -94,7 +97,7 @@ SHADOW_HAND_CONFIG = {
             "ring": "rh_rftip",
             "little": "rh_lftip"
         },
-    "handbase2robotbase": np.eye(4),  # TODO
+    "handbase2robotbase": manobase2shadowbase,
     "model":
         {
             "urdf": resource_filename(
