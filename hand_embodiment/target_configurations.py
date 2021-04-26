@@ -77,22 +77,22 @@ MIA_CONFIG = {
 
 
 SHADOW_HAND_CONFIG = {
-    "joint_names":  # TODO
-        {
-            "thumb": [],
-            "index": [],
-            "middle": [],
-            "ring": [],
-            "little": [],
+    "joint_names":
+        {  # wrist: rh_WRJ2, rh_WRJ1
+            "thumb": ["rh_THJ5", "rh_THJ4", "rh_THJ3", "rh_THJ2", "rh_THJ1"],
+            "index": ["rh_FFJ4", "rh_FFJ3", "rh_FFJ2", "rh_FFJ1"],
+            "middle": ["rh_MFJ4", "rh_MFJ3", "rh_MFJ2", "rh_MFJ1"],
+            "ring": ["rh_RFJ4", "rh_RFJ3", "rh_RFJ2", "rh_RFJ1"],
+            "little": ["rh_LFJ5", "rh_LFJ4", "rh_LFJ3", "rh_LFJ2", "rh_LFJ1"],
         },
-    "base_frame": "rh_forearm",  # TODO
-    "ee_frames":  # TODO
+    "base_frame": "rh_forearm",
+    "ee_frames":
         {
-            "thumb": None,
-            "index": None,
-            "middle": None,
-            "ring": None,
-            "little": None
+            "thumb": "rh_thtip",
+            "index": "rh_fftip",
+            "middle": "rh_mftip",
+            "ring": "rh_rftip",
+            "little": "rh_lftip"
         },
     "handbase2robotbase": np.eye(4),  # TODO
     "model":
