@@ -32,7 +32,7 @@ The currently implemented motion capture approaches are:
 
 The currently implemented target systems are:
 * Mia hand from Prensilia
-* Shadow hand (not yet, TODO)
+* Dexterous Hand from Shadow
 
 ## Data
 
