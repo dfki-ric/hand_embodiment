@@ -77,8 +77,8 @@ MIA_CONFIG = {
 
 
 manobase2shadowbase = pt.transform_from(
-    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-3.08, 1.427, 2.923])),
-    p=np.array([0.01, -0.01, 0.36]))
+    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-3.17, 1.427, 3.032])),
+    p=np.array([0.011, -0.014, 0.36]))
 SHADOW_HAND_CONFIG = {
     "joint_names":
         {  # wrist: rh_WRJ2, rh_WRJ1

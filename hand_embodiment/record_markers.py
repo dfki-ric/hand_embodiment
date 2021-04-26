@@ -19,20 +19,24 @@ MANO_CONFIG = {
             "thumb": np.arange(39, 48),
             "index": np.arange(3, 12),
             "middle": np.arange(12, 21),
+            "ring": np.arange(30, 39),
+            "little": np.arange(21, 30),
         },
     "vertex_index_per_finger":
         {
             "thumb": 744,  # 729#727
             "index": 320,
             "middle": 445,
+            "little": 673,
+            "ring": 554,  # improvement possible...
         },
     "joint_indices_per_finger":
         {
             "thumb": (13, 14, 15),
             "index": (1, 2, 3),
             "middle": (4, 5, 6),
-            # little finger, joint indices 7, 8, 9
-            # ring finger, joint indices 10, 11, 12
+            "ring": (10, 11, 12),
+            "little": (7, 8, 9)
         }
 }
 
@@ -199,11 +203,7 @@ class ManoFingerKinematics:
         self.finger_vertex_index = finger_vertex_index
         self.finger_joint_indices = np.asarray([0] + list(finger_joint_indices), dtype=int)
 
-        # TODO mapping might be correct by accident
-        self.finger_vertex_indices = np.unique(np.nonzero(
-            hand_state.pose_parameters["weights"][:, np.unique(finger_pose_param_indices // 3)])[0])
-        self.finger_vertex_indices = self.finger_vertex_indices[
-            abs(self.finger_vertex_indices - self.finger_vertex_index) < 2]
+        self._search_similar_vertices(finger_pose_param_indices, hand_state)
 
         self.finger_pose_params, self.finger_opt_vertex_index = \
             self.reduce_pose_parameters(hand_state)
@@ -215,6 +215,15 @@ class ManoFingerKinematics:
         self._optimizer_pose = np.zeros(len(self.current_pose) + 3)
 
         self.last_forward_result = None
+
+    def _search_similar_vertices(self, finger_pose_param_indices, hand_state):
+        # TODO mapping to indices of weights might be correct by accident
+        # search for vertices that are influenced by the same pose parameters
+        self.finger_vertex_indices = np.unique(np.nonzero(
+            hand_state.pose_parameters["weights"][:, np.unique(finger_pose_param_indices // 3)])[0])
+        # extract those with a close index
+        self.finger_vertex_indices = self.finger_vertex_indices[
+            abs(self.finger_vertex_indices - self.finger_vertex_index) < 2]
 
     def reduce_pose_parameters(self, hand_state):  # TODO we should introduce our own vertex at marker's position
         finger_opt_vertex_index = np.where(self.finger_vertex_indices == self.finger_vertex_index)[0][0]

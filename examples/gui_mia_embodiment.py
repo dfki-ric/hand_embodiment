@@ -120,12 +120,12 @@ def make_mia_widgets(fig, graph, tm):
     fig.tab1.add_child(collision_objects_checkbox)
 
 
-def make_mano_widgets(fig, hand_state, graph, tm, embodiment, show_mano, hand_config):
+def make_mano_widgets(fig, hand_state, graph, tm, embodiment, show_mano, hand_config, mano_pose):
     em = fig.window.theme.font_size
 
     fig.tab2.add_child(gui.Label("MANO transformation"))
     mano_pos_state = OnManoPoseSlider(
-        fig, hand_state, graph, tm, embodiment, show_mano, hand_config)
+        fig, hand_state, graph, tm, embodiment, show_mano, hand_config, mano_pose)
     for i in range(3):
         pose_control_layout = gui.Horiz()
         pose_control_layout.add_child(gui.Label(f"{i + 1}"))
@@ -239,31 +239,14 @@ class OnMano(On):
 
 
 class OnManoPoseSlider(OnMano):
-    def __init__(self, fig, hand_state, graph, tm, embodiment, show_mano, hand_config):
+    def __init__(self, fig, hand_state, graph, tm, embodiment, show_mano, hand_config, mano_pose):
         super(OnManoPoseSlider, self).__init__(
             fig, hand_state, graph, tm, show_mano)
         mano2robot = hand_config["handbase2robotbase"]
         euler = pr.intrinsic_euler_xyz_from_active_matrix(mano2robot[:3, :3])
         pos = mano2robot[:3, 3]
         self.pose = np.hstack((pos, euler))
-        self.hand_state.pose[:] = np.array([
-            0, 0, 0,
-            -0.068, 0, 0.068,
-            0, 0.068, 0.068,
-            0, 0, 0.615,
-            0, 0.137, 0.068,
-            0, 0, 0.137,
-            0, 0, 0.683,
-            0, 0.205, -0.137,
-            0, 0.068, 0.205,
-            0, 0, 0.205,
-            0, 0.137, -0.137,
-            0, -0.068, 0.273,
-            0, 0, 0.478,
-            0.615, 0.068, 0.273,
-            0, 0, 0,
-            0, 0, 0
-        ])
+        self.hand_state.pose[:] = mano_pose
         self.embodiment = embodiment
         self.mano_index_kin = make_finger_kinematics(hand_state, "index")
         self.q = np.zeros(len(MIA_CONFIG["joint_names"]["index"]))
@@ -293,8 +276,27 @@ hand = "shadow_hand"
 
 if hand == "shadow_hand":
     hand_config = SHADOW_HAND_CONFIG
+    mano_pose = np.zeros(48)
 elif hand == "mia":
     hand_config = MIA_CONFIG
+    mano_pose = np.array([
+        0, 0, 0,
+        -0.068, 0, 0.068,
+        0, 0.068, 0.068,
+        0, 0, 0.615,
+        0, 0.137, 0.068,
+        0, 0, 0.137,
+        0, 0, 0.683,
+        0, 0.205, -0.137,
+        0, 0.068, 0.205,
+        0, 0, 0.205,
+        0, 0.137, -0.137,
+        0, -0.068, 0.273,
+        0, 0, 0.478,
+        0.615, 0.068, 0.273,
+        0, 0, 0,
+        0, 0, 0
+    ])
 else:
     raise Exception(f"Unknown hand: '{hand}'")
 
@@ -303,7 +305,9 @@ fig = Figure(hand, 1920, 1080, ax_s=0.2)
 hand_state = HandState(left=False)
 if show_mano:
     fig.add_hand_mesh(hand_state.hand_mesh, hand_state.material)
-emb = HandEmbodiment(hand_state, hand_config)
+emb = HandEmbodiment(
+    hand_state, hand_config,
+    use_fingers=("thumb", "index", "middle", "ring", "little"))
 
 graph = pv.Graph(
     emb.transform_manager_, "world", show_frames=True,
@@ -312,6 +316,6 @@ graph = pv.Graph(
 graph.add_artist(fig)
 
 make_mia_widgets(fig, graph, emb.transform_manager_)
-make_mano_widgets(fig, hand_state, graph, emb.transform_manager_, emb, show_mano, hand_config)
+make_mano_widgets(fig, hand_state, graph, emb.transform_manager_, emb, show_mano, hand_config, mano_pose)
 
 fig.show()
