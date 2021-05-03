@@ -116,7 +116,7 @@ class HandEmbodiment:
             Maps finger names to corresponding joint angles in the order that
             is given in the target configuration.
 
-        desires_positions : dict, optional
+        desired_positions : dict, optional
             Maps finger names to desired finger tip positions in robot base
             frame.
         """
