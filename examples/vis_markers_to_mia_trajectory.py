@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 from pytransform3d import visualizer as pv
 from pytransform3d import transformations as pt
@@ -9,7 +10,21 @@ from mocap.cleaning import interpolate_nan, median_filter
 from mocap import conversion
 from hand_embodiment.record_markers import ManoHand, MarkerBasedRecordMapping
 from hand_embodiment.embodiment import HandEmbodiment
-from hand_embodiment.target_configurations import MIA_CONFIG
+from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "hand", type=str,
+        help="Name of the hand. Possible options: mia, shadow_hand")
+    parser.add_argument(
+        "--hide-mano", action="store_true", help="Don't show MANO mesh")
+
+    return parser.parse_args()
+
+
+args = parse_args()
 
 
 pattern = "data/Qualisys_pnp/*.tsv"
@@ -32,18 +47,26 @@ index = conversion.array_from_dataframe(hand_trajectory, ["Index X", "Index Y", 
 thumb = conversion.array_from_dataframe(hand_trajectory, ["Thumb X", "Thumb Y", "Thumb Z"])
 
 
-def animation_callback(t, markers, hand, mia, hse, hand_top, hand_left, hand_right, thumb, index, middle, emb):
+def animation_callback(t, markers, hand, robot, hse, hand_top, hand_left, hand_right, thumb, index, middle, emb):
     markers.set_data([hand_top[t], hand_left[t], hand_right[t], middle[t], index[t], thumb[t]])
     hse.estimate(
         [hand_top[t], hand_left[t], hand_right[t]],
         {"thumb": thumb[t], "index": index[t], "middle": middle[t]})
     emb.solve(hse.mano2world_, use_cached_forward_kinematics=True)
-    mia.set_data()
+    robot.set_data()
     if show_mano:
         hand.set_data()
-        return markers, hand, mia
+        return markers, hand, robot
     else:
-        return markers, mia
+        return markers, robot
+
+
+if args.hand == "shadow_hand":
+    hand_config = SHADOW_HAND_CONFIG
+elif args.hand == "mia":
+    hand_config = MIA_CONFIG
+else:
+    raise Exception(f"Unknown hand: '{args.hand}'")
 
 
 fig = pv.figure()
@@ -62,18 +85,18 @@ hse = MarkerBasedRecordMapping(
     left=False, action_weight=action_weight,
     mano2hand_markers=mano2hand_markers, shape_parameters=betas, verbose=1)
 emb = HandEmbodiment(
-    hse.hand_state_, MIA_CONFIG, mano_finger_kinematics=hse.mano_finger_kinematics_,
+    hse.hand_state_, hand_config, mano_finger_kinematics=hse.mano_finger_kinematics_,
     initial_handbase2world=hse.mano2world_, verbose=1)
-mia = pv.Graph(
+robot = pv.Graph(
     emb.target_kin.tm, "world", show_frames=False,
     show_connections=False, show_visuals=True, show_collision_objects=False,
     show_name=False, s=0.02)
-mia.add_artist(fig)
+robot.add_artist(fig)
 hand = ManoHand(hse)
 if show_mano:
     hand.add_artist(fig)
 
 fig.view_init()
-fig.animate(animation_callback, len(hand_top), loop=True, fargs=(markers, hand, mia, hse, hand_top, hand_left, hand_right, thumb, index, middle, emb))
+fig.animate(animation_callback, len(hand_top), loop=True, fargs=(markers, hand, robot, hse, hand_top, hand_left, hand_right, thumb, index, middle, emb))
 
 fig.show()

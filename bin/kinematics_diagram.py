@@ -1,7 +1,7 @@
 import argparse
 from hand_embodiment.tools.graphviz_urdf import write_png
 from hand_embodiment.embodiment import load_kinematic_model
-from hand_embodiment.target_configurations import MIA_CONFIG
+from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
 
 
 def main():
@@ -9,7 +9,7 @@ def main():
     parser.add_argument(
         "hand", type=str,
         help="Hand for which we plot the kinematics diagram. Possible "
-             "options: 'mia'")
+             "options: 'mia', 'shadow_hand'")
     parser.add_argument(
         "--show-visuals", action="store_true",
         help="Show visual geometries.")
@@ -24,6 +24,8 @@ def main():
 
     if args.hand == "mia":
         hand_config = MIA_CONFIG
+    elif args.hand == "shadow_hand":
+        hand_config = SHADOW_HAND_CONFIG
     else:
         raise Exception(f"Unknown hand: '{args.hand}'")
 
