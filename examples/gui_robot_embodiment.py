@@ -1,3 +1,4 @@
+import argparse
 from functools import partial
 import numpy as np
 import open3d as o3d
@@ -271,13 +272,23 @@ class OnManoPoseSlider(OnMano):
                 p=self.pose[:3]))
 
 
-show_mano = True
-hand = "mia"
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "hand", type=str,
+        help="Name of the hand. Possible options: mia, shadow_hand")
+    parser.add_argument(
+        "--hide-mano", action="store_true", help="Don't show MANO mesh")
 
-if hand == "shadow_hand":
+    return parser.parse_args()
+
+
+args = parse_args()
+
+if args.hand == "shadow_hand":
     hand_config = SHADOW_HAND_CONFIG
     mano_pose = np.zeros(48)
-elif hand == "mia":
+elif args.hand == "mia":
     hand_config = MIA_CONFIG
     mano_pose = np.array([
         0, 0, 0,
@@ -298,12 +309,12 @@ elif hand == "mia":
         0, 0, 0
     ])
 else:
-    raise Exception(f"Unknown hand: '{hand}'")
+    raise Exception(f"Unknown hand: '{args.hand}'")
 
-fig = Figure(hand, 1920, 1080, ax_s=0.2)
+fig = Figure(args.hand, 1920, 1080, ax_s=0.2)
 
 hand_state = HandState(left=False)
-if show_mano:
+if not args.hide_mano:
     fig.add_hand_mesh(hand_state.hand_mesh, hand_state.material)
 emb = HandEmbodiment(
     hand_state, hand_config,
@@ -316,6 +327,7 @@ graph = pv.Graph(
 graph.add_artist(fig)
 
 make_mia_widgets(fig, graph, emb.transform_manager_)
-make_mano_widgets(fig, hand_state, graph, emb.transform_manager_, emb, show_mano, hand_config, mano_pose)
+make_mano_widgets(fig, hand_state, graph, emb.transform_manager_, emb,
+                  not args.hide_mano, hand_config, mano_pose)
 
 fig.show()

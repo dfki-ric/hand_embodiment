@@ -4,6 +4,10 @@ import pytransform3d.rotations as pr
 from pkg_resources import resource_filename
 
 
+###############################################################################
+# Mia hand
+###############################################################################
+
 def kinematic_model_hook_mia(kin):
     """Extends kinematic model to include links for embodiment mapping."""
     kin.tm.add_transform(
@@ -75,6 +79,27 @@ MIA_CONFIG = {
         }
 }
 
+###############################################################################
+# Shadow dexterous hand
+###############################################################################
+
+
+class ShadowVirtualF0Joint:
+    def __init__(self, first_real_joint_name, second_real_joint_name):
+        self.first_real_joint_name = first_real_joint_name
+        self.second_real_joint_name = second_real_joint_name
+        self.first_joint_max = 0.5 * np.pi
+
+    def __call__(self, value):
+        if value > self.first_joint_max:
+            first_joint_value = self.first_joint_max
+            second_joint_value = value - self.first_joint_max
+        else:
+            first_joint_value = value
+            second_joint_value = 0.0
+        return {self.first_real_joint_name: first_joint_value,
+                self.second_real_joint_name: second_joint_value}
+
 
 manobase2shadowbase = pt.transform_from(
     R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-3.17, 1.427, 3.032])),
@@ -83,10 +108,10 @@ SHADOW_HAND_CONFIG = {
     "joint_names":
         {  # wrist: rh_WRJ2, rh_WRJ1
             "thumb": ["rh_THJ5", "rh_THJ4", "rh_THJ3", "rh_THJ2", "rh_THJ1"],
-            "index": ["rh_FFJ4", "rh_FFJ3", "rh_FFJ2", "rh_FFJ1"],
-            "middle": ["rh_MFJ4", "rh_MFJ3", "rh_MFJ2", "rh_MFJ1"],
-            "ring": ["rh_RFJ4", "rh_RFJ3", "rh_RFJ2", "rh_RFJ1"],
-            "little": ["rh_LFJ5", "rh_LFJ4", "rh_LFJ3", "rh_LFJ2", "rh_LFJ1"],
+            "index": ["rh_FFJ4", "rh_FFJ3", "rh_FFJ0"],
+            "middle": ["rh_MFJ4", "rh_MFJ3", "rh_MFJ0"],
+            "ring": ["rh_RFJ4", "rh_RFJ3", "rh_RFJ0"],
+            "little": ["rh_LFJ5", "rh_LFJ4", "rh_LFJ3", "rh_LFJ0"],
         },
     "base_frame": "rh_forearm",
     "ee_frames":
@@ -106,5 +131,12 @@ SHADOW_HAND_CONFIG = {
             "package_dir": resource_filename(
                 "hand_embodiment", "model/sr_common/"),
             "kinematic_model_hook": lambda x: x  # TODO
+        },
+    "virtual_joints_callbacks":
+        {
+            "rh_FFJ0": ShadowVirtualF0Joint("rh_FFJ2", "rh_FFJ1"),
+            "rh_MFJ0": ShadowVirtualF0Joint("rh_MFJ2", "rh_MFJ1"),
+            "rh_RFJ0": ShadowVirtualF0Joint("rh_RFJ2", "rh_RFJ1"),
+            "rh_LFJ0": ShadowVirtualF0Joint("rh_LFJ2", "rh_LFJ1"),
         }
 }

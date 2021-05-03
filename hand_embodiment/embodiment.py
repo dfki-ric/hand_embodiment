@@ -186,4 +186,7 @@ def load_kinematic_model(hand_config):
         kin = Kinematics(urdf=f.read(), package_dir=model["package_dir"])
     if "kinematic_model_hook" in model:
         model["kinematic_model_hook"](kin)
+    if "virtual_joints_callbacks" in hand_config:
+        for joint_name, callback in hand_config["virtual_joints_callbacks"].items():
+            kin.tm.add_virtual_joint(joint_name, callback)
     return kin

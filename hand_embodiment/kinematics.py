@@ -8,6 +8,7 @@ from scipy.optimize import minimize
 class FastUrdfTransformManager(UrdfTransformManager):
     def __init__(self):
         super(FastUrdfTransformManager, self).__init__(check=False)
+        self.virtual_joints = {}
 
     def set_joint(self, joint_name, value):
         """Set joint position.
@@ -23,6 +24,13 @@ class FastUrdfTransformManager(UrdfTransformManager):
             Joint angle in radians in case of revolute joints or position
             in case of prismatic joint.
         """
+        if joint_name in self.virtual_joints:
+            callback = self.virtual_joints[joint_name]
+            actual_joint_states = callback(value)
+            for actual_joint_name, actual_value in actual_joint_states.items():
+                self.set_joint(actual_joint_name, actual_value)
+            return
+
         from_frame, to_frame, child2parent, axis, limits, joint_type = self._joints[joint_name]
         value = min(max(value, limits[0]), limits[1])
         if joint_type == "revolute":
@@ -49,6 +57,17 @@ class FastUrdfTransformManager(UrdfTransformManager):
             Homogeneous matrix that represents the transform from ee to base
         """
         return self._path_transform(self._shortest_path(ee_index, base_index))
+
+    def add_virtual_joint(self, joint_name, callback):
+        self.virtual_joints[joint_name] = callback
+        # TODO clean up hack
+        first_limits = self._joints[callback.first_real_joint_name][4]
+        second_limits = self._joints[callback.second_real_joint_name][4]
+        joint_range = (second_limits[1] - second_limits[0] +
+                       first_limits[1] - first_limits[0])
+        self._joints[joint_name] = (
+            joint_name + "_from", joint_name + "_to", np.eye(4),
+            np.array([0, 0, 0]), (0, joint_range), "revolute")
 
 
 @numba.jit(nopython=True, cache=True)
