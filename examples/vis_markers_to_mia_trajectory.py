@@ -1,3 +1,8 @@
+"""
+Example call:
+
+python examples/vis_markers_to_mia_trajectory.py mia --start-idx 8000 --end-idx 8700
+"""
 import argparse
 import numpy as np
 from pytransform3d import visualizer as pv
@@ -19,7 +24,17 @@ def parse_args():
         "hand", type=str,
         help="Name of the hand. Possible options: mia, shadow_hand")
     parser.add_argument(
-        "--hide-mano", action="store_true", help="Don't show MANO mesh")
+        "--start-idx", type=int, default=0, help="Start index.")
+    parser.add_argument(
+        "--end-idx", type=int, default=None, help="Start index.")
+    parser.add_argument(
+        "--show-mano", action="store_true", help="Show MANO mesh")
+    parser.add_argument(
+        "--skip-frames", type=int, default=15,
+        help="Skip this number of frames between animated frames.")
+    parser.add_argument(
+        "--demo-idx", type=int, default=2,
+        help="Index of demonstration that should be used.")
 
     return parser.parse_args()
 
@@ -28,14 +43,12 @@ args = parse_args()
 
 
 pattern = "data/Qualisys_pnp/*.tsv"
-demo_idx = 2
-skip_frames = 15
-show_mano = False
-filename = list(sorted(glob.glob(pattern)))[demo_idx]
+filename = list(sorted(glob.glob(pattern)))[args.demo_idx]
 trajectory = qualisys.read_qualisys_tsv(filename=filename)
 
 hand_trajectory = pandas_utils.extract_markers(trajectory, ["Hand left", "Hand right", "Hand top", "Middle", "Index", "Thumb"])
-hand_trajectory = hand_trajectory.iloc[::skip_frames]
+hand_trajectory = hand_trajectory.iloc[
+                  args.start_idx:args.end_idx:args.skip_frames]
 
 hand_trajectory = median_filter(interpolate_nan(hand_trajectory), 3).iloc[2:]
 
@@ -54,7 +67,7 @@ def animation_callback(t, markers, hand, robot, hse, hand_top, hand_left, hand_r
         {"thumb": thumb[t], "index": index[t], "middle": middle[t]})
     emb.solve(hse.mano2world_, use_cached_forward_kinematics=True)
     robot.set_data()
-    if show_mano:
+    if args.show_mano:
         hand.set_data()
         return markers, hand, robot
     else:
@@ -93,7 +106,7 @@ robot = pv.Graph(
     show_name=False, s=0.02)
 robot.add_artist(fig)
 hand = ManoHand(hse)
-if show_mano:
+if args.show_mano:
     hand.add_artist(fig)
 
 fig.view_init()
