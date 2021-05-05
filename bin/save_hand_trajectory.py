@@ -91,7 +91,7 @@ for t in range(n_steps):
     joint_angles = emb.solve(hse.mano2world_, use_cached_forward_kinematics=True)
     ee_pose = emb.transform_manager_.get_transform(
         hand_config["base_frame"], "world")
-    all_joint_angles.append(joint_angles)
+    all_joint_angles.append(joint_angles.copy())
     all_ee_poses.append(ee_pose)
 
 pose_columns = ["base_x", "base_y", "base_z", "base_qw", "base_qx", "base_qy", "base_qz"]
