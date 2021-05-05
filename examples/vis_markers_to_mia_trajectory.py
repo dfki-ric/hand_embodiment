@@ -101,7 +101,7 @@ emb = HandEmbodiment(
     hse.hand_state_, hand_config, mano_finger_kinematics=hse.mano_finger_kinematics_,
     initial_handbase2world=hse.mano2world_, verbose=1)
 robot = pv.Graph(
-    emb.target_kin.tm, "world", show_frames=False,
+    emb.target_kin.tm, "world", show_frames=True, whitelist=[hand_config["base_frame"]],
     show_connections=False, show_visuals=True, show_collision_objects=False,
     show_name=False, s=0.02)
 robot.add_artist(fig)
