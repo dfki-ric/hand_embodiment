@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import pytransform3d.transformations as pt
 import pytransform3d.rotations as pr
@@ -47,13 +48,34 @@ def kinematic_model_hook_mia(kin):
             [0, 0, 0, 1]]))
 
 
+class MiaVirtualThumbJoint:
+    def __init__(self, real_joint_name):
+        self.real_joint_name = real_joint_name
+        self.angle_threshold = 0.25 * math.pi
+        self.min_angle = 0.0
+        self.max_angle = 0.5 * math.pi
+
+    def make_virtual_joint(self, joint_name, tm):
+        limits = tm.get_joint_limits(self.real_joint_name)
+
+        return (joint_name + "_from", joint_name + "_to", np.eye(4),
+                np.array([0, 0, 0]), limits, "revolute")
+
+    def __call__(self, value):
+        if value >= self.angle_threshold:
+            angle = self.max_angle
+        else:
+            angle = self.min_angle
+        return {self.real_joint_name: angle}
+
+
 manobase2miabase = pt.transform_from(
     R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-1.634, 1.662, -0.182])),
     p=np.array([0.002, 0.131, -0.024]))
 MIA_CONFIG = {
     "joint_names":
         {
-            "thumb": ["jMCP1", "jmetacarpus"],
+            "thumb": ["jMCP1", "jmetacarpus_binary"],
             "index": ["jMCP2"],
             "middle": ["jMCP3"],
             "ring": ["jMCP4"],
@@ -76,6 +98,10 @@ MIA_CONFIG = {
                 "model/mia_hand_description/urdf/mia_hand.urdf"),
             "package_dir": resource_filename("hand_embodiment", "model/"),
             "kinematic_model_hook": kinematic_model_hook_mia
+        },
+    "virtual_joints_callbacks":
+        {
+            "jmetacarpus_binary": MiaVirtualThumbJoint("jmetacarpus"),
         }
 }
 
@@ -89,6 +115,15 @@ class ShadowVirtualF0Joint:
         self.first_real_joint_name = first_real_joint_name
         self.second_real_joint_name = second_real_joint_name
         self.first_joint_max = 0.5 * np.pi
+
+    def make_virtual_joint(self, joint_name, tm):
+        first_limits = tm.get_joint_limits(self.first_real_joint_name)
+        second_limits = tm.get_joint_limits(self.second_real_joint_name)
+
+        joint_range = (second_limits[1] - second_limits[0] +
+                       first_limits[1] - first_limits[0])
+        return (joint_name + "_from", joint_name + "_to", np.eye(4),
+                np.array([0, 0, 0]), (0, joint_range), "revolute")
 
     def __call__(self, value):
         if value > self.first_joint_max:

@@ -60,14 +60,8 @@ class FastUrdfTransformManager(UrdfTransformManager):
 
     def add_virtual_joint(self, joint_name, callback):
         self.virtual_joints[joint_name] = callback
-        # TODO clean up hack
-        first_limits = self._joints[callback.first_real_joint_name][4]
-        second_limits = self._joints[callback.second_real_joint_name][4]
-        joint_range = (second_limits[1] - second_limits[0] +
-                       first_limits[1] - first_limits[0])
-        self._joints[joint_name] = (
-            joint_name + "_from", joint_name + "_to", np.eye(4),
-            np.array([0, 0, 0]), (0, joint_range), "revolute")
+        self._joints[joint_name] = callback.make_virtual_joint(
+            joint_name, self)
 
 
 @numba.jit(nopython=True, cache=True)
