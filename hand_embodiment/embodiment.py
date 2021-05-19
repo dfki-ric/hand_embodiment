@@ -1,4 +1,5 @@
 import time
+import warnings
 import numpy as np
 
 from .kinematics import Kinematics
@@ -189,4 +190,13 @@ def load_kinematic_model(hand_config):
     if "virtual_joints_callbacks" in hand_config:
         for joint_name, callback in hand_config["virtual_joints_callbacks"].items():
             kin.tm.add_virtual_joint(joint_name, callback)
+    if "world" in kin.tm.nodes:
+        warnings.warn(
+            "'world' frame is already in URDF. Removing all connections to it.")
+        invalid_connections = []
+        for from_frame, to_frame in kin.tm.transforms:
+            if "world" in (from_frame, to_frame):
+                invalid_connections.append((from_frame, to_frame))
+        for from_frame, to_frame in invalid_connections:
+            kin.tm.remove_transform(from_frame, to_frame)
     return kin
