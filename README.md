@@ -70,3 +70,7 @@ The following scripts can be used to investigate a hand configuration:
 * `bin/vis_extended_hand_model.py` - visualizes finger tip positions in the
   visual model of the hand, if you have to define additional finger tips this
   is a good tool to verify the result
+* `bin/gui_robot_embodiment.py` - with this tool you can (1) find an
+  appropriate pose of the hand in MANO's base and (2) interactively verify
+  that the embodiment mapping finds appropriate solutions to mimic the MANO
+  model
