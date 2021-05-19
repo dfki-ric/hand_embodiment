@@ -73,7 +73,7 @@ class HandEmbodiment:
         self.target_finger_chains = {}
         self.joint_angles = {}
         self.base_frame = target_config["base_frame"]
-        for finger_name in use_fingers:
+        for finger_name in target_config["ee_frames"].keys():
             assert finger_name in target_config["joint_names"]
             assert finger_name in target_config["ee_frames"]
             self.target_finger_chains[finger_name] = \
@@ -85,6 +85,11 @@ class HandEmbodiment:
                 np.zeros(len(target_config["joint_names"][finger_name]))
 
         self._update_hand_base_pose(initial_handbase2world)
+
+        if "coupled_joints" in target_config:
+            self.coupled_joints = target_config["coupled_joints"]
+        else:
+            self.coupled_joints = None
 
         self.verbose = verbose
 
@@ -124,17 +129,8 @@ class HandEmbodiment:
         if self.verbose:
             start = time.time()
 
-        desired_positions = {}
-        for finger_name in self.finger_names_:
-            finger_tip_in_handbase = self._mano_forward_kinematics(
-                finger_name, use_cached_forward_kinematics)
-            finger_tip_in_robotbase = pt.transform(
-                self.handbase2robotbase,
-                pt.vector_to_point(finger_tip_in_handbase))[:3]
-            desired_positions[finger_name] = finger_tip_in_robotbase
-
-            self._robotic_hand_inverse_kinematics(finger_name, finger_tip_in_robotbase)
-
+        desired_positions = self._mano_forward_kinematics(use_cached_forward_kinematics)
+        self._robotic_hand_inverse_kinematics(desired_positions)
         self._update_hand_base_pose(handbase2world)
 
         if self.verbose:
@@ -148,23 +144,60 @@ class HandEmbodiment:
         else:
             return self.joint_angles
 
-    def _mano_forward_kinematics(self, finger_name, use_cached_forward_kinematics):
+    def _mano_forward_kinematics(self, use_cached_forward_kinematics):
         """MANO forward kinematics."""
-        if use_cached_forward_kinematics:  # because it has been computed during embodiment mapping
-            finger_tip_in_handbase = self.mano_finger_kinematics[finger_name].forward(
-                None, return_cached_result=True)
-        else:
-            finger_tip_in_handbase = self.mano_finger_kinematics[finger_name].forward(
-                self.hand_state_.pose[
-                    self.mano_finger_kinematics[
-                        finger_name].finger_pose_param_indices])
-        return finger_tip_in_handbase
+        desired_positions = {}
+        for finger_name in self.finger_names_:
+            if use_cached_forward_kinematics:  # because it has been computed during embodiment mapping
+                finger_tip_in_handbase = self.mano_finger_kinematics[finger_name].forward(
+                    None, return_cached_result=True)
+            else:
+                finger_tip_in_handbase = self.mano_finger_kinematics[finger_name].forward(
+                    self.hand_state_.pose[
+                        self.mano_finger_kinematics[
+                            finger_name].finger_pose_param_indices])
 
-    def _robotic_hand_inverse_kinematics(self, finger_name, finger_tip_in_robotbase):
+            finger_tip_in_robotbase = pt.transform(
+                self.handbase2robotbase,
+                pt.vector_to_point(finger_tip_in_handbase))[:3]
+            desired_positions[finger_name] = finger_tip_in_robotbase
+        return desired_positions
+
+    def _robotic_hand_inverse_kinematics(self, desired_positions):
         """Robotic hand inverse kinematics."""
-        self.joint_angles[finger_name] = \
-            self.target_finger_chains[finger_name].inverse_position(
-                finger_tip_in_robotbase, self.joint_angles[finger_name])
+        for finger_name in self.finger_names_:
+            self.joint_angles[finger_name] = \
+                self.target_finger_chains[finger_name].inverse_position(
+                    desired_positions[finger_name],
+                    self.joint_angles[finger_name])
+
+        if self.coupled_joints is not None:
+            self._average_coupled_joints()
+
+    def _average_coupled_joints(self):
+        angle_sum = 0.0
+        n_joints = 0
+        for finger_name, joint_name in self.coupled_joints:
+            if finger_name not in self.finger_names_:
+                continue
+            angle_sum += self.joint_angles[finger_name][
+                self.target_finger_chains[
+                    finger_name].joint_names.index(joint_name)]
+            n_joints += 1
+
+        if n_joints == 0:
+            return
+
+        average_angle = angle_sum / n_joints
+        updated_fingers = set()
+        for finger_name, joint_name in self.coupled_joints:
+            self.joint_angles[finger_name][
+                self.target_finger_chains[finger_name].joint_names.index(
+                    joint_name)] = average_angle
+            updated_fingers.add(finger_name)
+        for finger_name in updated_fingers:
+            self.finger_forward_kinematics(
+                finger_name, self.joint_angles[finger_name])
 
     def _update_hand_base_pose(self, handbase2world):
         if handbase2world is None:

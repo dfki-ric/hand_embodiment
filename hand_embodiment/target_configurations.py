@@ -103,7 +103,13 @@ MIA_CONFIG = {
     "virtual_joints_callbacks":
         {
             "j_thumb_opp_binary": MiaVirtualThumbJoint("j_thumb_opp"),
-        }
+        },
+    "coupled_joints":
+    [
+        ("middle", "j_mrl_fle"),
+        ("ring", "j_ring_fle"),
+        ("little", "j_little_fle"),
+    ]
 }
 
 ###############################################################################
