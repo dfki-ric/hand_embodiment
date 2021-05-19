@@ -13,6 +13,9 @@ def parse_args():
     parser.add_argument(
         "hand", type=str,
         help="Name of the hand. Possible options: mia, shadow_hand")
+    parser.add_argument(
+        "--only-link-frames", action="store_true",
+        help="Show only link frames.")
 
     return parser.parse_args()
 
@@ -192,10 +195,18 @@ def main(args):
         raise Exception(f"Unknown hand: '{args.hand}'")
 
     tm = load_kinematic_model(hand_config).tm
+    if args.only_link_frames:
+        whitelist = [
+            node for node in tm.nodes
+            if not (node.startswith("visual:") or
+                    node.startswith("collision_object:") or
+                    node.startswith("inertial_frame:"))]
+    else:
+        whitelist = None
     graph = pv.Graph(
         tm, hand_config["base_frame"], show_frames=True,
         show_connections=False, show_visuals=True, show_collision_objects=True,
-        show_name=False, s=0.02)
+        show_name=False, s=0.02, whitelist=whitelist)
     graph.add_artist(fig)
     make_widgets(fig, graph, tm)
 
