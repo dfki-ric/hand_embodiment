@@ -12,38 +12,38 @@ from pkg_resources import resource_filename
 def kinematic_model_hook_mia(kin):
     """Extends kinematic model to include links for embodiment mapping."""
     kin.tm.add_transform(
-        "thumb_tip", "MCP1",
+        "thumb_tip", "thumb_fle",
         np.array([
             [1, 0, 0, 0.025],
             [0, 1, 0, 0.08],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "index_tip", "MCP2",
+        "index_tip", "index_fle",
         np.array([
             [1, 0, 0, -0.02],
             [0, 1, 0, 0.09],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "middle_tip", "MCP3",
+        "middle_tip", "middle_fle",
         np.array([
             [1, 0, 0, -0.02],
             [0, 1, 0, 0.09],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "ring_tip", "MCP4",
+        "ring_tip", "ring_fle",
         np.array([
-            [1, 0, 0, -0.013],
+            [1, 0, 0, -0.017],
             [0, 1, 0, 0.083],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "little_tip", "MCP5",
+        "little_tip", "little_fle",
         np.array([
-            [1, 0, 0, -0.009],
-            [0, 1, 0, 0.065],
+            [1, 0, 0, -0.015],
+            [0, 1, 0, 0.068],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
 
@@ -51,9 +51,9 @@ def kinematic_model_hook_mia(kin):
 class MiaVirtualThumbJoint:
     def __init__(self, real_joint_name):
         self.real_joint_name = real_joint_name
-        self.angle_threshold = 0.25 * math.pi
-        self.min_angle = 0.0
-        self.max_angle = 0.5 * math.pi
+        self.min_angle = -0.628
+        self.max_angle = 0.0
+        self.angle_threshold = 0.5 * (self.min_angle + self.max_angle)
 
     def make_virtual_joint(self, joint_name, tm):
         limits = tm.get_joint_limits(self.real_joint_name)
@@ -75,13 +75,13 @@ manobase2miabase = pt.transform_from(
 MIA_CONFIG = {
     "joint_names":
         {
-            "thumb": ["jMCP1", "jmetacarpus_binary"],
-            "index": ["jMCP2"],
-            "middle": ["jMCP3"],
-            "ring": ["jMCP4"],
-            "little": ["jMCP5"],
+            "thumb": ["j_thumb_fle", "j_thumb_opp_binary"],
+            "index": ["j_index_fle"],
+            "middle": ["j_mrl_fle"],
+            "ring": ["j_ring_fle"],
+            "little": ["j_little_fle"],
         },
-    "base_frame": "wrist",
+    "base_frame": "palm",
     "ee_frames":
         {
             "thumb": "thumb_tip",
@@ -93,15 +93,16 @@ MIA_CONFIG = {
     "handbase2robotbase": manobase2miabase,
     "model":
         {
+            # this xacro is actually just plain urdf:
             "urdf": resource_filename(
                 "hand_embodiment",
-                "model/mia_hand_description/urdf/mia_hand.urdf"),
+                "model/mia_hand_description/urdf/mia_hand.urdf.xacro"),
             "package_dir": resource_filename("hand_embodiment", "model/"),
             "kinematic_model_hook": kinematic_model_hook_mia
         },
     "virtual_joints_callbacks":
         {
-            "jmetacarpus_binary": MiaVirtualThumbJoint("jmetacarpus"),
+            "j_thumb_opp_binary": MiaVirtualThumbJoint("j_thumb_opp"),
         }
 }
 
