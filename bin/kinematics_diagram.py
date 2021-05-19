@@ -17,6 +17,9 @@ def main():
         "--show-collision-objects", action="store_true",
         help="Show collision objects.")
     parser.add_argument(
+        "--show-inertial-frames", action="store_true",
+        help="Show collision objects.")
+    parser.add_argument(
         "--show-matrix", action="store_true",
         help="Show transformation matrices.")
 
@@ -35,6 +38,7 @@ def main():
     write_png(
         kin.tm, filename, prog="fdp", show_visuals=args.show_visuals,
         show_collision_objects=args.show_collision_objects,
+        show_inertial_frames=args.show_inertial_frames,
         show_matrix=args.show_matrix)
     print(f"Result has been written to {filename}")
 
