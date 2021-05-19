@@ -5,7 +5,7 @@ from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
 
 fig = pv.figure()
 
-hand = "shadow_hand"
+hand = "mia"
 if hand == "shadow_hand":
     hand_config = SHADOW_HAND_CONFIG
 elif hand == "mia":
