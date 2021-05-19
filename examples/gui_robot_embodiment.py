@@ -320,10 +320,15 @@ emb = HandEmbodiment(
     hand_state, hand_config,
     use_fingers=("thumb", "index", "middle", "ring", "little"))
 
+whitelist = [
+    node for node in emb.transform_manager_.nodes
+    if not (node.startswith("visual:") or
+            node.startswith("collision_object:") or
+            node.startswith("inertial_frame:"))]
 graph = pv.Graph(
     emb.transform_manager_, "world", show_frames=True,
     show_connections=False, show_visuals=True, show_collision_objects=True,
-    show_name=False, s=0.02)
+    show_name=False, s=0.02, whitelist=whitelist)
 graph.add_artist(fig)
 
 make_mia_widgets(fig, graph, emb.transform_manager_)
