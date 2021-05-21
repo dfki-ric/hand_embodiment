@@ -97,7 +97,7 @@ def make_mano_widgets(fig, hand_state, initial_pose, initial_shape):
 
     fig.tab2.add_child(gui.Label("MANO to Hand Markers / Exponential Coordinates"))
     names = ["o_1", "o_2", "o_3", "v_1", "v_2", "v_3"]
-    ranges = [1.5, 1.5, 1.5, 0.1, 0.1, 0.1]
+    ranges = [2, 2, 2, 0.1, 0.1, 0.1]
     for i, (name, r) in enumerate(zip(names, ranges)):
         pose_control_layout = gui.Horiz()
         pose_control_layout.add_child(gui.Label(name))
@@ -107,6 +107,8 @@ def make_mano_widgets(fig, hand_state, initial_pose, initial_shape):
         slider.set_on_value_changed(partial(mano_change.pos_changed, i=i))
         pose_control_layout.add_child(slider)
         fig.tab2.add_child(pose_control_layout)
+        mano_change.shape_changed(initial_pose[i], i)
+    mano_change.update_mesh()
 
 
 class OnMano:
@@ -156,26 +158,28 @@ fig.add_hand_mesh(hand_state.hand_mesh, hand_state.material)
 
 import glob
 from mocap import qualisys, pandas_utils, cleaning, conversion
-pattern = "data/Qualisys_pnp/*.tsv"
-demo_idx = 2
-filename = list(sorted(glob.glob(pattern)))[demo_idx]
+filename = "data/QualisysAprilTest/april_test_001.tsv"
 trajectory = qualisys.read_qualisys_tsv(filename=filename)
-hand_trajectory = pandas_utils.extract_markers(trajectory, ["Hand left", "Hand right", "Hand top", "Middle", "Index", "Thumb"])
+hand_trajectory = pandas_utils.extract_markers(trajectory, ["hand_left", "hand_right", "hand_top", "ring_middle", "middle_middle", "index_middle", "ring_tip", "middle_tip", "index_tip", "thumb_tip"])
 hand_trajectory = hand_trajectory.iloc[100:200]
 hand_trajectory = cleaning.median_filter(cleaning.interpolate_nan(hand_trajectory), 3).iloc[2:]
-hand_left = conversion.array_from_dataframe(hand_trajectory, ["Hand left X", "Hand left Y", "Hand left Z"])
-hand_right = conversion.array_from_dataframe(hand_trajectory, ["Hand right X", "Hand right Y", "Hand right Z"])
-hand_top = conversion.array_from_dataframe(hand_trajectory, ["Hand top X", "Hand top Y", "Hand top Z"])
-middle = conversion.array_from_dataframe(hand_trajectory, ["Middle X", "Middle Y", "Middle Z"])
-index = conversion.array_from_dataframe(hand_trajectory, ["Index X", "Index Y", "Index Z"])
-thumb = conversion.array_from_dataframe(hand_trajectory, ["Thumb X", "Thumb Y", "Thumb Z"])
+hand_left = conversion.array_from_dataframe(hand_trajectory, ["hand_left X", "hand_left Y", "hand_left Z"])
+hand_right = conversion.array_from_dataframe(hand_trajectory, ["hand_right X", "hand_right Y", "hand_right Z"])
+hand_top = conversion.array_from_dataframe(hand_trajectory, ["hand_top X", "hand_top Y", "hand_top Z"])
+ring_middle = conversion.array_from_dataframe(hand_trajectory, ["ring_middle X", "ring_middle Y", "ring_middle Z"])
+middle_middle = conversion.array_from_dataframe(hand_trajectory, ["middle_middle X", "middle_middle Y", "middle_middle Z"])
+index_middle = conversion.array_from_dataframe(hand_trajectory, ["index_middle X", "index_middle Y", "index_middle Z"])
+ring = conversion.array_from_dataframe(hand_trajectory, ["ring_tip X", "ring_tip Y", "ring_tip Z"])
+middle = conversion.array_from_dataframe(hand_trajectory, ["middle_tip X", "middle_tip Y", "middle_tip Z"])
+index = conversion.array_from_dataframe(hand_trajectory, ["index_tip X", "index_tip Y", "index_tip Z"])
+thumb = conversion.array_from_dataframe(hand_trajectory, ["thumb_tip X", "thumb_tip Y", "thumb_tip Z"])
 t = 0
 mbrm = MarkerBasedRecordMapping(left=False, mano2hand_markers=np.eye(4))  # TODO initialize transform
 mbrm.estimate(
     [hand_top[t], hand_left[t], hand_right[t]],
-    {"thumb": thumb[t], "index": index[t], "middle": middle[t]})
+    {"thumb": thumb[t], "index": index[t], "middle": middle[t], "ring": ring[t]})
 world2mano = pt.invert_transform(mbrm.mano2world_)
-markers_in_world = np.array([hand_top[t], hand_left[t], hand_right[t], thumb[t], index[t], middle[t]])
+markers_in_world = np.array([hand_top[t], hand_left[t], hand_right[t], thumb[t], index[t], middle[t], ring[t], index_middle[t], middle_middle[t], ring_middle[t]])
 markers_in_mano = pt.transform(world2mano, pt.vectors_to_points(markers_in_world))[:, :3]
 
 for p in markers_in_mano:
@@ -192,11 +196,12 @@ for p in markers_in_mano:
 coordinate_system = make_coordinate_system(s=0.2)
 fig.add_geometry(coordinate_system)
 
-initial_pose = pt.transform_from(
-            R=pr.active_matrix_from_intrinsic_euler_xyz(np.deg2rad([-5, 97, 0])),
-            p=[0.0, -0.03, 0.065])
+#initial_pose = pt.transform_from_exponential_coordinates(np.array([-0.041, 1.99, -0.133, -0.066, -0.03, 0.096]))
+#initial_pose = pt.transform_from_exponential_coordinates(np.array([0.031, 1.98, -0.154, -0.066, -0.027, 0.094]))
+#initial_pose = pt.transform_from_exponential_coordinates(np.array([0.103, 2.083, -0.123, -0.066, -0.034, 0.083]))
+initial_pose = pt.transform_from_exponential_coordinates(np.array([-0.01, 1.97, -0.123, -0.066, -0.034, 0.083]))
 initial_pose = pt.exponential_coordinates_from_transform(initial_pose)
-initial_shape = np.array([-2.424, -1.212, -1.869, -1.616, -4.091, -1.768, -0.808, 2.323, 1.111, 1.313])
+initial_shape = np.array([-3.5, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 make_mano_widgets(fig, hand_state, initial_pose, initial_shape)
 
 fig.show()
