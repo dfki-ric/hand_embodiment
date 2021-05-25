@@ -49,10 +49,9 @@ markers = scatter(fig, np.vstack([v for v in marker_pos]), s=0.005)
 mano2hand_markers = pt.transform_from_exponential_coordinates([0.048, 1.534, -0.092, -0.052, -0.031, 0.045])
 betas = np.array([-2.424, -1.212, -1.869, -1.616, -4.091, -1.768, -0.808, 2.323, 1.111, 1.313])
 
-action_weight = 0.02
 hse = MarkerBasedRecordMapping(
-    left=False, action_weight=action_weight,
-    mano2hand_markers=mano2hand_markers, shape_parameters=betas, verbose=1)
+    left=False, mano2hand_markers=mano2hand_markers, shape_parameters=betas,
+    verbose=1)
 hand = ManoHand(hse)
 hand.add_artist(fig)
 

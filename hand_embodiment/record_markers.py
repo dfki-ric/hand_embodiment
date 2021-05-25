@@ -37,17 +37,55 @@ MANO_CONFIG = {
             "middle": (4, 5, 6),
             "ring": (10, 11, 12),
             "little": (7, 8, 9)
+        },
+    "action_weights_per_finger":
+        {
+            "thumb":
+                np.array([[0.01, 0.01, 0.01,
+                           0.01, 0.01, 0.01,
+                           0.01, 0.05, 0.05],
+                          [0.01, 0.01, 0.01,
+                           0.01, 0.01, 0.01,
+                           0.01, 0.05, 0.05]]),
+            "index":
+                np.array([[0.05, 0.0, 0.0,
+                           0.05, 0.01, 0.0,
+                           0.05, 0.01, 0.0],
+                          [0.05, 0.0, 0.0,
+                           0.05, 0.01, 0.005,
+                           0.05, 0.01, 0.005]]),
+            "middle":
+                np.array([[0.05, 0.0, 0.0,
+                           0.05, 0.01, 0.0,
+                           0.05, 0.01, 0.0],
+                          [0.05, 0.0, 0.0,
+                           0.05, 0.02, 0.005,
+                           0.05, 0.05, 0.005]]),
+            "ring":
+                np.array([[0.05, 0.0, 0.0,
+                           0.05, 0.01, 0.0,
+                           0.05, 0.01, 0.0],
+                          [0.05, 0.0, 0.0,
+                           0.05, 0.01, 0.005,
+                           0.05, 0.01, 0.005]]),
+            "little":
+                np.array([[0.05, 0.0, 0.0,
+                           0.05, 0.01, 0.0,
+                           0.05, 0.01, 0.0],
+                          [0.05, 0.0, 0.0,
+                           0.05, 0.01, 0.005,
+                           0.05, 0.01, 0.005]]),
         }
 }
 
 
-def make_finger_kinematics(hand_state, finger_name, action_weight=0.2):
-    pppf = MANO_CONFIG["pose_parameters_per_finger"]
-    vipf = MANO_CONFIG["vertex_index_per_finger"]
-    jipf = MANO_CONFIG["joint_indices_per_finger"]
+def make_finger_kinematics(hand_state, finger_name):
     return ManoFingerKinematics(
-        hand_state, pppf[finger_name], vipf[finger_name], jipf[finger_name],
-        action_weight)
+        hand_state,
+        MANO_CONFIG["pose_parameters_per_finger"][finger_name],
+        MANO_CONFIG["vertex_index_per_finger"][finger_name],
+        MANO_CONFIG["joint_indices_per_finger"][finger_name],
+        MANO_CONFIG["action_weights_per_finger"][finger_name])
 
 
 class MarkerBasedRecordMapping:
@@ -60,9 +98,6 @@ class MarkerBasedRecordMapping:
     ----------
     left : bool, optional (default: False)
         Left hand. Right hand otherwise.
-
-    action_weight : float, optional (default: 0.02)
-        Default weight of action penalty in error function for fingers.
 
     mano2hand_markers : array-like, shape (4, 4)
         Transform from MANO model to hand markers.
@@ -86,7 +121,7 @@ class MarkerBasedRecordMapping:
     mano2world_ : array-like, shape (4, 4)
         MANO base pose in world frame.
     """
-    def __init__(self, left=False, action_weight=0.02, mano2hand_markers=None,
+    def __init__(self, left=False, mano2hand_markers=None,
                  shape_parameters=None, verbose=0):
         self.hand_state_ = HandState(left=left)
         if shape_parameters is not None:
@@ -94,14 +129,10 @@ class MarkerBasedRecordMapping:
                 apply_shape_parameters(betas=shape_parameters, **self.hand_state_.shape_parameters)
         self.verbose = verbose
         self.mano_finger_kinematics_ = {
-            "thumb": make_finger_kinematics(
-                self.hand_state_, "thumb", action_weight),
-            "index": make_finger_kinematics(
-                self.hand_state_, "index", action_weight),
-            "middle": make_finger_kinematics(
-                self.hand_state_, "middle", action_weight),
-            "ring": make_finger_kinematics(
-                self.hand_state_, "ring", action_weight),
+            "thumb": make_finger_kinematics(self.hand_state_, "thumb"),
+            "index": make_finger_kinematics(self.hand_state_, "index"),
+            "middle": make_finger_kinematics(self.hand_state_, "middle"),
+            "ring": make_finger_kinematics(self.hand_state_, "ring"),
         }
 
         if mano2hand_markers is None:
@@ -196,11 +227,11 @@ class ManoFingerKinematics:
     finger_joint_indices : array, shape (n_finger_joints,)
         Indices of joints that correspond to this finger
 
-    action_weight : float, optional (default: 0.02)
+    action_weights : array, shape (2, n_finger_joints * 3)
         Default weight of action penalty in error function for fingers.
     """
     def __init__(self, hand_state, finger_pose_param_indices,
-                 finger_vertex_index, finger_joint_indices, action_weight):
+                 finger_vertex_index, finger_joint_indices, action_weights):
         self.finger_pose_param_indices = finger_pose_param_indices
         self.finger_vertex_index = finger_vertex_index
         self.finger_joint_indices = np.asarray([0] + list(finger_joint_indices), dtype=int)
@@ -209,7 +240,7 @@ class ManoFingerKinematics:
 
         self.finger_pose_params, self.finger_opt_vertex_index = \
             self.reduce_pose_parameters(hand_state)
-        self.finger_error = FingerError(self.forward, action_weight)
+        self.finger_error = FingerError(self.forward, action_weights)
 
         self.current_pose = np.zeros_like(
             self.finger_pose_param_indices, dtype=float)
@@ -252,7 +283,7 @@ class ManoFingerKinematics:
 
     def inverse(self, position):
         """Estimate finger joint parameters from position."""
-        res = minimize(self.finger_error, self.current_pose, args=(position,), method="SLSQP")
+        res = minimize(self.finger_error, self.current_pose, args=(position,), method="COBYLA")  # SLSQP, COBYLA
         self.current_pose[:] = res["x"]
         return self.current_pose
 
@@ -265,17 +296,21 @@ class FingerError:
     forward_kinematics : callable
         Forward kinematics
 
-    action_weight : float, optional (default: 0.02)
-        Default weight of action penalty in error function for fingers.
+    action_weights : array, shape (2, n_joints * 3)
+        Weight of action penalty in error function for fingers.
     """
-    def __init__(self, forward_kinematics, action_weight):
+    def __init__(self, forward_kinematics, action_weights):
         self.forward_kinematics = forward_kinematics
-        self.action_weight = action_weight
+        self.action_weights = action_weights
 
     def __call__(self, finger_pose, desired_finger_pos):
         tip_position = self.forward_kinematics(finger_pose)
-        return (np.linalg.norm(desired_finger_pos - tip_position) +
-                self.action_weight * np.linalg.norm(finger_pose))
+        pos_finger_pose = np.maximum(0.0, finger_pose)
+        neg_finger_pose = -np.minimum(0.0, finger_pose)
+        return (np.linalg.norm(desired_finger_pos - tip_position)
+                + np.dot(self.action_weights[0], pos_finger_pose)
+                + np.dot(self.action_weights[1], neg_finger_pose)
+                )
 
 
 class ManoHand(pv.Artist):

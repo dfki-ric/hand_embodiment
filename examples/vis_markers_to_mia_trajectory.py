@@ -95,8 +95,8 @@ betas = np.array([-2.424, -1.212, -1.869, -1.616, -4.091, -1.768, -0.808, 2.323,
 
 action_weight = 0.02
 hse = MarkerBasedRecordMapping(
-    left=False, action_weight=action_weight,
-    mano2hand_markers=mano2hand_markers, shape_parameters=betas, verbose=1)
+    left=False, mano2hand_markers=mano2hand_markers, shape_parameters=betas,
+    verbose=1)
 emb = HandEmbodiment(
     hse.hand_state_, hand_config, mano_finger_kinematics=hse.mano_finger_kinematics_,
     initial_handbase2world=hse.mano2world_, verbose=1)
