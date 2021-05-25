@@ -130,7 +130,7 @@ class MarkerBasedRecordMapping:
         self.mano2world_ = pt.concat(
             self.mano2hand_markers, self.current_hand_markers2world)
 
-        for finger_name in self.mano_finger_kinematics_.keys():
+        for finger_name in finger_markers.keys():
             self.finger_markers_in_mano[finger_name] = pt.invert_transform(
                 self.mano2world_).dot(
                 pt.vector_to_point(finger_markers[finger_name]))[:3]
@@ -138,7 +138,7 @@ class MarkerBasedRecordMapping:
         if self.verbose:
             start = time.time()
 
-        for finger_name in self.mano_finger_kinematics_.keys():
+        for finger_name in finger_markers.keys():
             fe = self.mano_finger_kinematics_[finger_name]
             finger_pose = fe.inverse(self.finger_markers_in_mano[finger_name])
             self.hand_state_.pose[fe.finger_pose_param_indices] = finger_pose
