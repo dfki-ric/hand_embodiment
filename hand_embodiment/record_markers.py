@@ -2,7 +2,7 @@ import time
 
 import numpy as np
 from mocap.mano import HandState, hand_vertices, apply_shape_parameters
-from pytransform3d import transformations as pt, rotations as pr, visualizer as pv
+from pytransform3d import transformations as pt, rotations as pr
 from scipy.optimize import minimize
 
 
@@ -246,6 +246,8 @@ class ManoFingerKinematics:
             self.finger_pose_param_indices, dtype=float)
 
         self._optimizer_pose = np.zeros(len(self.current_pose) + 3)
+        self.bounds = np.array([
+            [-0.25 * np.pi, 0.25 * np.pi]] * len(self.current_pose))
 
         self.last_forward_result = None
 
@@ -283,7 +285,8 @@ class ManoFingerKinematics:
 
     def inverse(self, position):
         """Estimate finger joint parameters from position."""
-        res = minimize(self.finger_error, self.current_pose, args=(position,), method="COBYLA")  # SLSQP, COBYLA
+        res = minimize(self.finger_error, self.current_pose, args=(position,),
+                       method="COBYLA", bounds=self.bounds)  # SLSQP, COBYLA
         self.current_pose[:] = res["x"]
         return self.current_pose
 
@@ -311,23 +314,3 @@ class FingerError:
                 + np.dot(self.action_weights[0], pos_finger_pose)
                 + np.dot(self.action_weights[1], neg_finger_pose)
                 )
-
-
-class ManoHand(pv.Artist):
-    """Representation of hand mesh as artist for 3D visualization in Open3D."""
-    def __init__(self, hse):
-        self.hse = hse
-
-    def set_data(self):
-        pass
-
-    @property
-    def geometries(self):
-        """Expose geometries.
-
-        Returns
-        -------
-        geometries : list
-            List of geometries that can be added to the visualizer.
-        """
-        return [self.hse.hand_state_.hand_mesh]

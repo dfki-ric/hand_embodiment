@@ -13,7 +13,8 @@ from mocap import qualisys
 from mocap import pandas_utils
 from mocap.cleaning import interpolate_nan, median_filter
 from mocap import conversion
-from hand_embodiment.record_markers import ManoHand, MarkerBasedRecordMapping
+from hand_embodiment.record_markers import MarkerBasedRecordMapping
+from hand_embodiment.vis_utils import ManoHand
 from hand_embodiment.embodiment import HandEmbodiment
 from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
 

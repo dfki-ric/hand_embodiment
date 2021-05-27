@@ -6,11 +6,11 @@ from mocap import qualisys
 from mocap import pandas_utils
 from mocap.cleaning import interpolate_nan, median_filter
 from mocap import conversion
-from hand_embodiment.record_markers import ManoHand, MarkerBasedRecordMapping
-
+from hand_embodiment.record_markers import MarkerBasedRecordMapping
+from hand_embodiment.vis_utils import ManoHand
 
 skip_frames = 1
-filename = "data/QualisysAprilTest/april_test_007.tsv"
+filename = "data/QualisysAprilTest/april_test_013.tsv"
 trajectory = qualisys.read_qualisys_tsv(filename=filename)
 
 hand_trajectory = pandas_utils.extract_markers(trajectory, ["hand_left", "hand_right", "hand_top", "ring_middle", "middle_middle", "index_middle", "ring_tip", "middle_tip", "index_tip", "thumb_tip"])
@@ -50,16 +50,16 @@ markers = scatter(fig, np.vstack([v for v in marker_pos]), s=0.005)
 mano2hand_markers = pt.transform_from_exponential_coordinates(np.array([-0.103, 1.97, -0.123, -0.066, -0.034, 0.083]))
 betas = np.array([-3.5, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-hse = MarkerBasedRecordMapping(
+mbrm = MarkerBasedRecordMapping(
     left=False, mano2hand_markers=mano2hand_markers, shape_parameters=betas,
     verbose=1)
-hand = ManoHand(hse)
+hand = ManoHand(mbrm, show_mesh=False, show_vertices=True)
 hand.add_artist(fig)
 
 fig.view_init()
 fig.animate(
     animation_callback, len(hand_top), loop=True,
-    fargs=(markers, hand, hse, hand_top, hand_left, hand_right, thumb, index,
+    fargs=(markers, hand, mbrm, hand_top, hand_left, hand_right, thumb, index,
            middle, ring))
 
 fig.show()

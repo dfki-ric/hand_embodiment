@@ -12,7 +12,8 @@ from mocap import qualisys
 from mocap import pandas_utils
 from mocap.cleaning import interpolate_nan, median_filter
 from mocap import conversion
-from hand_embodiment.record_markers import ManoHand, MarkerBasedRecordMapping
+from hand_embodiment.record_markers import MarkerBasedRecordMapping
+from hand_embodiment.vis_utils import ManoHand
 from hand_embodiment.embodiment import HandEmbodiment
 from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
 
@@ -42,7 +43,7 @@ args = parse_args()
 
 
 skip_frames = 1
-filename = "data/QualisysAprilTest/april_test_007.tsv"
+filename = "data/QualisysAprilTest/april_test_010.tsv"
 trajectory = qualisys.read_qualisys_tsv(filename=filename)
 
 hand_trajectory = pandas_utils.extract_markers(trajectory, ["hand_left", "hand_right", "hand_top", "ring_middle", "middle_middle", "index_middle", "ring_tip", "middle_tip", "index_tip", "thumb_tip"])
@@ -95,24 +96,24 @@ markers = scatter(fig, np.vstack([v for v in marker_pos]), s=0.005)
 mano2hand_markers = pt.transform_from_exponential_coordinates(np.array([-0.103, 1.97, -0.123, -0.066, -0.034, 0.083]))
 betas = np.array([-3.5, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-hse = MarkerBasedRecordMapping(
+mbrm = MarkerBasedRecordMapping(
     left=False, mano2hand_markers=mano2hand_markers, shape_parameters=betas,
     verbose=1)
 emb = HandEmbodiment(
-    hse.hand_state_, hand_config,
+    mbrm.hand_state_, hand_config,
     use_fingers=("thumb", "index", "middle", "ring"),
-    mano_finger_kinematics=hse.mano_finger_kinematics_,
-    initial_handbase2world=hse.mano2world_, verbose=1)
+    mano_finger_kinematics=mbrm.mano_finger_kinematics_,
+    initial_handbase2world=mbrm.mano2world_, verbose=1)
 robot = pv.Graph(
     emb.target_kin.tm, "world", show_frames=True, whitelist=[hand_config["base_frame"]],
     show_connections=False, show_visuals=True, show_collision_objects=False,
     show_name=False, s=0.02)
 robot.add_artist(fig)
-hand = ManoHand(hse)
+hand = ManoHand(mbrm, show_mesh=False, show_vertices=True)
 if args.show_mano:
     hand.add_artist(fig)
 
 fig.view_init()
-fig.animate(animation_callback, len(hand_top), loop=True, fargs=(markers, hand, robot, hse, hand_top, hand_left, hand_right, thumb, index, middle, ring, emb))
+fig.animate(animation_callback, len(hand_top), loop=True, fargs=(markers, hand, robot, mbrm, hand_top, hand_left, hand_right, thumb, index, middle, ring, emb))
 
 fig.show()
