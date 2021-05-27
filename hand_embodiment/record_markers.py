@@ -41,38 +41,38 @@ MANO_CONFIG = {
     "action_weights_per_finger":
         {
             "thumb":     # roll -l/+r -ext/+flex
-                np.array([[0.01, 0.01, 0.01,  # positive
+                np.array([[0.01, 0.01, 0.01,  # + positive
                            0.01, 0.01, 0.01,
                            0.01, 0.05, 0.05],
-                          [0.01, 0.01, 0.01,  # negative
+                          [0.01, 0.01, 0.01,  # - negative
                            0.01, 0.01, 0.01,
                            0.01, 0.05, 0.05]]),
             "index":
-                np.array([[0.05, 0.0, 0.0,  # close to palm
-                           0.05, 0.05, 0.0,  # middle joint
-                           0.05, 0.05, 0.0],  # tip joint
-                          [0.05, 0.0, 0.0,
+                np.array([[0.05, 0.001, 0.001,  # close to palm
+                           0.05, 0.05, 0.001,  # middle joint
+                           0.05, 0.05, 0.001],  # tip joint
+                          [0.05, 0.001, 0.001,
                            0.05, 0.05, 0.005,
                            0.05, 0.05, 0.005]]),
             "middle":
-                np.array([[0.05, 0.0, 0.0,
-                           0.05, 0.01, 0.0,
-                           0.05, 0.01, 0.0],
-                          [0.05, 0.0, 0.0,
+                np.array([[0.05, 0.001, 0.001,
+                           0.05, 0.01, 0.001,
+                           0.05, 0.01, 0.001],
+                          [0.05, 0.001, 0.001,
                            0.05, 0.05, 0.005,
                            0.05, 0.05, 0.005]]),
             "ring":
-                np.array([[0.05, 0.0, 0.0,
-                           0.05, 0.01, 0.0,
-                           0.05, 0.01, 0.0],
-                          [0.05, 0.0, 0.0,
+                np.array([[0.05, 0.001, 0.001,
+                           0.05, 0.01, 0.001,
+                           0.05, 0.01, 0.001],
+                          [0.05, 0.001, 0.001,
                            0.05, 0.05, 0.005,
                            0.05, 0.05, 0.005]]),
             "little":
-                np.array([[0.05, 0.0, 0.0,
-                           0.05, 0.01, 0.0,
-                           0.05, 0.01, 0.0],
-                          [0.05, 0.0, 0.0,
+                np.array([[0.05, 0.001, 0.001,
+                           0.05, 0.01, 0.001,
+                           0.05, 0.01, 0.001],
+                          [0.05, 0.001, 0.001,
                            0.05, 0.05, 0.005,
                            0.05, 0.05, 0.005]]),
         }
@@ -294,7 +294,7 @@ class ManoFingerKinematics:
     def inverse(self, position):
         """Estimate finger joint parameters from position."""
         res = minimize(self.finger_error, self.current_pose, args=(position,),
-                       method="COBYLA", bounds=self.bounds)  # SLSQP, COBYLA
+                       method="SLSQP", bounds=self.bounds)  # SLSQP, COBYLA
         self.current_pose[:] = res["x"]
         return self.current_pose
 
@@ -318,7 +318,7 @@ class FingerError:
         tip_position = self.forward_kinematics(finger_pose)
         pos_finger_pose = np.maximum(0.0, finger_pose)
         neg_finger_pose = -np.minimum(0.0, finger_pose)
-        return (np.linalg.norm(desired_finger_pos - tip_position)
-                + np.dot(self.action_weights[0], pos_finger_pose)
-                + np.dot(self.action_weights[1], neg_finger_pose)
+        return (np.linalg.norm(desired_finger_pos - tip_position) ** 2
+                + np.dot(self.action_weights[0], pos_finger_pose) ** 2
+                + np.dot(self.action_weights[1], neg_finger_pose) ** 2
                 )
