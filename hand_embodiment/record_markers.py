@@ -318,6 +318,8 @@ class FingerError:
         tip_position = self.forward_kinematics(finger_pose)
         pos_finger_pose = np.maximum(0.0, finger_pose)
         neg_finger_pose = -np.minimum(0.0, finger_pose)
+        # squared cost improves result and speed drastically in comparison
+        # to non-squared cost
         return (np.linalg.norm(desired_finger_pos - tip_position) ** 2
                 + np.dot(self.action_weights[0], pos_finger_pose) ** 2
                 + np.dot(self.action_weights[1], neg_finger_pose) ** 2
