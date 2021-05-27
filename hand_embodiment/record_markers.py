@@ -146,6 +146,11 @@ class MarkerBasedRecordMapping:
             finger_name: np.eye(4)
             for finger_name in self.mano_finger_kinematics_.keys()}
 
+    def reset(self):
+        """Reset current joint poses of MANO."""
+        for finger_name in self.mano_finger_kinematics_:
+            self.mano_finger_kinematics_[finger_name].reset()
+
     def estimate(self, hand_markers, finger_markers):
         """Estimate hand state from positions of hand markers and finger markers.
 
@@ -259,6 +264,9 @@ class ManoFingerKinematics:
         # extract those with a close index
         self.finger_vertex_indices = self.finger_vertex_indices[
             abs(self.finger_vertex_indices - self.finger_vertex_index) < 2]
+
+    def reset(self):
+        self.current_pose[:] = 0.0
 
     def reduce_pose_parameters(self, hand_state):  # TODO we should introduce our own vertex at marker's position
         finger_opt_vertex_index = np.where(self.finger_vertex_indices == self.finger_vertex_index)[0][0]
