@@ -7,7 +7,7 @@ from hand_embodiment.vis_utils import ManoHand
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 
 
-filename = "data/QualisysAprilTest/april_test_005.tsv"
+filename = "data/QualisysAprilTest/april_test_010.tsv"
 skip_frames = 1
 finger_names = ["thumb", "index", "middle", "ring"]
 hand_marker_names = ["hand_top", "hand_left", "hand_right"]
@@ -43,7 +43,7 @@ betas = np.array([-3.5, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 mbrm = MarkerBasedRecordMapping(
     left=False, mano2hand_markers=mano2hand_markers, shape_parameters=betas,
     verbose=1)
-hand = ManoHand(mbrm, show_mesh=True, show_vertices=True)
+hand = ManoHand(mbrm, show_mesh=True, show_vertices=False)
 hand.add_artist(fig)
 
 fig.view_init(azim=45)

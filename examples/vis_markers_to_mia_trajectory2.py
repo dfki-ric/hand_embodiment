@@ -8,10 +8,6 @@ import numpy as np
 from pytransform3d import visualizer as pv
 from pytransform3d import transformations as pt
 from mocap.visualization import scatter
-from mocap import qualisys
-from mocap import pandas_utils
-from mocap.cleaning import interpolate_nan, median_filter
-from mocap import conversion
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.vis_utils import ManoHand
 from hand_embodiment.embodiment import HandEmbodiment
@@ -43,7 +39,7 @@ def parse_args():
 args = parse_args()
 
 
-filename = "data/QualisysAprilTest/april_test_004.tsv"
+filename = "data/QualisysAprilTest/april_test_010.tsv"
 skip_frames = 1
 finger_names = ["thumb", "index", "middle", "ring"]
 hand_marker_names = ["hand_top", "hand_left", "hand_right"]
@@ -52,14 +48,14 @@ finger_marker_names = {"thumb": "thumb_tip", "index": "index_tip",
 additional_marker_names = ["index_middle", "middle_middle", "ring_middle"]
 dataset = HandMotionCaptureDataset(
     filename, finger_names, hand_marker_names, finger_marker_names, additional_marker_names,
-    skip_frames=5)
+    skip_frames=2)
 
 
 def animation_callback(t, markers, hand, robot, hse, dataset, emb):
     if t == 0:
         hse.reset()
         import time
-        time.sleep(1)
+        time.sleep(5)
     markers.set_data(dataset.get_markers(t))
     hse.estimate(dataset.get_hand_markers(t), dataset.get_finger_markers(t))
     emb.solve(hse.mano2world_, use_cached_forward_kinematics=True)
