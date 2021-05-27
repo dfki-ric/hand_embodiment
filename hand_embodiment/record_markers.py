@@ -252,7 +252,7 @@ class ManoFingerKinematics:
 
         self._optimizer_pose = np.zeros(len(self.current_pose) + 3)
         self.bounds = np.array([
-            [-0.25 * np.pi, 0.25 * np.pi]] * len(self.current_pose))
+            [-0.4 * np.pi, 0.4 * np.pi]] * len(self.current_pose))
 
         self.last_forward_result = None
 
