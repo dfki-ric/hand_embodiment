@@ -9,7 +9,7 @@ from mocap import conversion
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.vis_utils import ManoHand
 
-skip_frames = 1
+skip_frames = 2
 filename = "data/QualisysAprilTest/april_test_013.tsv"
 trajectory = qualisys.read_qualisys_tsv(filename=filename)
 
@@ -35,6 +35,10 @@ thumb = conversion.array_from_dataframe(hand_trajectory, ["thumb_tip X", "thumb_
 
 
 def animation_callback(t, markers, hand, hse, hand_top, hand_left, hand_right, thumb, index, middle, ring):
+    if t == 0:
+        hse.reset()
+        import time
+        time.sleep(1)
     markers.set_data([hand_top[t], hand_left[t], hand_right[t], middle[t], index[t], thumb[t], ring[t]])
     hse.estimate(
         [hand_top[t], hand_left[t], hand_right[t]],
@@ -57,10 +61,11 @@ betas = np.array([-3.5, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 mbrm = MarkerBasedRecordMapping(
     left=False, mano2hand_markers=mano2hand_markers, shape_parameters=betas,
     verbose=1)
-hand = ManoHand(mbrm, show_mesh=False, show_vertices=True)
+hand = ManoHand(mbrm, show_mesh=True, show_vertices=False)
 hand.add_artist(fig)
 
-fig.view_init()
+fig.view_init(azim=45)
+fig.set_zoom(0.7)
 fig.animate(
     animation_callback, len(hand_top), loop=True,
     fargs=(markers, hand, mbrm, hand_top, hand_left, hand_right, thumb, index,

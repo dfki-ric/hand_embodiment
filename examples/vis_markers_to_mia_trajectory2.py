@@ -42,7 +42,7 @@ def parse_args():
 args = parse_args()
 
 
-skip_frames = 1
+skip_frames = 2
 filename = "data/QualisysAprilTest/april_test_013.tsv"
 trajectory = qualisys.read_qualisys_tsv(filename=filename)
 
@@ -68,6 +68,10 @@ thumb = conversion.array_from_dataframe(hand_trajectory, ["thumb_tip X", "thumb_
 
 
 def animation_callback(t, markers, hand, robot, hse, hand_top, hand_left, hand_right, thumb, index, middle, ring, emb):
+    if t == 0:
+        hse.reset()
+        import time
+        time.sleep(1)
     markers.set_data([hand_top[t], hand_left[t], hand_right[t], middle[t], index[t], thumb[t], ring[t]])
     hse.estimate(
         [hand_top[t], hand_left[t], hand_right[t]],
@@ -113,11 +117,15 @@ robot = pv.Graph(
     show_connections=False, show_visuals=True, show_collision_objects=False,
     show_name=False, s=0.02)
 robot.add_artist(fig)
-hand = ManoHand(mbrm, show_mesh=False, show_vertices=True)
+hand = ManoHand(mbrm, show_mesh=True, show_vertices=False)
 if args.show_mano:
     hand.add_artist(fig)
 
-fig.view_init()
-fig.animate(animation_callback, len(hand_top), loop=True, fargs=(markers, hand, robot, mbrm, hand_top, hand_left, hand_right, thumb, index, middle, ring, emb))
+fig.view_init(azim=45)
+fig.set_zoom(0.7)
+fig.animate(
+    animation_callback, len(hand_top), loop=True,
+    fargs=(markers, hand, robot, mbrm, hand_top, hand_left, hand_right, thumb,
+           index, middle, ring, emb))
 
 fig.show()
