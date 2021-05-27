@@ -7,7 +7,7 @@ from hand_embodiment.vis_utils import ManoHand
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 
 
-filename = "data/QualisysAprilTest/april_test_004.tsv"
+filename = "data/QualisysAprilTest/april_test_005.tsv"
 skip_frames = 1
 finger_names = ["thumb", "index", "middle", "ring"]
 hand_marker_names = ["hand_top", "hand_left", "hand_right"]
@@ -16,14 +16,14 @@ finger_marker_names = {"thumb": "thumb_tip", "index": "index_tip",
 additional_marker_names = ["index_middle", "middle_middle", "ring_middle"]
 dataset = HandMotionCaptureDataset(
     filename, finger_names, hand_marker_names, finger_marker_names, additional_marker_names,
-    skip_frames=1)
+    skip_frames=2)
 
 
 def animation_callback(t, markers, hand, hse, dataset):
     if t == 0:
         hse.reset()
         import time
-        time.sleep(1)
+        time.sleep(5)
     markers.set_data(dataset.get_markers(t))
     hse.estimate(dataset.get_hand_markers(t), dataset.get_finger_markers(t))
     hand.set_data()
@@ -35,7 +35,6 @@ fig = pv.figure()
 fig.plot_transform(np.eye(4), s=0.5)
 
 marker_pos = dataset.get_markers(0)
-print(marker_pos)
 markers = scatter(fig, marker_pos, s=0.005)
 
 mano2hand_markers = pt.transform_from_exponential_coordinates(np.array([-0.103, 1.97, -0.123, -0.066, -0.034, 0.083]))
