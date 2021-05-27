@@ -42,7 +42,7 @@ def parse_args():
 args = parse_args()
 
 
-skip_frames = 2
+skip_frames = 5
 filename = "data/QualisysAprilTest/april_test_013.tsv"
 trajectory = qualisys.read_qualisys_tsv(filename=filename)
 
