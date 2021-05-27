@@ -43,10 +43,14 @@ args = parse_args()
 
 
 skip_frames = 1
-filename = "data/QualisysAprilTest/april_test_010.tsv"
+filename = "data/QualisysAprilTest/april_test_013.tsv"
 trajectory = qualisys.read_qualisys_tsv(filename=filename)
 
-hand_trajectory = pandas_utils.extract_markers(trajectory, ["hand_left", "hand_right", "hand_top", "ring_middle", "middle_middle", "index_middle", "ring_tip", "middle_tip", "index_tip", "thumb_tip"])
+marker_names = ["hand_left", "hand_right", "hand_top", "ring_middle", "middle_middle", "index_middle", "ring_tip", "middle_tip", "index_tip", "thumb_tip"]
+hand_trajectory = pandas_utils.extract_markers(trajectory, marker_names).copy()
+column_names = pandas_utils.match_columns(hand_trajectory, marker_names, keep_time=False)
+for column_name in column_names:
+    hand_trajectory[column_name].replace(0.0, np.nan, inplace=True)
 hand_trajectory = hand_trajectory.iloc[::skip_frames]
 
 hand_trajectory = median_filter(interpolate_nan(hand_trajectory), 3).iloc[2:]
