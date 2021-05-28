@@ -111,9 +111,48 @@ MIA_CONFIG = {
     ]
 }
 
+
 ###############################################################################
 # Shadow dexterous hand
 ###############################################################################
+
+def kinematic_model_hook_shadow(kin):
+    """Extends kinematic model to include links for embodiment mapping."""
+    kin.tm.add_transform(
+        "thumb_tip", "rh_thtip",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.013],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "index_tip", "rh_fftip",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.01],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "middle_tip", "rh_mftip",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.01],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "ring_tip", "rh_rftip",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.01],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "little_tip", "rh_lftip",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.01],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
 
 
 class ShadowVirtualF0Joint:
@@ -157,11 +196,11 @@ SHADOW_HAND_CONFIG = {
     "base_frame": "rh_forearm",
     "ee_frames":
         {
-            "thumb": "rh_thtip",
-            "index": "rh_fftip",
-            "middle": "rh_mftip",
-            "ring": "rh_rftip",
-            "little": "rh_lftip"
+            "thumb": "thumb_tip",
+            "index": "index_tip",
+            "middle": "middle_tip",
+            "ring": "ring_tip",
+            "little": "little_tip"
         },
     "handbase2robotbase": manobase2shadowbase,
     "model":
@@ -171,7 +210,7 @@ SHADOW_HAND_CONFIG = {
                 "model/sr_common/sr_description/urdf/shadow_hand.urdf"),
             "package_dir": resource_filename(
                 "hand_embodiment", "model/sr_common/"),
-            #"kinematic_model_hook": lambda x: x  # not required at the moment
+            "kinematic_model_hook": kinematic_model_hook_shadow
         },
     "virtual_joints_callbacks":
         {
