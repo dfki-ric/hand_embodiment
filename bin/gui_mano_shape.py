@@ -24,7 +24,9 @@ def parse_args():
     parser.add_argument(
         "--start-idx", type=int, default=100,
         help="Index of frame that we visualize.")
-
+    parser.add_argument(
+        "--fit-fingers", action="store_true",
+        help="Fit fingers to marker configuration.")
     return parser.parse_args()
 
 
@@ -196,6 +198,7 @@ def main():
     dataset = HandMotionCaptureDataset(
         args.mocap_filename, finger_names, hand_marker_names, finger_marker_names,
         additional_marker_names)
+
     config_filename = args.filename
     if os.path.exists(config_filename):
         mano2hand_markers, betas = load_mano_config(config_filename)
@@ -204,12 +207,20 @@ def main():
 
     mbrm = MarkerBasedRecordMapping(
         left=False, shape_parameters=betas, mano2hand_markers=mano2hand_markers)
-    mbrm.estimate(dataset.get_hand_markers(args.start_idx), finger_markers={})  # TODO fit fingers?
+
+    if args.fit_fingers:
+        finger_markers = dataset.get_finger_markers(args.start_idx)
+    else:
+        finger_markers = {}
+    mbrm.estimate(dataset.get_hand_markers(args.start_idx), finger_markers)
     world2mano = pt.invert_transform(mbrm.mano2world_)
     markers_in_world = dataset.get_markers(args.start_idx)
-    markers_in_mano = pt.transform(mano2hand_markers, pt.transform(world2mano, pt.vectors_to_points(markers_in_world)))[:, :3]
+    markers_in_mano = pt.transform(
+        mano2hand_markers, pt.transform(
+            world2mano, pt.vectors_to_points(markers_in_world)))[:, :3]
 
     fig = Figure("MANO shape", 1920, 1080, config_filename, ax_s=0.2)
+
     for p in markers_in_mano:  # TODO refactor
         marker = o3d.geometry.TriangleMesh.create_sphere(radius=0.005)
         n_vertices = len(marker.vertices)
@@ -224,8 +235,6 @@ def main():
     coordinate_system = make_coordinate_system(s=0.2)
     fig.add_geometry(coordinate_system)
 
-    #initial_pose = pt.transform_from_exponential_coordinates(np.array([-0.103, 1.97, -0.123, -0.066, -0.034, 0.083]))
-    #initial_pose = pt.exponential_coordinates_from_transform(initial_pose)
     fig.make_mano_widgets(mbrm)
 
     fig.show()
