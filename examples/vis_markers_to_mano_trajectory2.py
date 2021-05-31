@@ -1,10 +1,11 @@
 import numpy as np
 import pytransform3d.visualizer as pv
-import pytransform3d.transformations as pt
 from mocap.visualization import scatter
+
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.vis_utils import ManoHand
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
+from hand_embodiment.config import load_mano_config
 
 
 filename = "data/QualisysAprilTest/april_test_010.tsv"
@@ -37,9 +38,8 @@ fig.plot_transform(np.eye(4), s=0.5)
 marker_pos = dataset.get_markers(0)
 markers = scatter(fig, marker_pos, s=0.005)
 
-mano2hand_markers = pt.transform_from_exponential_coordinates(np.array([-0.103, 1.97, -0.123, -0.066, -0.034, 0.083]))
-betas = np.array([-3.5, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-
+mano2hand_markers, betas = load_mano_config(
+    "examples/config/april_test_mano.yaml")
 mbrm = MarkerBasedRecordMapping(
     left=False, mano2hand_markers=mano2hand_markers, shape_parameters=betas,
     verbose=1)
