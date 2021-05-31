@@ -48,6 +48,14 @@ Motion capture data fitted to the MANO hand model.
 
 Transfer of the MANO state to the Mia hand.
 
+![MANO to Mia](doc/source/_static/shadow_embodiment.png)
+
+Interactive transfer of the MANO state to the Shadow hand.
+
+![MANO to Mia](doc/source/_static/mano_shape.png)
+
+Configuration of MANO parameters.
+
 ## Integrating a New Robotic Hand
 
 Each target hand needs a configuration. These are typically stored in
