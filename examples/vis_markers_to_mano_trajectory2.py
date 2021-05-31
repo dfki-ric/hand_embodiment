@@ -9,7 +9,6 @@ from hand_embodiment.config import load_mano_config
 
 
 filename = "data/QualisysAprilTest/april_test_010.tsv"
-skip_frames = 1
 finger_names = ["thumb", "index", "middle", "ring"]
 hand_marker_names = ["hand_top", "hand_left", "hand_right"]
 finger_marker_names = {"thumb": "thumb_tip", "index": "index_tip",

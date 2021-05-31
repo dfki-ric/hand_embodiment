@@ -6,7 +6,6 @@ python examples/vis_markers_to_mia_trajectory.py mia --start-idx 8000 --end-idx 
 import argparse
 import numpy as np
 from pytransform3d import visualizer as pv
-from pytransform3d import transformations as pt
 from mocap.visualization import scatter
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.vis_utils import ManoHand
@@ -41,7 +40,6 @@ args = parse_args()
 
 
 filename = "data/QualisysAprilTest/april_test_010.tsv"
-skip_frames = 1
 finger_names = ["thumb", "index", "middle", "ring"]
 hand_marker_names = ["hand_top", "hand_left", "hand_right"]
 finger_marker_names = {"thumb": "thumb_tip", "index": "index_tip",

@@ -20,8 +20,31 @@ def load_mano_config(filename):
         Shape parameters of MANO mesh
     """
     with open(filename, "r") as f:
-        config = yaml.load(f)
+        config = yaml.safe_load(f)
     mano2hand_markers = pt.transform_from_exponential_coordinates(
         config["mano2hand_markers"])
     betas = np.array(config["betas"])
     return mano2hand_markers, betas
+
+
+def save_mano_config(filename, mano2hand_markers, betas):
+    """Save MANO configuration for record mapping.
+
+    Parameters
+    ----------
+    filename : str
+        Configuration file
+
+    mano2hand_markers : array, shape (4, 4)
+        Transformation from MANO base to hand marker frame
+
+    betas : array, shape (10,)
+        Shape parameters of MANO mesh
+    """
+    mano2hand_markers = pt.exponential_coordinates_from_transform(mano2hand_markers)
+    config = {
+        "mano2hand_markers": mano2hand_markers.tolist(),
+        "betas": betas.tolist()
+    }
+    with open(filename, "w") as f:
+        yaml.dump(config, f)

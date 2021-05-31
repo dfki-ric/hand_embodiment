@@ -105,6 +105,10 @@ class MarkerBasedRecordMapping:
     shape_parameters : array-like, shape (10,)
         Shape parameters for MANO hand.
 
+    hand_state : mocap.mano.HandState, optional (default: None)
+        If there is already a hand state object, this can be reused for the
+        record mapping. Otherwise we will create a new one.
+
     verbose : int, optional (default: 0)
         Verbosity level
 
@@ -118,16 +122,27 @@ class MarkerBasedRecordMapping:
     mano_finger_kinematics_ : dict (str to ManoFingerKinematics)
         Maps finger names to their kinematic chain in the MANO model.
 
+    mano2hand_markers_ : array-like, shape (4, 4)
+        Transformation from MANO base frame to marker base frame.
+
     mano2world_ : array-like, shape (4, 4)
         MANO base pose in world frame.
     """
     def __init__(self, left=False, mano2hand_markers=None,
-                 shape_parameters=None, verbose=0):
-        self.hand_state_ = HandState(left=left)
-        if shape_parameters is not None:
-            self.hand_state_.pose_parameters["J"], self.hand_state_.pose_parameters["v_template"] = \
-                apply_shape_parameters(betas=shape_parameters, **self.hand_state_.shape_parameters)
+                 shape_parameters=None, hand_state=None, verbose=0):
+        if hand_state is None:
+            self.hand_state_ = HandState(left=left)
+            if shape_parameters is not None:
+                self.hand_state_.betas[:] = shape_parameters
+                self.hand_state_.pose_parameters["J"], \
+                    self.hand_state_.pose_parameters["v_template"] = \
+                    apply_shape_parameters(betas=shape_parameters,
+                                           **self.hand_state_.shape_parameters)
+        else:
+            self.hand_state_ = hand_state
+
         self.verbose = verbose
+
         self.mano_finger_kinematics_ = {
             "thumb": make_finger_kinematics(self.hand_state_, "thumb"),
             "index": make_finger_kinematics(self.hand_state_, "index"),
@@ -136,12 +151,12 @@ class MarkerBasedRecordMapping:
         }
 
         if mano2hand_markers is None:
-            self.mano2hand_markers = MANO2HAND_MARKERS
+            self.mano2hand_markers_ = MANO2HAND_MARKERS
         else:
-            self.mano2hand_markers = mano2hand_markers
+            self.mano2hand_markers_ = mano2hand_markers
         self.current_hand_markers2world = np.eye(4)
         self.mano2world_ = pt.concat(
-            self.mano2hand_markers, self.current_hand_markers2world)
+            self.mano2hand_markers_, self.current_hand_markers2world)
         self.finger_markers_in_mano = {
             finger_name: np.eye(4)
             for finger_name in self.mano_finger_kinematics_.keys()}
@@ -164,7 +179,7 @@ class MarkerBasedRecordMapping:
         """
         self.current_hand_markers2world = estimate_hand_pose(*hand_markers)
         self.mano2world_ = pt.concat(
-            self.mano2hand_markers, self.current_hand_markers2world)
+            self.mano2hand_markers_, self.current_hand_markers2world)
 
         for finger_name in finger_markers.keys():
             self.finger_markers_in_mano[finger_name] = pt.invert_transform(
