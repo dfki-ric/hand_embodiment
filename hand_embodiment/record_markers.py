@@ -24,11 +24,11 @@ MANO_CONFIG = {
         },
     "vertex_index_per_finger":
         {
-            "thumb": 744,  # 729#727
-            "index": 320,
-            "middle": 445,
-            "little": 673,
-            "ring": 554,  # improvement possible...
+            "thumb": 724,
+            "index": 314,
+            "middle": 426,
+            "little": 651,
+            "ring": 534,
         },
     "joint_indices_per_finger":
         {

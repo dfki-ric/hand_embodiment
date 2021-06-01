@@ -7,6 +7,8 @@ from pytransform3d import visualizer as pv
 from mocap.mano import HandState
 
 from hand_embodiment.vis_utils import make_coordinate_system
+from hand_embodiment.config import load_mano_config
+from hand_embodiment.record_markers import MANO_CONFIG
 
 POSE = np.array([
     0, 0, 0,
@@ -42,8 +44,17 @@ def parse_args():
         "--show-reference", action="store_true",
         help="Show coordinate frame for size reference.")
     parser.add_argument(
+        "--show-transforms", action="store_true",
+        help="Show reference frames of markers and MANO.")
+    parser.add_argument(
+        "--show-tips", action="store_true",
+        help="Show tip vertices of fingers in green color.")
+    parser.add_argument(
         "--zero-pose", action="store_true",
         help="Set all pose parameters to 0.")
+    parser.add_argument(
+        "--config-filename", type=str, default=None,
+        help="MANO configuration that includes shape parameters.")
 
     return parser.parse_args()
 
@@ -90,12 +101,21 @@ def main():
 
     hand_state = HandState(left=False)
 
+    if args.config_filename is None:
+        mano2hand_markers, betas = np.eye(4), np.zeros(
+            hand_state.n_shape_parameters)
+    else:
+        mano2hand_markers, betas = load_mano_config(args.config_filename)
+
     if args.zero_pose:
         pose = np.zeros_like(POSE)
     else:
         pose = POSE
+
+    hand_state.betas[:] = betas
+    hand_state.recompute_shape()
     hand_state.pose[:] = pose
-    hand_state.mesh_updated = True
+    hand_state.recompute_mesh()
 
     pose = pose.reshape(-1, 3)
     J = joint_poses(pose, hand_state.pose_parameters["J"],
@@ -112,6 +132,17 @@ def main():
                 colors.append((0, 0, 0))
         pc.colors = o3d.utility.Vector3dVector(colors)
 
+    if args.show_tips:
+        vipf = MANO_CONFIG["vertex_index_per_finger"]
+        for finger in vipf:
+            idx = vipf[finger]
+            pc.colors[idx] = (0, 1, 0)
+            for dist in range(1, 6):
+                if idx - dist >= 0:
+                    pc.colors[idx - dist] = (0, 0, 1.0 / dist)
+                if idx + dist < len(pc.colors):
+                    pc.colors[idx + dist] = (0, 0, 1.0 / dist)
+
     fig = pv.figure()
     fig.add_geometry(pc)
     for i in range(len(J)):
@@ -125,6 +156,9 @@ def main():
     if args.show_reference:
         coordinate_system = make_coordinate_system(s=0.2)
         fig.add_geometry(coordinate_system)
+    if args.show_transforms:
+        fig.plot_transform(np.eye(4), s=0.05)
+        fig.plot_transform(pt.invert_transform(mano2hand_markers), s=0.05)
     fig.show()
 
 
