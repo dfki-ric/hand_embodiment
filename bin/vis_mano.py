@@ -1,3 +1,9 @@
+"""
+Example call:
+python bin/vis_mano.py \
+    --config-filename examples/config/april_test_mano2.yaml \
+    --show-tips --show-mesh --show-transforms
+"""
 import argparse
 import numpy as np
 import open3d as o3d
@@ -8,7 +14,7 @@ from mocap.mano import HandState
 
 from hand_embodiment.vis_utils import make_coordinate_system
 from hand_embodiment.config import load_mano_config
-from hand_embodiment.record_markers import MANO_CONFIG
+from hand_embodiment.record_markers import MANO_CONFIG, make_finger_kinematics
 
 POSE = np.array([
     0, 0, 0,
@@ -117,8 +123,7 @@ def main():
     hand_state.pose[:] = pose
     hand_state.recompute_mesh()
 
-    pose = pose.reshape(-1, 3)
-    J = joint_poses(pose, hand_state.pose_parameters["J"],
+    J = joint_poses(pose.reshape(-1, 3), hand_state.pose_parameters["J"],
                     hand_state.pose_parameters["kintree_table"])
 
     pc = hand_state.hand_pointcloud
@@ -142,6 +147,9 @@ def main():
                     pc.colors[idx - dist] = (0, 0, 1.0 / dist)
                 if idx + dist < len(pc.colors):
                     pc.colors[idx + dist] = (0, 0, 1.0 / dist)
+            kin = make_finger_kinematics(hand_state, finger)
+            pos = kin.forward(pose[kin.finger_pose_param_indices])
+            pc.points[idx] = pos
 
     fig = pv.figure()
     fig.add_geometry(pc)

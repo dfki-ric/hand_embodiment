@@ -38,6 +38,14 @@ MANO_CONFIG = {
             "ring": (10, 11, 12),
             "little": (7, 8, 9)
         },
+    "tip_vertex_offset_per_finger":
+        {
+            "thumb": np.array([0.005, 0.005, 0.003]),
+            "index": np.array([0, 0.005, 0]),
+            "middle": np.array([0, 0.005, 0]),
+            "ring": np.array([0, 0.005, 0]),
+            "little": np.array([0, 0.005, 0])
+        },
     "action_weights_per_finger":
         {
             "thumb":     # roll -l/+r -ext/+flex
@@ -85,7 +93,8 @@ def make_finger_kinematics(hand_state, finger_name):
         MANO_CONFIG["pose_parameters_per_finger"][finger_name],
         MANO_CONFIG["vertex_index_per_finger"][finger_name],
         MANO_CONFIG["joint_indices_per_finger"][finger_name],
-        MANO_CONFIG["action_weights_per_finger"][finger_name])
+        MANO_CONFIG["action_weights_per_finger"][finger_name],
+        MANO_CONFIG["tip_vertex_offset_per_finger"][finger_name])
 
 
 class MarkerBasedRecordMapping:
@@ -249,12 +258,18 @@ class ManoFingerKinematics:
 
     action_weights : array, shape (2, n_finger_joints * 3)
         Default weight of action penalty in error function for fingers.
+
+    tip_vertex_offset : array, shape (3,)
+        Offset of tip vertex with respect to original vertex in MANO base
+        frame.
     """
     def __init__(self, hand_state, finger_pose_param_indices,
-                 finger_vertex_index, finger_joint_indices, action_weights):
+                 finger_vertex_index, finger_joint_indices, action_weights,
+                 tip_vertex_offset):
         self.finger_pose_param_indices = finger_pose_param_indices
         self.finger_vertex_index = finger_vertex_index
         self.finger_joint_indices = np.asarray([0] + list(finger_joint_indices), dtype=int)
+        self.tip_vertex_offset = tip_vertex_offset
 
         self._search_similar_vertices(finger_pose_param_indices, hand_state)
 
@@ -290,7 +305,7 @@ class ManoFingerKinematics:
             "J": hand_state.pose_parameters["J"][self.finger_joint_indices],
             "weights": hand_state.pose_parameters["weights"][self.finger_vertex_indices][:, self.finger_joint_indices],
             "kintree_table": hand_state.pose_parameters["kintree_table"][:, self.finger_joint_indices],  # TODO maybe this does not work in general
-            "v_template": hand_state.pose_parameters["v_template"][self.finger_vertex_indices],
+            "v_template": hand_state.pose_parameters["v_template"][self.finger_vertex_indices] + self.tip_vertex_offset,
             "posedirs": hand_state.pose_parameters["posedirs"][self.finger_vertex_indices][:, :, pose_dir_joint_indices]
         }
         return pose_params, finger_opt_vertex_index
