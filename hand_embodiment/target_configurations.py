@@ -13,8 +13,8 @@ def kinematic_model_hook_mia(kin):
     kin.tm.add_transform(
         "thumb_tip", "thumb_fle",
         np.array([
-            [1, 0, 0, 0.025],
-            [0, 1, 0, 0.08],
+            [1, 0, 0, 0.03],
+            [0, 1, 0, 0.07],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
