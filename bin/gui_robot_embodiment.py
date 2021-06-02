@@ -279,6 +279,10 @@ def parse_args():
         help="Name of the hand. Possible options: mia, shadow_hand")
     parser.add_argument(
         "--hide-mano", action="store_true", help="Don't show MANO mesh")
+    parser.add_argument(
+        "--config_filename", type=str,
+        default="examples/config/april_test_mano.yaml",
+        help="MANO configuration file.")
 
     return parser.parse_args()
 

@@ -123,14 +123,14 @@ def kinematic_model_hook_shadow(kin):
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.013],
-            [0, 0, 1, 0],
+            [0, 0, 1, -0.015],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
         "index_tip", "rh_fftip",
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.01],
-            [0, 0, 1, 0],
+            [0, 0, 1, -0.01],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
         "middle_tip", "rh_mftip",
@@ -144,14 +144,14 @@ def kinematic_model_hook_shadow(kin):
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.01],
-            [0, 0, 1, 0],
+            [0, 0, 1, -0.013],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
         "little_tip", "rh_lftip",
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.01],
-            [0, 0, 1, 0],
+            [0, 0, 1, -0.025],
             [0, 0, 0, 1]]))
 
 
