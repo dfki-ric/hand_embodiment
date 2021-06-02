@@ -176,15 +176,8 @@ class OnManoChange(OnMano):
         self.redraw()
 
     def update_mesh(self):
-        self.mbrm.hand_state_.pose_parameters["J"], self.mbrm.hand_state_.pose_parameters["v_template"] = \
-            mano.apply_shape_parameters(betas=self.mbrm.hand_state_.betas, **self.mbrm.hand_state_.shape_parameters)
-        self.mbrm.hand_state_.vertices[:, :] = mano.hand_vertices(
-            pose=self.mbrm.hand_state_.pose, **self.mbrm.hand_state_.pose_parameters)
-        self.mbrm.hand_state_.vertices[:, :] = pt.transform(
-            self.mbrm.mano2hand_markers_, pt.vectors_to_points(self.mbrm.hand_state_.vertices))[:, :3]
-        self.mbrm.hand_state_._mesh.vertices = o3d.utility.Vector3dVector(self.mbrm.hand_state_.vertices)
-        self.mbrm.hand_state_._mesh.compute_vertex_normals()
-        self.mbrm.hand_state_._mesh.compute_triangle_normals()
+        self.mbrm.hand_state_.recompute_shape()
+        self.mbrm.hand_state_.recompute_mesh(self.mbrm.mano2hand_markers_)
 
 
 def main():
