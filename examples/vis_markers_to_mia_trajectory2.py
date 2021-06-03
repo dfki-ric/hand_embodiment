@@ -32,6 +32,9 @@ def parse_args():
     parser.add_argument(
         "--demo-idx", type=int, default=2,
         help="Index of demonstration that should be used.")
+    parser.add_argument(
+        "--mia-thumb-adducted", action="store_true",
+        help="Adduct thumb of Mia hand.")
 
     return parser.parse_args()
 
@@ -91,6 +94,11 @@ emb = HandEmbodiment(
     use_fingers=("thumb", "index", "middle", "ring"),
     mano_finger_kinematics=mbrm.mano_finger_kinematics_,
     initial_handbase2world=mbrm.mano2world_, verbose=1)
+if args.hand == "mia":
+    if args.mia_thumb_adducted:
+        emb.target_kin.tm.set_joint("j_thumb_opp_binary", 1.0)
+    else:
+        emb.target_kin.tm.set_joint("j_thumb_opp_binary", -1.0)
 robot = pv.Graph(
     emb.target_kin.tm, "world", show_frames=True, whitelist=[hand_config["base_frame"]],
     show_connections=False, show_visuals=True, show_collision_objects=False,

@@ -48,6 +48,7 @@ def kinematic_model_hook_mia(kin):
 
 
 class MiaVirtualThumbJoint:
+    """Positive values will be mapped to max limit, negative values to min."""
     def __init__(self, real_joint_name):
         self.real_joint_name = real_joint_name
         self.min_angle = -0.628
@@ -61,7 +62,7 @@ class MiaVirtualThumbJoint:
                 np.array([0, 0, 0]), limits, "revolute")
 
     def __call__(self, value):
-        if value >= self.angle_threshold:
+        if value >= 0:
             angle = self.max_angle
         else:
             angle = self.min_angle
@@ -74,7 +75,7 @@ manobase2miabase = pt.transform_from(
 MIA_CONFIG = {
     "joint_names":
         {  # map finger names to a list of joint names that control the finger
-            "thumb": ["j_thumb_fle", "j_thumb_opp_binary"],
+            "thumb": ["j_thumb_fle"],
             "index": ["j_index_fle"],
             "middle": ["j_mrl_fle"],
             "ring": ["j_ring_fle"],
