@@ -4,30 +4,49 @@
 
 import asyncio
 import qtm
+import pytransform3d.visualizer as pv
 
 
-def on_packet(packet):
-    """Callback function that is called everytime a data packet arrives from QTM."""
-    print("Framenumber: {}".format(packet.framenumber))
+class OnPacket:
+    def __init__(self):
+        self.fig = pv.figure()
+        self.window_open = True
+        # TODO define artists
 
-    timecode = packet.get_time_code()
-    print(timecode)
+    def __del__(self):
+        self.fig.show()
 
-    header, markers = packet.get_3d_markers_no_label()
-    print("Component info: {}".format(header))
-    for marker in markers:
-        print("\t", marker)  # x, y, z, id
+    def __call__(self, packet):
+        """Callback function that is called everytime a data packet arrives from QTM."""
+        print("Framenumber: {}".format(packet.framenumber))
 
-    header, markers = packet.get_3d_markers()
-    print("Component info: {}".format(header))
-    for marker in markers:
-        print("\t", marker)  # x, y, z
+        timecode = packet.get_time_code()
+        print(timecode)
 
-    # TODO
-    #components = packet.get_skeletons()
-    # for the skeleton: https://github.com/qualisys/qualisys_python_sdk/blob/master/qtm/packet.py#L124
+        header, markers = packet.get_3d_markers_no_label()
+        print("Component info: {}".format(header))
+        for marker in markers:
+            print("\t", marker)  # x, y, z, id
 
-    # TODO update visualizer
+        header, markers = packet.get_3d_markers()
+        print("Component info: {}".format(header))
+        for marker in markers:
+            print("\t", marker)  # x, y, z
+
+        # TODO
+        #components = packet.get_skeletons()
+        # for the skeleton: https://github.com/qualisys/qualisys_python_sdk/blob/master/qtm/packet.py#L124
+
+        # https://github.com/AlexanderFabisch/pytransform3d_examples/blob/master/bin/async_visualizer/async_visualizer.py
+        # TODO define meshes to update
+        #drawn_artists = []
+        #for a in drawn_artists:
+        #    for geometry in a.geometries:
+        #        self.fig.update_geometry(geometry)
+        #self.window_open = self.fig.visualizer.poll_events()
+        #if not self.window_open:
+        #    exit(0)  # TODO any better way?
+        #self.fig.visualizer.update_renderer()
 
 
 async def setup(frequency=None):
@@ -48,7 +67,7 @@ async def setup(frequency=None):
     #'skeleton:global'
 
     await connection.stream_frames(
-        frames=frames, components=components, on_packet=on_packet)
+        frames=frames, components=components, on_packet=OnPacket())
 
 
 if __name__ == "__main__":
