@@ -221,3 +221,14 @@ SHADOW_HAND_CONFIG = {
             "rh_LFJ0": ShadowVirtualF0Joint("rh_LFJ2", "rh_LFJ1"),
         }
 }
+
+
+###############################################################################
+# Selection
+###############################################################################
+
+TARGET_CONFIG = {
+    "mia": MIA_CONFIG,
+    "shadow_hand": SHADOW_HAND_CONFIG,
+    "shadow": SHADOW_HAND_CONFIG
+}

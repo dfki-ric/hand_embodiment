@@ -4,6 +4,7 @@ import numpy as np
 
 from .kinematics import Kinematics
 from .record_markers import make_finger_kinematics
+from .target_configurations import TARGET_CONFIG
 import pytransform3d.transformations as pt
 
 
@@ -17,8 +18,9 @@ class HandEmbodiment:
         parameters, and whether it is a left or right hand. It also
         stores the mesh.
 
-    target_config : dict
-        Configuration for the target system.
+    target_config : dict or str
+        Configuration for the target system as a dictionary or string that
+        identifies the target hand.
 
     use_fingers : tuple of str, optional (default: ('thumb', 'index', 'middle'))
         Fingers for which we compute the embodiment mapping.
@@ -56,6 +58,8 @@ class HandEmbodiment:
             use_fingers=("thumb", "index", "middle"),
             mano_finger_kinematics=None, initial_handbase2world=None,
             verbose=0):
+        if isinstance(target_config, str):
+            target_config = TARGET_CONFIG[target_config]
         self.finger_names_ = use_fingers
         self.hand_state_ = hand_state
         if mano_finger_kinematics is None:

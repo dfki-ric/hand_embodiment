@@ -5,19 +5,14 @@ python bin/save_hand_trajectory.py mia --mia-thumb-adducted --demo-file data/Qua
 """
 import argparse
 import time
-import glob
 import pandas as pd
 import numpy as np
 from pytransform3d import transformations as pt
 import tqdm
-from mocap import qualisys
-from mocap import pandas_utils
-from mocap.cleaning import interpolate_nan, median_filter
-from mocap import conversion
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.embodiment import HandEmbodiment
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
-from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
+from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.config import load_mano_config
 
 
@@ -33,14 +28,14 @@ def parse_args():
         "--demo-file", type=str,
         default="data/QualisysAprilTest/april_test_010.tsv",
         help="Demonstration that should be used.")
-    #parser.add_argument(
-    #    "--start-idx", type=int, default=0, help="Start index.")
-    #parser.add_argument(
-    #    "--end-idx", type=int, default=None, help="Start index.")
+    parser.add_argument(
+        "--start-idx", type=int, default=None, help="Start index.")
+    parser.add_argument(
+        "--end-idx", type=int, default=None, help="Start index.")
     parser.add_argument(
         "--show-mano", action="store_true", help="Show MANO mesh")
     parser.add_argument(
-        "--skip-frames", type=int, default=15,
+        "--skip-frames", type=int, default=1,
         help="Skip this number of frames between animated frames.")
     parser.add_argument(
         "--mia-thumb-adducted", action="store_true",
@@ -51,23 +46,17 @@ def parse_args():
 
 args = parse_args()
 
-
-filename = args.demo_file
 finger_names = ["thumb", "index", "middle", "ring"]
 hand_marker_names = ["hand_top", "hand_left", "hand_right"]
 finger_marker_names = {"thumb": "thumb_tip", "index": "index_tip",
                        "middle": "middle_tip", "ring": "ring_tip"}
 additional_marker_names = ["index_middle", "middle_middle", "ring_middle"]
 dataset = HandMotionCaptureDataset(
-    filename, finger_names, hand_marker_names, finger_marker_names, additional_marker_names,
-    skip_frames=2)
+    args.demo_file, finger_names, hand_marker_names, finger_marker_names,
+    additional_marker_names, skip_frames=args.skip_frames,
+    start_idx=args.start_idx, end_idx=args.end_idx)
 
-if args.hand == "shadow_hand":
-    hand_config = SHADOW_HAND_CONFIG
-elif args.hand == "mia":
-    hand_config = MIA_CONFIG
-else:
-    raise Exception(f"Unknown hand: '{args.hand}'")
+hand_config = TARGET_CONFIG[args.hand]
 
 mano2hand_markers, betas = load_mano_config(
     "examples/config/april_test_mano.yaml")
