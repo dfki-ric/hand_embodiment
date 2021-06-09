@@ -49,8 +49,9 @@ finger_marker_names = {"thumb": "thumb_tip", "index": "index_tip",
                        "middle": "middle_tip", "ring": "ring_tip"}
 additional_marker_names = ["index_middle", "middle_middle", "ring_middle"]
 dataset = HandMotionCaptureDataset(
-    filename, finger_names, hand_marker_names, finger_marker_names, additional_marker_names,
-    skip_frames=2)
+    filename, finger_names, hand_marker_names, finger_marker_names,
+    additional_marker_names, skip_frames=2, start_idx=args.start_idx,
+    end_idx=args.end_idx)
 
 
 def animation_callback(t, markers, hand, robot, hse, dataset, emb):
