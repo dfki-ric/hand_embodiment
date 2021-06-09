@@ -5,15 +5,14 @@ python bin/save_hand_trajectory.py mia --mia-thumb-adducted --demo-file data/Qua
 """
 import argparse
 import time
-import pandas as pd
 import numpy as np
-from pytransform3d import transformations as pt
 import tqdm
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.embodiment import HandEmbodiment
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.config import load_mano_config
+from hand_embodiment.target_dataset import RoboticHandDataset
 
 
 def parse_args():
@@ -76,8 +75,7 @@ def main():
         else:
             emb.target_kin.tm.set_joint("j_thumb_opp_binary", -1.0)
 
-    all_joint_angles = []
-    all_ee_poses = []
+    output_dataset = RoboticHandDataset(finger_names=use_fingers)
     start_time = time.time()
     for t in tqdm.tqdm(range(dataset.n_steps)):
         mbrm.estimate(dataset.get_hand_markers(t),
@@ -87,40 +85,23 @@ def main():
         ee_pose = emb.transform_manager_.get_transform(
             hand_config["base_frame"], "world")
         joint_angles_t = joint_angles.copy()
-        if args.hand == "mia":
+        if args.hand == "mia":  # TODO refactor
             j_min, j_max = emb.transform_manager_.get_joint_limits("j_thumb_opp")
             if args.mia_thumb_adducted:
                 thumb_opp = j_max
             else:
                 thumb_opp = j_min
             joint_angles_t["thumb"] = np.hstack((joint_angles_t["thumb"], [thumb_opp]))
-        all_joint_angles.append(joint_angles_t)
-        all_ee_poses.append(ee_pose)
-    stop_time = time.time()
-    duration = stop_time - start_time
+        output_dataset.append(ee_pose, joint_angles_t)
+
+    duration = time.time() - start_time
     time_per_frame = duration / dataset.n_steps
     frequency = dataset.n_steps / duration
     print(f"Embodiment mapping done after {duration:.2f} s, "
           f"{time_per_frame:.4f} s per frame, {frequency:.1f} Hz")
 
-    pose_columns = ["base_x", "base_y", "base_z", "base_qw", "base_qx", "base_qy", "base_qz"]
-    column_names = []
-    for finger in use_fingers:
-        column_names += hand_config["joint_names"][finger]
-        if args.hand == "mia" and finger == "thumb":
-            column_names.append("j_thumb_opp")
-    column_names += pose_columns
-
-    raw_data = []
-    for t in range(dataset.n_steps):
-        joint_angles = []
-        for finger in use_fingers:
-            joint_angles += all_joint_angles[t][finger].tolist()
-        pose = pt.pq_from_transform(all_ee_poses[t])
-        raw_data.append(np.hstack((joint_angles, pose)))
-
-    df = pd.DataFrame(raw_data, columns=column_names)
-    df.to_csv(args.output)
+    output_dataset.export(args.output, args.hand, hand_config)
+    # TODO convert frequency
     print(f"Saved demonstration to '{args.output}'")
 
 
