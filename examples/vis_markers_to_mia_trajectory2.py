@@ -10,7 +10,7 @@ from mocap.visualization import scatter
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.vis_utils import ManoHand
 from hand_embodiment.embodiment import HandEmbodiment
-from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
+from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 from hand_embodiment.config import load_mano_config
 
@@ -69,20 +69,14 @@ def animation_callback(t, markers, hand, robot, hse, dataset, emb):
         return markers, robot
 
 
-if args.hand == "shadow_hand":
-    hand_config = SHADOW_HAND_CONFIG
-elif args.hand == "mia":
-    hand_config = MIA_CONFIG
-else:
-    raise Exception(f"Unknown hand: '{args.hand}'")
+hand_config = TARGET_CONFIG[args.hand]
 
 
 fig = pv.figure()
 
 fig.plot_transform(np.eye(4), s=0.5)
 
-marker_pos = dataset.get_markers(0)
-markers = scatter(fig, marker_pos, s=0.005)
+markers = scatter(fig, dataset.get_markers(0), s=0.005)
 
 mano2hand_markers, betas = load_mano_config(
     "examples/config/april_test_mano.yaml")
