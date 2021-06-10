@@ -1,12 +1,13 @@
 import json
 import numpy as np
 import pytransform3d.visualizer as pv
+from mocap.visualization import scatter
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.config import load_mano_config
-from mocap.visualization import scatter
+from hand_embodiment.vis_utils import ManoHand
 
 
-def animation_callback(step, markers, mbrm):
+def animation_callback(step, markers, mbrm, hand):
     try:
         with open("comm.json", "r") as f:
             result = json.load(f)
@@ -24,7 +25,26 @@ def animation_callback(step, markers, mbrm):
 
     markers.set_data(marker_pos)
 
-    return markers
+    if not valid:
+        return markers
+
+    # TODO Markers on hand in order 'hand_top', 'hand_left', 'hand_right'.
+    hand_markers = [np.array(result["hand_top"]),
+                    np.array(result["hand_left"]),
+                    np.array(result["hand_right"])]
+    # TODO Positions of markers on fingers.
+    finger_markers = {
+        "thumb": np.array(result["thumb_tip"]),
+        "index": np.array(result["index_tip"]),
+        "middle": np.array(result["middle_tip"]),
+        "ring": np.array(result["ring_tip"]),
+        "little": np.array(result["little_tip"])
+    }
+    mbrm.estimate(hand_markers, finger_markers)
+
+    hand.set_data()
+
+    return markers, hand
 
 
 mano2hand_markers, betas = load_mano_config(
@@ -32,12 +52,14 @@ mano2hand_markers, betas = load_mano_config(
 mbrm = MarkerBasedRecordMapping(
     left=False, mano2hand_markers=mano2hand_markers,
     shape_parameters=betas, verbose=1)
+hand = ManoHand(mbrm, show_mesh=True, show_vertices=False)
 
 fig = pv.figure()
 fig.plot_transform(s=0.5)
-markers = scatter(fig, np.zeros((13, 3)), s=0.005)
+markers = scatter(fig, np.zeros((13, 3)), s=0.006)
+hand.add_artist(fig)
 fig.view_init(azim=-70)
 fig.animate(
     animation_callback, 1, loop=True,
-    fargs=(markers, mbrm))
+    fargs=(markers, mbrm, hand))
 fig.show()

@@ -9,8 +9,7 @@ import json
 
 
 class OnPacket:
-    def __init__(self, gui=False, verbose=1):
-        self.gui = gui
+    def __init__(self, verbose=1):
         self.verbose = verbose
 
         # label order from AIM model
@@ -51,36 +50,6 @@ class OnPacket:
             result[label] = (marker.x / 1000.0, marker.y / 1000.0, marker.z / 1000.0)
         with open("comm.json", "w") as f:
             json.dump(result, f)
-        return
-
-        # TODO update all marker positions
-        self.markers.set_data(marker_pos)
-        for geometry in self.markers.geometries:
-            self.fig.update_geometry(geometry)
-
-        """
-
-        # TODO Markers on hand in order 'hand_top', 'hand_left', 'hand_right'.
-        hand_markers = [np.zeros(3), np.zeros(3), np.zeros(3)]
-        # TODO Positions of markers on fingers.
-        finger_markers = {
-            "thumb": np.zeros(3),
-            "index": np.zeros(3),
-            "middle": np.zeros(3),
-            "ring": np.zeros(3)
-        }
-        self.mbrm.estimate(hand_markers, finger_markers)
-        # https://github.com/AlexanderFabisch/pytransform3d_examples/blob/master/bin/async_visualizer/async_visualizer.py
-        self.fig.update_geometry(self.mbrm.hand_state_.hand_mesh)
-        self.window_open = self.fig.visualizer.poll_events()
-        """
-
-        if not self.window_open:
-            exit(0)  # TODO any better way?
-        self.fig.visualizer.update_renderer()
-        print("Updated visualizer")
-
-        # TODO embodiment mapping and visualize URDF
 
 
 async def setup(ip, frequency=None):

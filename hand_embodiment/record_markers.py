@@ -157,6 +157,7 @@ class MarkerBasedRecordMapping:
             "index": make_finger_kinematics(self.hand_state_, "index"),
             "middle": make_finger_kinematics(self.hand_state_, "middle"),
             "ring": make_finger_kinematics(self.hand_state_, "ring"),
+            "little": make_finger_kinematics(self.hand_state_, "little"),
         }
 
         if mano2hand_markers is None:
