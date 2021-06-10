@@ -29,14 +29,6 @@ class OnPacket:
             "index_middle",
         ]
 
-        return  # TODO remove
-        #self.fig.add_geometry(self.mbrm.hand_state_.hand_mesh)
-        # TODO measure marker size
-
-    def __del__(self):
-        #self.fig.show()
-        pass
-
     def __call__(self, packet):
         """Callback function that is called everytime a data packet arrives from QTM."""
         print("Framenumber: {}".format(packet.framenumber))
@@ -46,7 +38,7 @@ class OnPacket:
         result = {}
         for i, label, marker in zip(range(len(markers)), self.labels, markers):
             if self.verbose:
-                print(f"{marker.x:.1f} {marker.y:.1f} {marker.z:.1f} - {label}")  # x, y, z
+                print(f"{marker.x:.1f} {marker.y:.1f} {marker.z:.1f} - {label}")
             result[label] = (marker.x / 1000.0, marker.y / 1000.0, marker.z / 1000.0)
         with open("comm.json", "w") as f:
             json.dump(result, f)

@@ -28,11 +28,9 @@ def animation_callback(step, markers, mbrm, hand):
     if not valid:
         return markers
 
-    # TODO Markers on hand in order 'hand_top', 'hand_left', 'hand_right'.
     hand_markers = [np.array(result["hand_top"]),
                     np.array(result["hand_left"]),
                     np.array(result["hand_right"])]
-    # TODO Positions of markers on fingers.
     finger_markers = {
         "thumb": np.array(result["thumb_tip"]),
         "index": np.array(result["index_tip"]),
