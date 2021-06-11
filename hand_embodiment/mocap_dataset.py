@@ -1,3 +1,4 @@
+import warnings
 import yaml
 import numpy as np
 from mocap import qualisys, pandas_utils, conversion
@@ -95,8 +96,13 @@ class HandMotionCaptureDataset:
     def _additional_trajectories(self, additional_markers, trajectory):
         self.additional_trajectories = []
         for marker_name in additional_markers:
-            column_names = pandas_utils.match_columns(
-                trajectory, [marker_name], keep_time=False)
+            try:
+                column_names = pandas_utils.match_columns(
+                    trajectory, [marker_name], keep_time=False)
+            except ValueError:
+                warnings.warn(
+                    f"Could not find additional marker '{marker_name}'.")
+                continue
             additional_trajectory = conversion.array_from_dataframe(
                 trajectory, column_names)
             self.additional_trajectories.append(additional_trajectory)

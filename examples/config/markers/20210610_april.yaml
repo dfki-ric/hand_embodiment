@@ -20,3 +20,6 @@ additional_markers:
 - middle_middle
 - ring_middle
 - little_middle
+- bag_left
+- bag_right
+- bag_top
