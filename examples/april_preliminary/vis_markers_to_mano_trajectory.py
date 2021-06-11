@@ -46,9 +46,12 @@ def main():
             import time
             time.sleep(5)
         markers.set_data(dataset.get_markers(t))
-        hse.estimate(dataset.get_hand_markers(t), dataset.get_finger_markers(t))
-        hand.set_data()
-        return markers, hand
+        if hand is not None:
+            hse.estimate(dataset.get_hand_markers(t), dataset.get_finger_markers(t))
+            hand.set_data()
+            return markers, hand
+        else:
+            return markers
 
 
     fig = pv.figure()
@@ -56,15 +59,19 @@ def main():
     fig.plot_transform(np.eye(4), s=0.5)
 
     marker_pos = dataset.get_markers(0)
-    markers = scatter(fig, marker_pos, s=0.005)
+    markers = scatter(fig, marker_pos, s=0.006)
 
     mano2hand_markers, betas = load_mano_config(
         "examples/config/april_test_mano.yaml")
     mbrm = MarkerBasedRecordMapping(
         left=False, mano2hand_markers=mano2hand_markers, shape_parameters=betas,
         verbose=1)
-    hand = ManoHand(mbrm, show_mesh=True, show_vertices=False)
-    hand.add_artist(fig)
+
+    if args.hide_mano:
+        hand = None
+    else:
+        hand = ManoHand(mbrm, show_mesh=True, show_vertices=False)
+        hand.add_artist(fig)
 
     fig.view_init(azim=45)
     fig.set_zoom(0.7)
