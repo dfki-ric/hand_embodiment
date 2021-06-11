@@ -76,12 +76,17 @@ class Figure:
         self.geometry_names = []
         self.mbrm = None
 
-    def _on_layout(self, theme):
+    def _on_layout(self, layout_context):
+        # The on_layout callback should set the frame (position + size) of every
+        # child correctly. After the callback is done the window will layout
+        # the grandchildren.
         r = self.window.content_rect
         self.scene_widget.frame = r
-        width = 30 * theme.font_size
+        width = 30 * layout_context.theme.font_size
         height = min(
-            r.height, self.layout.calc_preferred_size(theme).height)
+            r.height,
+            self.layout.calc_preferred_size(
+                layout_context, gui.Widget.Constraints()).height)
         self.layout.frame = gui.Rect(r.get_right() - width, r.y, width, height)
 
     def show(self):
@@ -187,10 +192,12 @@ def main():
     hand_marker_names = ["hand_top", "hand_left", "hand_right"]
     finger_marker_names = {"thumb": "thumb_tip", "index": "index_tip",
                            "middle": "middle_tip", "ring": "ring_tip"}
-    additional_marker_names = ["index_middle", "middle_middle", "ring_middle"]
+    additional_markers = ["index_middle", "middle_middle", "ring_middle"]
     dataset = HandMotionCaptureDataset(
-        args.mocap_filename, finger_names, hand_marker_names, finger_marker_names,
-        additional_marker_names)
+        args.mocap_filename, finger_names=finger_names,
+        hand_marker_names=hand_marker_names,
+        finger_marker_names=finger_marker_names,
+        additional_markers=additional_markers)
 
     config_filename = args.filename
     if os.path.exists(config_filename):
@@ -215,7 +222,7 @@ def main():
     fig = Figure("MANO shape", 1920, 1080, config_filename, ax_s=0.2)
 
     for p in markers_in_mano:  # TODO refactor
-        marker = o3d.geometry.TriangleMesh.create_sphere(radius=0.005)
+        marker = o3d.geometry.TriangleMesh.create_sphere(radius=0.006)
         n_vertices = len(marker.vertices)
         colors = np.zeros((n_vertices, 3))
         colors[:] = (0.3, 0.3, 0.3)
