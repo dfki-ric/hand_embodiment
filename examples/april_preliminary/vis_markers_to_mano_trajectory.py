@@ -28,8 +28,25 @@ def parse_args():
     parser.add_argument(
         "--skip-frames", type=int, default=1,
         help="Skip this number of frames between animated frames.")
+    parser.add_argument(
+        "--delay", type=float, default=0,
+        help="Delay in seconds before starting the animation")
 
     return parser.parse_args()
+
+
+def animation_callback(t, markers, hand, mbrm, dataset, delay):
+    if t == 1:
+        mbrm.reset()
+        import time
+        time.sleep(delay)
+    markers.set_data(dataset.get_markers(t))
+    if hand is not None:
+        mbrm.estimate(dataset.get_hand_markers(t), dataset.get_finger_markers(t))
+        hand.set_data()
+        return markers, hand
+    else:
+        return markers
 
 
 def main():
@@ -40,32 +57,15 @@ def main():
         skip_frames=args.skip_frames, start_idx=args.start_idx,
         end_idx=args.end_idx)
 
-    def animation_callback(t, markers, hand, hse, dataset):
-        if t == 0:
-            hse.reset()
-            import time
-            time.sleep(5)
-        markers.set_data(dataset.get_markers(t))
-        if hand is not None:
-            hse.estimate(dataset.get_hand_markers(t), dataset.get_finger_markers(t))
-            hand.set_data()
-            return markers, hand
-        else:
-            return markers
-
-
-    fig = pv.figure()
-
-    fig.plot_transform(np.eye(4), s=0.5)
-
-    marker_pos = dataset.get_markers(0)
-    markers = scatter(fig, marker_pos, s=0.006)
-
     mano2hand_markers, betas = load_mano_config(
         "examples/config/april_test_mano.yaml")
     mbrm = MarkerBasedRecordMapping(
         left=False, mano2hand_markers=mano2hand_markers, shape_parameters=betas,
         verbose=1)
+
+    fig = pv.figure()
+    fig.plot_transform(np.eye(4), s=0.5)
+    markers = scatter(fig, dataset.get_markers(0), s=0.006)
 
     if args.hide_mano:
         hand = None
@@ -77,7 +77,7 @@ def main():
     fig.set_zoom(0.7)
     fig.animate(
         animation_callback, dataset.n_steps, loop=True,
-        fargs=(markers, hand, mbrm, dataset))
+        fargs=(markers, hand, mbrm, dataset, args.delay))
 
     fig.show()
 
