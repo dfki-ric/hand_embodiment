@@ -1,3 +1,4 @@
+import yaml
 import numpy as np
 from mocap import qualisys, pandas_utils, conversion
 from mocap.cleaning import median_filter, interpolate_nan
@@ -11,17 +12,21 @@ class HandMotionCaptureDataset:
     filename : str
         Name of the qualisys file (.tsv).
 
-    finger_names : list of str
+    finger_names : list of str, optional (default: None)
         Names of tracked fingers.
 
-    hand_marker_names : list of str
+    hand_marker_names : list of str, optional (default: None)
         Names of hand markers that will be used to find the hand's pose.
 
-    finger_marker_names : dict
+    finger_marker_names : dict, optional (default: None)
         Mapping from finger names to corresponding marker.
 
     additional_markers : list, optional (default: [])
         Additional markers that have been tracked.
+
+    mocap_config : str, optional (default: None)
+        Path to configuration file that contains finger names, hand marker,
+        names, finger marker names, and additional markers.
 
     skip_frames : int, optional (default: 1)
         Skip this number of frames when loading the motion capture data.
@@ -32,13 +37,19 @@ class HandMotionCaptureDataset:
     end_idx : int, optional (default: None)
         Index of the last valid sample.
     """
-    def __init__(self, filename, finger_names, hand_marker_names,
-                 finger_marker_names, additional_markers=(), skip_frames=1,
-                 start_idx=None, end_idx=None):
+    def __init__(self, filename, mocap_config=None, skip_frames=1,
+                 start_idx=None, end_idx=None, **kwargs):
         trajectory = qualisys.read_qualisys_tsv(filename=filename)
 
-        marker_names = (hand_marker_names + list(finger_marker_names.values())
-                        + additional_markers)
+        if mocap_config is not None:
+            with open(mocap_config, "r") as f:
+                config = yaml.safe_load(f)
+        else:
+            config = dict()
+        config.update(kwargs)
+
+        marker_names = (config["hand_marker_names"] + list(config["finger_marker_names"].values())
+                        + config.get("additional_markers", []))
         trajectory = pandas_utils.extract_markers(
             trajectory, marker_names).copy()
         trajectory = self._convert_zeros_to_nans(trajectory, marker_names)
@@ -48,9 +59,9 @@ class HandMotionCaptureDataset:
 
         self.n_steps = len(trajectory)
 
-        self._hand_trajectories(hand_marker_names, trajectory)
-        self._finger_trajectories(finger_marker_names, finger_names, trajectory)
-        self._additional_trajectories(additional_markers, trajectory)
+        self._hand_trajectories(config["hand_marker_names"], trajectory)
+        self._finger_trajectories(config["finger_marker_names"], config["finger_names"], trajectory)
+        self._additional_trajectories(config.get("additional_markers", ()), trajectory)
 
     def _convert_zeros_to_nans(self, hand_trajectory, marker_names):
         column_names = pandas_utils.match_columns(
