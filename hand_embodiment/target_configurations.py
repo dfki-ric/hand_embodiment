@@ -18,10 +18,24 @@ def kinematic_model_hook_mia(kin):
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
+        "thumb_middle", "thumb_fle",
+        np.array([
+            [1, 0, 0, 0.03],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
         "index_tip", "index_fle",
         np.array([
             [1, 0, 0, -0.02],
             [0, 1, 0, 0.09],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "index_middle", "index_fle",
+        np.array([
+            [1, 0, 0, 0.02],
+            [0, 1, 0, 0.015],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
@@ -32,6 +46,13 @@ def kinematic_model_hook_mia(kin):
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
+        "middle_middle", "middle_fle",
+        np.array([
+            [1, 0, 0, 0.02],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
         "ring_tip", "ring_fle",
         np.array([
             [1, 0, 0, -0.017],
@@ -39,10 +60,24 @@ def kinematic_model_hook_mia(kin):
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
+        "ring_middle", "ring_fle",
+        np.array([
+            [1, 0, 0, 0.017],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
         "little_tip", "little_fle",
         np.array([
             [1, 0, 0, -0.015],
             [0, 1, 0, 0.068],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "little_middle", "little_fle",
+        np.array([
+            [1, 0, 0, 0.015],
+            [0, 1, 0, 0.015],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
 
@@ -89,6 +124,14 @@ MIA_CONFIG = {
             "middle": "middle_tip",
             "ring": "ring_tip",
             "little": "little_tip"
+        },
+    "intermediate_frames":
+        {
+            "thumb": "thumb_middle",
+            "index": "index_middle",
+            "middle": "middle_middle",
+            "ring": "ring_middle",
+            "little": "little_middle"
         },
     "handbase2robotbase": manobase2miabase,  # transform from MANO base to hand base
     "model":  # kinematic model definition

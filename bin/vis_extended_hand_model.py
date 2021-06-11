@@ -26,6 +26,12 @@ def main():
         finger2base = kin.tm.get_transform(
             hand_config["ee_frames"][finger_name], hand_config["base_frame"])
         fig.plot_sphere(radius=0.005, A2B=finger2base, c=(1, 0, 0))
+    if "intermediate_frames" in hand_config:
+        for finger_name in hand_config["intermediate_frames"].keys():
+            finger2base = kin.tm.get_transform(
+                hand_config["intermediate_frames"][finger_name],
+                hand_config["base_frame"])
+            fig.plot_sphere(radius=0.005, A2B=finger2base, c=(1, 0, 0))
 
     graph = pv.Graph(
         kin.tm, hand_config["base_frame"], show_frames=False,
