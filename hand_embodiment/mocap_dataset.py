@@ -58,10 +58,13 @@ class HandMotionCaptureDataset:
         trajectory = median_filter(interpolate_nan(trajectory), 3).iloc[2:]
 
         self.n_steps = len(trajectory)
+        self.finger_names = config["finger_names"]
 
         self._hand_trajectories(config["hand_marker_names"], trajectory)
-        self._finger_trajectories(config["finger_marker_names"], config["finger_names"], trajectory)
-        self._additional_trajectories(config.get("additional_markers", ()), trajectory)
+        self._finger_trajectories(
+            config["finger_marker_names"], self.finger_names, trajectory)
+        self._additional_trajectories(
+            config.get("additional_markers", ()), trajectory)
 
     def _convert_zeros_to_nans(self, hand_trajectory, marker_names):
         column_names = pandas_utils.match_columns(

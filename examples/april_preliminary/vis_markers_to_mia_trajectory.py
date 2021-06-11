@@ -1,9 +1,11 @@
+"""Example calls:
+python examples/april_preliminary/vis_markers_to_mia_trajectory.py mia --demo-file data/Qualisys_pnp/20151005_r_AV82_PickAndPlace_BesMan_labeled_02.tsv --mocap-config examples/config/markers/20151005_besman.yaml --mano-config examples/config/mano/20151005_besman.yaml
+python examples/april_preliminary/vis_markers_to_mia_trajectory.py mia --demo-file data/QualisysAprilTest/april_test_005.tsv
+python examples/april_preliminary/vis_markers_to_mia_trajectory.py mia --demo-file data/20210610_april/Measurement2.tsv --mocap-config examples/config/markers/20210610_april.yaml --mano-config examples/config/mano/20210610_april.yaml
 """
-Example call:
 
-python examples/vis_markers_to_mia_trajectory.py mia --start-idx 8000 --end-idx 8700
-"""
 import argparse
+import time
 import numpy as np
 from pytransform3d import visualizer as pv
 from mocap.visualization import scatter
@@ -21,6 +23,18 @@ def parse_args():
         "hand", type=str,
         help="Name of the hand. Possible options: mia, shadow_hand")
     parser.add_argument(
+        "--demo-file", type=str,
+        default="data/QualisysAprilTest/april_test_010.tsv",
+        help="Demonstration that should be used.")
+    parser.add_argument(
+        "--mocap-config", type=str,
+        default="examples/config/markers/20210520_april.yaml",
+        help="MoCap configuration file.")
+    parser.add_argument(
+        "--mano-config", type=str,
+        default="examples/config/mano/20210520_april.yaml",
+        help="MANO configuration file.")
+    parser.add_argument(
         "--start-idx", type=int, default=0, help="Start index.")
     parser.add_argument(
         "--end-idx", type=int, default=None, help="Start index.")
@@ -35,78 +49,76 @@ def parse_args():
     parser.add_argument(
         "--mia-thumb-adducted", action="store_true",
         help="Adduct thumb of Mia hand.")
+    parser.add_argument(
+        "--delay", type=float, default=0,
+        help="Delay in seconds before starting the animation")
 
     return parser.parse_args()
 
 
-args = parse_args()
-
-
-filename = "data/QualisysAprilTest/april_test_010.tsv"
-finger_names = ["thumb", "index", "middle", "ring"]
-hand_marker_names = ["hand_top", "hand_left", "hand_right"]
-finger_marker_names = {"thumb": "thumb_tip", "index": "index_tip",
-                       "middle": "middle_tip", "ring": "ring_tip"}
-additional_marker_names = ["index_middle", "middle_middle", "ring_middle"]
-dataset = HandMotionCaptureDataset(
-    filename, finger_names, hand_marker_names, finger_marker_names,
-    additional_marker_names, skip_frames=2, start_idx=args.start_idx,
-    end_idx=args.end_idx)
-
-
-def animation_callback(t, markers, hand, robot, hse, dataset, emb):
-    if t == 0:
+def animation_callback(t, markers, hand, robot, hse, dataset, emb, delay):
+    if t == 1:
         hse.reset()
-        import time
-        time.sleep(5)
+        time.sleep(delay)
     markers.set_data(dataset.get_markers(t))
     hse.estimate(dataset.get_hand_markers(t), dataset.get_finger_markers(t))
     emb.solve(hse.mano2world_, use_cached_forward_kinematics=True)
     robot.set_data()
-    if args.show_mano:
+    if hand is not None:
         hand.set_data()
         return markers, hand, robot
     else:
         return markers, robot
 
 
-hand_config = TARGET_CONFIG[args.hand]
+def main():
+    args = parse_args()
 
+    dataset = HandMotionCaptureDataset(
+        args.demo_file, mocap_config=args.mocap_config,
+        skip_frames=args.skip_frames, start_idx=args.start_idx,
+        end_idx=args.end_idx)
 
-fig = pv.figure()
+    hand_config = TARGET_CONFIG[args.hand]
 
-fig.plot_transform(np.eye(4), s=0.5)
+    mano2hand_markers, betas = load_mano_config(args.mano_config)
+    mbrm = MarkerBasedRecordMapping(
+        left=False, mano2hand_markers=mano2hand_markers,
+        shape_parameters=betas, verbose=1)
+    emb = HandEmbodiment(
+        mbrm.hand_state_, hand_config,
+        use_fingers=dataset.finger_names,
+        mano_finger_kinematics=mbrm.mano_finger_kinematics_,
+        initial_handbase2world=mbrm.mano2world_, verbose=1)
+    if args.hand == "mia":
+        if args.mia_thumb_adducted:
+            emb.target_kin.tm.set_joint("j_thumb_opp_binary", 1.0)
+        else:
+            emb.target_kin.tm.set_joint("j_thumb_opp_binary", -1.0)
 
-markers = scatter(fig, dataset.get_markers(0), s=0.005)
-
-mano2hand_markers, betas = load_mano_config(
-    "examples/config/april_test_mano.yaml")
-mbrm = MarkerBasedRecordMapping(
-    left=False, mano2hand_markers=mano2hand_markers, shape_parameters=betas,
-    verbose=1)
-emb = HandEmbodiment(
-    mbrm.hand_state_, hand_config,
-    use_fingers=("thumb", "index", "middle", "ring"),
-    mano_finger_kinematics=mbrm.mano_finger_kinematics_,
-    initial_handbase2world=mbrm.mano2world_, verbose=1)
-if args.hand == "mia":
-    if args.mia_thumb_adducted:
-        emb.target_kin.tm.set_joint("j_thumb_opp_binary", 1.0)
+    fig = pv.figure()
+    fig.plot_transform(np.eye(4), s=1)
+    markers = scatter(fig, dataset.get_markers(0), s=0.006)
+    robot = pv.Graph(
+        emb.target_kin.tm, "world", show_frames=True,
+        whitelist=[hand_config["base_frame"]], show_connections=False,
+        show_visuals=True, show_collision_objects=False, show_name=False,
+        s=0.02)
+    robot.add_artist(fig)
+    if args.show_mano:
+        hand = ManoHand(mbrm, show_mesh=True, show_vertices=False)
+        hand.add_artist(fig)
     else:
-        emb.target_kin.tm.set_joint("j_thumb_opp_binary", -1.0)
-robot = pv.Graph(
-    emb.target_kin.tm, "world", show_frames=True, whitelist=[hand_config["base_frame"]],
-    show_connections=False, show_visuals=True, show_collision_objects=False,
-    show_name=False, s=0.02)
-robot.add_artist(fig)
-hand = ManoHand(mbrm, show_mesh=True, show_vertices=False)
-if args.show_mano:
-    hand.add_artist(fig)
+        hand = None
 
-fig.view_init(azim=45)
-fig.set_zoom(0.7)
-fig.animate(
-    animation_callback, dataset.n_steps, loop=True,
-    fargs=(markers, hand, robot, mbrm, dataset, emb))
+    fig.view_init(azim=45)
+    fig.set_zoom(0.3)
+    fig.animate(
+        animation_callback, dataset.n_steps, loop=True,
+        fargs=(markers, hand, robot, mbrm, dataset, emb, args.delay))
 
-fig.show()
+    fig.show()
+
+
+if __name__ == "__main__":
+    main()
