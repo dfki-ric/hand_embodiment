@@ -21,12 +21,20 @@ def parse_args():
         "hand", type=str,
         help="Name of the hand. Possible options: mia, shadow_hand")
     parser.add_argument(
-        "--output", type=str, default="trajectory.csv",
-        help="Output file (.csv).")
-    parser.add_argument(
         "--demo-file", type=str,
         default="data/QualisysAprilTest/april_test_010.tsv",
         help="Demonstration that should be used.")
+    parser.add_argument(
+        "--mocap-config", type=str,
+        default="examples/config/markers/20210520_april.yaml",
+        help="MoCap configuration file.")
+    parser.add_argument(
+        "--mano-config", type=str,
+        default="examples/config/mano/20210520_april.yaml",
+        help="MANO configuration file.")
+    parser.add_argument(
+        "--output", type=str, default="trajectory.csv",
+        help="Output file (.csv).")
     parser.add_argument(
         "--start-idx", type=int, default=None, help="Start index.")
     parser.add_argument(
@@ -46,27 +54,21 @@ def parse_args():
 def main():
     args = parse_args()
 
-    finger_names = ["thumb", "index", "middle", "ring"]
-    hand_marker_names = ["hand_top", "hand_left", "hand_right"]
-    finger_marker_names = {"thumb": "thumb_tip", "index": "index_tip",
-                           "middle": "middle_tip", "ring": "ring_tip"}
-    additional_marker_names = ["index_middle", "middle_middle", "ring_middle"]
+
     dataset = HandMotionCaptureDataset(
-        args.demo_file, finger_names, hand_marker_names, finger_marker_names,
-        additional_marker_names, skip_frames=args.skip_frames,
-        start_idx=args.start_idx, end_idx=args.end_idx)
+        args.demo_file, mocap_config=args.mocap_config,
+        skip_frames=args.skip_frames, start_idx=args.start_idx,
+        end_idx=args.end_idx)
 
     hand_config = TARGET_CONFIG[args.hand]
 
-    mano2hand_markers, betas = load_mano_config(
-        "examples/config/april_test_mano.yaml")
-    use_fingers = ("thumb", "index", "middle", "ring")
+    mano2hand_markers, betas = load_mano_config(args.mano_config)
     mbrm = MarkerBasedRecordMapping(
-        left=False, mano2hand_markers=mano2hand_markers, shape_parameters=betas,
-        verbose=0)
+        left=False, mano2hand_markers=mano2hand_markers,
+        shape_parameters=betas, verbose=0)
     emb = HandEmbodiment(
         mbrm.hand_state_, hand_config,
-        use_fingers=use_fingers,
+        use_fingers=dataset.finger_names,
         mano_finger_kinematics=mbrm.mano_finger_kinematics_,
         initial_handbase2world=mbrm.mano2world_, verbose=0)
     if args.hand == "mia":
@@ -75,7 +77,7 @@ def main():
         else:
             emb.target_kin.tm.set_joint("j_thumb_opp_binary", -1.0)
 
-    output_dataset = RoboticHandDataset(finger_names=use_fingers)
+    output_dataset = RoboticHandDataset(finger_names=dataset.finger_names)
     start_time = time.time()
     for t in tqdm.tqdm(range(dataset.n_steps)):
         mbrm.estimate(dataset.get_hand_markers(t),
