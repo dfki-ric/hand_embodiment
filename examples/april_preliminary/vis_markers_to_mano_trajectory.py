@@ -1,3 +1,9 @@
+"""Example calls:
+python examples/april_preliminary/vis_markers_to_mano_trajectory.py --demo-file data/Qualisys_pnp/20151005_r_AV82_PickAndPlace_BesMan_labeled_02.tsv --mocap-config examples/config/markers/20151005_besman.yaml --mano-config examples/config/mano/20151005_besman.yaml
+python examples/april_preliminary/vis_markers_to_mano_trajectory.py --demo-file data/20210610_april/Measurement2.tsv --mocap-config examples/config/markers/20210610_april.yaml --mano-config examples/config/mano/20210610_april.yaml
+python examples/april_preliminary/vis_markers_to_mano_trajectory.py --demo-file data/QualisysAprilTest/april_test_005.tsv
+"""
+
 import argparse
 import numpy as np
 import pytransform3d.visualizer as pv
@@ -19,6 +25,10 @@ def parse_args():
         "--mocap-config", type=str,
         default="examples/config/markers/20210520_april.yaml",
         help="MoCap configuration file.")
+    parser.add_argument(
+        "--mano-config", type=str,
+        default="examples/config/mano/20210520_april.yaml",
+        help="MANO configuration file.")
     parser.add_argument(
         "--start-idx", type=int, default=None, help="Start index.")
     parser.add_argument(
@@ -57,8 +67,7 @@ def main():
         skip_frames=args.skip_frames, start_idx=args.start_idx,
         end_idx=args.end_idx)
 
-    mano2hand_markers, betas = load_mano_config(
-        "examples/config/april_test_mano.yaml")
+    mano2hand_markers, betas = load_mano_config(args.mano_config)
     mbrm = MarkerBasedRecordMapping(
         left=False, mano2hand_markers=mano2hand_markers, shape_parameters=betas,
         verbose=1)
