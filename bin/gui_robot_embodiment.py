@@ -51,12 +51,17 @@ class Figure:
         self.main_scene = self.scene_widget.scene
         self.geometry_names = []
 
-    def _on_layout(self, theme):
+    def _on_layout(self, layout_context):
+        # The on_layout callback should set the frame (position + size) of every
+        # child correctly. After the callback is done the window will layout
+        # the grandchildren.
         r = self.window.content_rect
         self.scene_widget.frame = r
-        width = 30 * theme.font_size
+        width = 30 * layout_context.theme.font_size
         height = min(
-            r.height, self.layout.calc_preferred_size(theme).height)
+            r.height,
+            self.layout.calc_preferred_size(
+                layout_context, gui.Widget.Constraints()).height)
         self.layout.frame = gui.Rect(r.get_right() - width, r.y, width, height)
 
     def show(self):
