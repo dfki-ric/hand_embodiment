@@ -167,7 +167,14 @@ def kinematic_model_hook_shadow(kin):
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.013],
-            [0, 0, 1, -0.015],
+            [0, 0, 1, -0.01],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "thumb_middle", "rh_thmiddle", # TODO
+        np.array([
+            [1, 0, 0, 0.015],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0.01],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
         "index_tip", "rh_fftip",
@@ -177,11 +184,25 @@ def kinematic_model_hook_shadow(kin):
             [0, 0, 1, -0.01],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
+        "index_middle", "rh_ffproximal", # TODO
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0.02],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
         "middle_tip", "rh_mftip",
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.01],
             [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "middle_middle", "rh_mfproximal", # TODO
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0.02],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
         "ring_tip", "rh_rftip",
@@ -191,11 +212,25 @@ def kinematic_model_hook_shadow(kin):
             [0, 0, 1, -0.013],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
+        "ring_middle", "rh_rfproximal", # TODO
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0.02],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
         "little_tip", "rh_lftip",
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.01],
             [0, 0, 1, -0.025],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "little_middle", "rh_lfproximal", # TODO
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0.02],
             [0, 0, 0, 1]]))
 
 
@@ -245,6 +280,14 @@ SHADOW_HAND_CONFIG = {
             "middle": "middle_tip",
             "ring": "ring_tip",
             "little": "little_tip"
+        },
+    "intermediate_frames":
+        {
+            "thumb": "thumb_middle",
+            "index": "index_middle",
+            "middle": "middle_middle",
+            "ring": "ring_middle",
+            "little": "little_middle"
         },
     "handbase2robotbase": manobase2shadowbase,
     "model":

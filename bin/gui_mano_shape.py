@@ -1,10 +1,14 @@
+"""
+Example call:
+
+python bin/gui_mano_shape.py examples/config/mano/20210610_april.yaml --mocap-filename data/20210610_april/Measurement2.tsv --mocap-config examples/config/markers/20210610_april.yaml --start-idx 3000 --fit-fingers
+"""
 import argparse
 import os
 from functools import partial
 import numpy as np
 import open3d as o3d
 from open3d.visualization import gui
-from mocap import mano
 import pytransform3d.transformations as pt
 
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
@@ -19,8 +23,12 @@ def parse_args():
         "filename", type=str,
         help="Configuration file. Modifies existing one or creates new one.")
     parser.add_argument(
-        "--mocap_filename", type=str, help="Path to motion capture recording.",
+        "--mocap-filename", type=str, help="Path to motion capture recording.",
         default="data/QualisysAprilTest/april_test_010.tsv")
+    parser.add_argument(
+        "--mocap-config", type=str,
+        default="examples/config/markers/20210520_april.yaml",
+        help="MoCap configuration file.")
     parser.add_argument(
         "--start-idx", type=int, default=100,
         help="Index of frame that we visualize.")
@@ -188,16 +196,8 @@ class OnManoChange(OnMano):
 def main():
     args = parse_args()
 
-    finger_names = ["thumb", "index", "middle", "ring"]
-    hand_marker_names = ["hand_top", "hand_left", "hand_right"]
-    finger_marker_names = {"thumb": "thumb_tip", "index": "index_tip",
-                           "middle": "middle_tip", "ring": "ring_tip"}
-    additional_markers = ["index_middle", "middle_middle", "ring_middle"]
     dataset = HandMotionCaptureDataset(
-        args.mocap_filename, finger_names=finger_names,
-        hand_marker_names=hand_marker_names,
-        finger_marker_names=finger_marker_names,
-        additional_markers=additional_markers)
+        args.mocap_filename, mocap_config=args.mocap_config)
 
     config_filename = args.filename
     if os.path.exists(config_filename):

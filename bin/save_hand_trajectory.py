@@ -54,7 +54,6 @@ def parse_args():
 def main():
     args = parse_args()
 
-
     dataset = HandMotionCaptureDataset(
         args.demo_file, mocap_config=args.mocap_config,
         skip_frames=args.skip_frames, start_idx=args.start_idx,
