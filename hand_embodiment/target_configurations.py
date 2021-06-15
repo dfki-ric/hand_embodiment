@@ -170,7 +170,7 @@ def kinematic_model_hook_shadow(kin):
             [0, 0, 1, -0.01],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "thumb_middle", "rh_thmiddle", # TODO
+        "thumb_middle", "rh_thmiddle",
         np.array([
             [1, 0, 0, 0.015],
             [0, 1, 0, 0],
@@ -184,7 +184,7 @@ def kinematic_model_hook_shadow(kin):
             [0, 0, 1, -0.01],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "index_middle", "rh_ffproximal", # TODO
+        "index_middle", "rh_ffproximal",
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.015],
@@ -198,7 +198,7 @@ def kinematic_model_hook_shadow(kin):
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "middle_middle", "rh_mfproximal", # TODO
+        "middle_middle", "rh_mfproximal",
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.015],
@@ -212,7 +212,7 @@ def kinematic_model_hook_shadow(kin):
             [0, 0, 1, -0.013],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "ring_middle", "rh_rfproximal", # TODO
+        "ring_middle", "rh_rfproximal",
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.015],
@@ -226,7 +226,7 @@ def kinematic_model_hook_shadow(kin):
             [0, 0, 1, -0.025],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "little_middle", "rh_lfproximal", # TODO
+        "little_middle", "rh_lfproximal",
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.015],

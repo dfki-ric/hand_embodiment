@@ -22,13 +22,13 @@ MANO_CONFIG = {
             "ring": np.arange(30, 39),
             "little": np.arange(21, 30),
         },
-    "vertex_index_per_finger":
+    "vertex_indices_per_finger":
         {
-            "thumb": 724,
-            "index": 314,
-            "middle": 426,
-            "little": 651,
-            "ring": 534,
+            "thumb": [724],
+            "index": [314],
+            "middle": [426],
+            "little": [651],
+            "ring": [534],
         },
     "joint_indices_per_finger":
         {
@@ -38,13 +38,13 @@ MANO_CONFIG = {
             "ring": (10, 11, 12),
             "little": (7, 8, 9)
         },
-    "tip_vertex_offset_per_finger":
+    "tip_vertex_offsets_per_finger":
         {
-            "thumb": np.array([0.005, 0.005, 0.003]),
-            "index": np.array([0, 0.005, 0]),
-            "middle": np.array([0, 0.005, 0]),
-            "ring": np.array([0, 0.005, 0]),
-            "little": np.array([0, 0.005, 0])
+            "thumb": [np.array([0.005, 0.005, 0.003])],
+            "index": [np.array([0, 0.005, 0])],
+            "middle": [np.array([0, 0.005, 0])],
+            "ring": [np.array([0, 0.005, 0])],
+            "little": [np.array([0, 0.005, 0])]
         },
     "action_weights_per_finger":
         {
@@ -91,10 +91,10 @@ def make_finger_kinematics(hand_state, finger_name):
     return ManoFingerKinematics(
         hand_state,
         MANO_CONFIG["pose_parameters_per_finger"][finger_name],
-        MANO_CONFIG["vertex_index_per_finger"][finger_name],
+        MANO_CONFIG["vertex_indices_per_finger"][finger_name],
         MANO_CONFIG["joint_indices_per_finger"][finger_name],
         MANO_CONFIG["action_weights_per_finger"][finger_name],
-        MANO_CONFIG["tip_vertex_offset_per_finger"][finger_name])
+        MANO_CONFIG["tip_vertex_offsets_per_finger"][finger_name])
 
 
 class MarkerBasedRecordMapping:
@@ -246,40 +246,41 @@ class ManoFingerKinematics:
     Parameters
     ----------
     hand_state : HandState
-        State of the hand mesh
+        State of the hand mesh.
 
     finger_pose_param_indices : array, shape (n_finger_joints * 3,)
-        Indices of pose parameters of this finger
+        Indices of pose parameters of this finger.
 
-    finger_vertex_index : int
-        Index of the vertex of which we will optimize the position
+    finger_vertex_indices : list of int
+        Indices of the vertices of which we will optimize the position.
 
     finger_joint_indices : array, shape (n_finger_joints,)
-        Indices of joints that correspond to this finger
+        Indices of joints that correspond to this finger.
 
     action_weights : array, shape (2, n_finger_joints * 3)
         Default weight of action penalty in error function for fingers.
 
-    tip_vertex_offset : array, shape (3,)
-        Offset of tip vertex with respect to original vertex in MANO base
-        frame.
+    tip_vertex_offsets : list of array
+        Offsets of vertex with respect to original vertex in MANO base frame.
     """
     def __init__(self, hand_state, finger_pose_param_indices,
-                 finger_vertex_index, finger_joint_indices, action_weights,
-                 tip_vertex_offset):
+                 finger_vertex_indices, finger_joint_indices, action_weights,
+                 tip_vertex_offsets):
         self.finger_pose_param_indices = finger_pose_param_indices
-        self.finger_vertex_index = finger_vertex_index
-        self.finger_joint_indices = np.asarray([0] + list(finger_joint_indices), dtype=int)
-        self.tip_vertex_offset = tip_vertex_offset
+        self.finger_vertex_indices = finger_vertex_indices
+        self.finger_joint_indices = np.asarray(
+            [0] + list(finger_joint_indices)).astype(dtype=int)
+        self.tip_vertex_offsets = tip_vertex_offsets
 
-        self._search_similar_vertices(finger_pose_param_indices, hand_state)
+        self.all_finger_vertex_indices = self._search_similar_vertices(
+            finger_pose_param_indices, hand_state)
 
-        self.finger_pose_params, self.finger_opt_vertex_index = \
+        self.finger_pose_params, self.finger_opt_vertex_indices = \
             self.reduce_pose_parameters(hand_state)
         self.finger_error = FingerError(self.forward, action_weights)
 
         self.current_pose = np.zeros_like(
-            self.finger_pose_param_indices, dtype=float)
+            self.finger_pose_param_indices).astype(dtype=float)
 
         self._optimizer_pose = np.zeros(len(self.current_pose) + 3)
         self.bounds = np.array([
@@ -288,39 +289,42 @@ class ManoFingerKinematics:
         self.last_forward_result = None
 
     def _search_similar_vertices(self, finger_pose_param_indices, hand_state):
-        # TODO mapping to indices of weights might be correct by accident
         # search for vertices that are influenced by the same pose parameters
-        self.finger_vertex_indices = np.unique(np.nonzero(
-            hand_state.pose_parameters["weights"][:, np.unique(finger_pose_param_indices // 3)])[0])
-        # extract those with a close index
-        self.finger_vertex_indices = self.finger_vertex_indices[
-            abs(self.finger_vertex_indices - self.finger_vertex_index) < 2]
+        # TODO mapping to indices of weights might be correct by accident
+        return np.unique(np.nonzero(
+            hand_state.pose_parameters["weights"][
+                :, np.unique(finger_pose_param_indices // 3)])[0])
 
     def reset(self):
         self.current_pose[:] = 0.0
 
-    def reduce_pose_parameters(self, hand_state):  # TODO we should introduce our own vertex at marker's position
-        finger_opt_vertex_index = np.where(self.finger_vertex_indices == self.finger_vertex_index)[0][0]
+    def reduce_pose_parameters(self, hand_state):
+        finger_opt_vertex_indices = [np.where(self.all_finger_vertex_indices == idx)[0][0] for idx in self.finger_vertex_indices]
         pose_dir_joint_indices = np.hstack([np.arange(i, i + 9) for i in self.finger_joint_indices[1:]]).astype(int)
+
+        v_template = hand_state.pose_parameters["v_template"][self.finger_vertex_indices].copy()
+        for i in range(len(v_template)):
+            v_template[i] += self.tip_vertex_offsets[i]
+
         pose_params = {
             "J": hand_state.pose_parameters["J"][self.finger_joint_indices],
             "weights": hand_state.pose_parameters["weights"][self.finger_vertex_indices][:, self.finger_joint_indices],
             "kintree_table": hand_state.pose_parameters["kintree_table"][:, self.finger_joint_indices],  # TODO maybe this does not work in general
-            "v_template": hand_state.pose_parameters["v_template"][self.finger_vertex_indices] + self.tip_vertex_offset,
+            "v_template": v_template,
             "posedirs": hand_state.pose_parameters["posedirs"][self.finger_vertex_indices][:, :, pose_dir_joint_indices]
         }
-        return pose_params, finger_opt_vertex_index
+        return pose_params, finger_opt_vertex_indices
 
     def forward(self, pose=None, return_cached_result=False):
         """Compute position at the tip of the finger for given joint parameters."""
         if return_cached_result:
             assert self.last_forward_result is not None
-            return self.last_forward_result
+            return self.last_forward_result[0]  # TODO
 
         self._optimizer_pose[3:] = pose
-        vertices = hand_vertices(pose=self._optimizer_pose, **self.finger_pose_params)
-        self.last_forward_result = vertices[self.finger_opt_vertex_index]
-        return self.last_forward_result
+        self.last_forward_result = hand_vertices(
+            pose=self._optimizer_pose, **self.finger_pose_params)
+        return self.last_forward_result[0]  # TODO
 
     def inverse(self, position):
         """Estimate finger joint parameters from position."""

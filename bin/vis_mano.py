@@ -56,6 +56,9 @@ def parse_args():
         "--show-tips", action="store_true",
         help="Show tip vertices of fingers in green color.")
     parser.add_argument(
+        "--color-fingers", action="store_true",
+        help="Show finger vertices in uniform color.")
+    parser.add_argument(
         "--zero-pose", action="store_true",
         help="Set all pose parameters to 0.")
     parser.add_argument(
@@ -137,19 +140,33 @@ def main():
                 colors.append((0, 0, 0))
         pc.colors = o3d.utility.Vector3dVector(colors)
 
-    if args.show_tips:
-        vipf = MANO_CONFIG["vertex_index_per_finger"]
-        for finger in vipf:
-            idx = vipf[finger]
-            pc.colors[idx] = (0, 1, 0)
-            for dist in range(1, 6):
-                if idx - dist >= 0:
-                    pc.colors[idx - dist] = (0, 0, 1.0 / dist)
-                if idx + dist < len(pc.colors):
-                    pc.colors[idx + dist] = (0, 0, 1.0 / dist)
+    if args.color_fingers:
+        colors = [
+            (1, 0, 0),
+            (1, 1, 0),
+            (0, 1, 1),
+            (0, 0, 1),
+            (1, 0, 1),
+        ]
+        for finger, c in zip(MANO_CONFIG["vertex_indices_per_finger"], colors):
             kin = make_finger_kinematics(hand_state, finger)
-            pos = kin.forward(pose[kin.finger_pose_param_indices])
-            pc.points[idx] = pos
+            for index in kin.all_finger_vertex_indices:
+                pc.colors[index] = c
+
+    if args.show_tips:
+        vipf = MANO_CONFIG["vertex_indices_per_finger"]
+        for finger in vipf:
+            indices = vipf[finger]
+            for index in indices:
+                pc.colors[index] = (0, 1, 0)
+                for dist in range(1, 6):
+                    if index - dist >= 0:
+                        pc.colors[index - dist] = (0, 0, 1.0 / dist)
+                    if index + dist < len(pc.colors):
+                        pc.colors[index + dist] = (0, 0, 1.0 / dist)
+                kin = make_finger_kinematics(hand_state, finger)
+                pos = kin.forward(pose[kin.finger_pose_param_indices])
+                pc.points[index] = pos
 
     fig = pv.figure()
     fig.add_geometry(pc)
