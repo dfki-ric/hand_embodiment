@@ -16,6 +16,7 @@ from hand_embodiment.vis_utils import make_coordinate_system
 from hand_embodiment.config import load_mano_config
 from hand_embodiment.record_markers import MANO_CONFIG, make_finger_kinematics
 
+
 POSE = np.array([
     0, 0, 0,
     -0.068, 0, 0.068 + 1,

@@ -24,7 +24,7 @@ MANO_CONFIG = {
         },
     "vertex_indices_per_finger":
         {
-            "thumb": [724],
+            "thumb": [724, 706],
             "index": [314],
             "middle": [426],
             "little": [651],
@@ -40,11 +40,12 @@ MANO_CONFIG = {
         },
     "tip_vertex_offsets_per_finger":
         {
-            "thumb": [np.array([0.005, 0.005, 0.003])],
-            "index": [np.array([0, 0.005, 0])],
-            "middle": [np.array([0, 0.005, 0])],
-            "ring": [np.array([0, 0.005, 0])],
-            "little": [np.array([0, 0.005, 0])]
+            "thumb": [np.array([0.006, 0.006, 0.003]),
+                      np.array([0.006, 0.006, 0.003])],
+            "index": [np.array([0, 0.006, 0])],
+            "middle": [np.array([0, 0.006, 0])],
+            "ring": [np.array([0, 0.006, 0])],
+            "little": [np.array([0, 0.006, 0])]
         },
     "action_weights_per_finger":
         {
@@ -299,7 +300,14 @@ class ManoFingerKinematics:
         self.current_pose[:] = 0.0
 
     def reduce_pose_parameters(self, hand_state):
-        finger_opt_vertex_indices = [np.where(self.all_finger_vertex_indices == idx)[0][0] for idx in self.finger_vertex_indices]
+        finger_opt_vertex_indices = []
+        for idx in self.finger_vertex_indices:
+            match = np.where(self.all_finger_vertex_indices == idx)[0]
+            if not match:
+                raise ValueError(
+                    f"Vertex with index {idx} does not belong to this finger. "
+                    f"Possible options: {self.all_finger_vertex_indices}")
+            finger_opt_vertex_indices.append(match[0])
         pose_dir_joint_indices = np.hstack([np.arange(i, i + 9) for i in self.finger_joint_indices[1:]]).astype(int)
 
         v_template = hand_state.pose_parameters["v_template"][self.finger_vertex_indices].copy()
