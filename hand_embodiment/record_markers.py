@@ -319,12 +319,12 @@ class ManoFingerKinematics:
         """Compute position at the tip of the finger for given joint parameters."""
         if return_cached_result:
             assert self.last_forward_result is not None
-            return self.last_forward_result[0]  # TODO
+            return self.last_forward_result
 
         self._optimizer_pose[3:] = pose
         self.last_forward_result = hand_vertices(
             pose=self._optimizer_pose, **self.finger_pose_params)
-        return self.last_forward_result[0]  # TODO
+        return self.last_forward_result
 
     def inverse(self, position):
         """Estimate finger joint parameters from position."""
@@ -350,12 +350,19 @@ class FingerError:
         self.action_weights = action_weights
 
     def __call__(self, finger_pose, desired_finger_pos):
-        tip_position = self.forward_kinematics(finger_pose)
+        positions = self.forward_kinematics(finger_pose)
+        desired_finger_pos = np.atleast_2d(desired_finger_pos)
+
         pos_finger_pose = np.maximum(0.0, finger_pose)
         neg_finger_pose = -np.minimum(0.0, finger_pose)
+
         # squared cost improves result and speed drastically in comparison
         # to non-squared cost
-        return (np.linalg.norm(desired_finger_pos - tip_position) ** 2
-                + np.dot(self.action_weights[0], pos_finger_pose) ** 2
-                + np.dot(self.action_weights[1], neg_finger_pose) ** 2
-                )
+        error = sum([np.linalg.norm(des - pos) ** 2
+                     for des, pos in zip(desired_finger_pos, positions)])
+
+        regularization = (
+                np.dot(self.action_weights[0], pos_finger_pose) ** 2
+                + np.dot(self.action_weights[1], neg_finger_pose) ** 2)
+
+        return error + regularization

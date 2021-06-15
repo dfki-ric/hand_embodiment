@@ -157,16 +157,16 @@ def main():
         vipf = MANO_CONFIG["vertex_indices_per_finger"]
         for finger in vipf:
             indices = vipf[finger]
-            for index in indices:
+            kin = make_finger_kinematics(hand_state, finger)
+            positions = kin.forward(pose[kin.finger_pose_param_indices])
+            for i, index in enumerate(indices):
                 pc.colors[index] = (0, 1, 0)
                 for dist in range(1, 6):
                     if index - dist >= 0:
                         pc.colors[index - dist] = (0, 0, 1.0 / dist)
                     if index + dist < len(pc.colors):
                         pc.colors[index + dist] = (0, 0, 1.0 / dist)
-                kin = make_finger_kinematics(hand_state, finger)
-                pos = kin.forward(pose[kin.finger_pose_param_indices])
-                pc.points[index] = pos
+                pc.points[index] = positions[i]
 
     fig = pv.figure()
     fig.add_geometry(pc)
