@@ -7,9 +7,12 @@ hand_marker_names:
 - Hand left
 - Hand right
 finger_marker_names:
-    thumb: Thumb
-    index: Index
-    middle: Middle
+    thumb:
+    - Thumb
+    index:
+    - Index
+    middle:
+    - Middle
 additional_markers:
 - Box left
 - Box back

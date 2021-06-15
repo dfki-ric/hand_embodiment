@@ -168,9 +168,8 @@ class MarkerBasedRecordMapping:
         self.current_hand_markers2world = np.eye(4)
         self.mano2world_ = pt.concat(
             self.mano2hand_markers_, self.current_hand_markers2world)
-        self.finger_markers_in_mano = {
-            finger_name: np.eye(4)
-            for finger_name in self.mano_finger_kinematics_.keys()}
+        self.markers_in_mano = {
+            finger_name: None for finger_name in self.mano_finger_kinematics_}
 
     def reset(self):
         """Reset current joint poses of MANO."""
@@ -192,17 +191,18 @@ class MarkerBasedRecordMapping:
         self.mano2world_ = pt.concat(
             self.mano2hand_markers_, self.current_hand_markers2world)
 
-        for finger_name in finger_markers.keys():
-            self.finger_markers_in_mano[finger_name] = pt.invert_transform(
-                self.mano2world_).dot(
-                pt.vector_to_point(finger_markers[finger_name]))[:3]
+        world2mano = pt.invert_transform(self.mano2world_, check=False)
+        for finger_name in finger_markers:
+            markers_in_world = np.atleast_2d(finger_markers[finger_name])
+            self.markers_in_mano[finger_name] = np.dot(
+                pt.vectors_to_points(markers_in_world), world2mano.T)[:, :3]
 
         if self.verbose:
             start = time.time()
 
         for finger_name in finger_markers.keys():
             fe = self.mano_finger_kinematics_[finger_name]
-            finger_pose = fe.inverse(self.finger_markers_in_mano[finger_name])
+            finger_pose = fe.inverse(self.markers_in_mano[finger_name])
             self.hand_state_.pose[fe.finger_pose_param_indices] = finger_pose
 
         """# joblib parallelization, not faster because of overhead for data transfer
@@ -366,8 +366,8 @@ class FingerError:
 
         # squared cost improves result and speed drastically in comparison
         # to non-squared cost
-        error = sum([np.linalg.norm(des - pos) ** 2
-                     for des, pos in zip(desired_finger_pos, positions)])
+        errors = np.linalg.norm(desired_finger_pos - positions, axis=1) ** 2
+        error = np.nansum(errors)
 
         regularization = (
                 np.dot(self.action_weights[0], pos_finger_pose) ** 2

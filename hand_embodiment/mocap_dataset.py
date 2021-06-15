@@ -37,9 +37,13 @@ class HandMotionCaptureDataset:
 
     end_idx : int, optional (default: None)
         Index of the last valid sample.
+
+    interpolate_missing_markers : bool, optional (default: False)
+        Interpolate unknown marker positions (indicated by nan).
     """
     def __init__(self, filename, mocap_config=None, skip_frames=1,
-                 start_idx=None, end_idx=None, **kwargs):
+                 start_idx=None, end_idx=None,
+                 interpolate_missing_markers=False, **kwargs):
         trajectory = qualisys.read_qualisys_tsv(filename=filename)
 
         if mocap_config is not None:
@@ -49,14 +53,19 @@ class HandMotionCaptureDataset:
             config = dict()
         config.update(kwargs)
 
-        marker_names = (config["hand_marker_names"] + list(config["finger_marker_names"].values())
+        all_finger_marker_names = []
+        for name in config["finger_marker_names"].values():
+            all_finger_marker_names.extend(name)
+        marker_names = (config["hand_marker_names"] + all_finger_marker_names
                         + config.get("additional_markers", []))
         trajectory = pandas_utils.extract_markers(
             trajectory, marker_names).copy()
         trajectory = self._convert_zeros_to_nans(trajectory, marker_names)
         trajectory = trajectory.iloc[slice(start_idx, end_idx)]
         trajectory = trajectory.iloc[::skip_frames]
-        trajectory = median_filter(interpolate_nan(trajectory), 3).iloc[2:]
+        if interpolate_missing_markers:
+            trajectory = interpolate_nan(trajectory)
+            trajectory = median_filter(trajectory, 3).iloc[2:]
 
         self.n_steps = len(trajectory)
         self.finger_names = config["finger_names"]
@@ -86,12 +95,13 @@ class HandMotionCaptureDataset:
     def _finger_trajectories(self, finger_marker_names, finger_names, trajectory):
         self.finger_trajectories = {}
         for finger_name in finger_names:
-            finger_marker_name = finger_marker_names[finger_name]
+            markers = finger_marker_names[finger_name]
             finger_column_names = pandas_utils.match_columns(
-                trajectory, [finger_marker_name], keep_time=False)
+                trajectory, markers, keep_time=False)
             self.finger_trajectories[finger_name] = \
                 conversion.array_from_dataframe(
-                    trajectory, finger_column_names)
+                    trajectory, finger_column_names).reshape(
+                    -1, len(markers), 3)
 
     def _additional_trajectories(self, additional_markers, trajectory):
         self.additional_trajectories = []
@@ -125,4 +135,8 @@ class HandMotionCaptureDataset:
         hand_markers = self.get_hand_markers(t)
         finger_markers = self.get_finger_markers(t)
         additional_trajectories = self.get_additional_markers(t)
-        return np.array(hand_markers + additional_trajectories + list(finger_markers.values()))
+        finger_markers_flat = []
+        for fn in finger_markers:
+            finger_markers_flat.extend(finger_markers[fn])
+        return np.array(hand_markers + additional_trajectories
+                        + finger_markers_flat)
