@@ -16,6 +16,20 @@ from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 from hand_embodiment.config import load_mano_config
 
 
+MARKER_COLORS = [
+    (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
+    (1, 0, 0), (0.5, 0, 0),
+    (0, 1, 0), (0, 0.5, 0),
+    (0, 0, 1), (0, 0, 0.5),
+    (1, 1, 0), (0.5, 0.5, 0),
+    (0, 1, 1), (0, 0.5, 0.5),
+    (1, 0, 1), (0.5, 0, 0.5),
+    (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
+    (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
+    (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
+]
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -74,7 +88,10 @@ def main():
 
     fig = pv.figure()
     fig.plot_transform(np.eye(4), s=1)
-    markers = scatter(fig, dataset.get_markers(0), s=0.006)
+    markers = dataset.get_markers(0)
+    print(markers)
+    print(dataset.get_finger_markers(0))
+    markers = scatter(fig, markers, s=0.006, c=MARKER_COLORS[:len(markers)])
 
     if args.hide_mano:
         hand = None

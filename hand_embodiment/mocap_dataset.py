@@ -53,9 +53,12 @@ class HandMotionCaptureDataset:
             config = dict()
         config.update(kwargs)
 
+        self.finger_names = config["finger_names"]
         all_finger_marker_names = []
-        for name in config["finger_marker_names"].values():
-            all_finger_marker_names.extend(name)
+        for fn in self.finger_names:
+            if fn in config["finger_marker_names"]:
+                all_finger_marker_names.extend(
+                    config["finger_marker_names"][fn])
         marker_names = (config["hand_marker_names"] + all_finger_marker_names
                         + config.get("additional_markers", []))
         trajectory = pandas_utils.extract_markers(
@@ -68,7 +71,6 @@ class HandMotionCaptureDataset:
             trajectory = median_filter(trajectory, 3).iloc[2:]
 
         self.n_steps = len(trajectory)
-        self.finger_names = config["finger_names"]
 
         self._hand_trajectories(config["hand_marker_names"], trajectory)
         self._finger_trajectories(
@@ -98,10 +100,10 @@ class HandMotionCaptureDataset:
             markers = finger_marker_names[finger_name]
             finger_column_names = pandas_utils.match_columns(
                 trajectory, markers, keep_time=False)
-            self.finger_trajectories[finger_name] = \
-                conversion.array_from_dataframe(
-                    trajectory, finger_column_names).reshape(
-                    -1, len(markers), 3)
+            arr = conversion.array_from_dataframe(
+                trajectory, finger_column_names)
+            self.finger_trajectories[finger_name] = arr.reshape(
+                -1, len(markers), 3)
 
     def _additional_trajectories(self, additional_markers, trajectory):
         self.additional_trajectories = []
@@ -124,7 +126,7 @@ class HandMotionCaptureDataset:
     def get_finger_markers(self, t):
         """Get finger markers."""
         return {fn: self.finger_trajectories[fn][t]
-                for fn in self.finger_trajectories}
+                for fn in self.finger_names}
 
     def get_additional_markers(self, t):
         """Get additional markers."""
@@ -136,7 +138,7 @@ class HandMotionCaptureDataset:
         finger_markers = self.get_finger_markers(t)
         additional_trajectories = self.get_additional_markers(t)
         finger_markers_flat = []
-        for fn in finger_markers:
-            finger_markers_flat.extend(finger_markers[fn])
-        return np.array(hand_markers + additional_trajectories
-                        + finger_markers_flat)
+        for fn in self.finger_names:
+            finger_markers_flat.extend(finger_markers[fn].tolist())
+        return np.array(hand_markers + finger_markers_flat
+                        + additional_trajectories)

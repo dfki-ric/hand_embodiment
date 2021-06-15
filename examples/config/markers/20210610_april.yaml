@@ -14,17 +14,21 @@ finger_marker_names:
     - thumb_middle
     index:
     - index_tip
+    - index_middle
     middle:
     - middle_tip
+    - middle_middle
     ring:
     - ring_tip
+    - ring_middle
     little:
     - little_tip
+    - little_middle
 additional_markers:
-- index_middle
-- middle_middle
-- ring_middle
-- little_middle
+#- index_middle
+#- middle_middle
+#- ring_middle
+#- little_middle
 - bag_left
 - bag_right
 - bag_top

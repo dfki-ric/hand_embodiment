@@ -12,10 +12,13 @@ finger_marker_names:
     - thumb_tip
     index:
     - index_tip
+    #- index_middle
     middle:
     - middle_tip
+    #- middle_middle
     ring:
     - ring_tip
+    #- ring_middle
 additional_markers:
 - index_middle
 - middle_middle

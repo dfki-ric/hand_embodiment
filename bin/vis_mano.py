@@ -164,10 +164,12 @@ def main():
                 pc.colors[index] = (0, 1, 0)
                 for dist in range(1, 6):
                     if index - dist >= 0:
-                        pc.colors[index - dist] = (0, 0, 1.0 / dist)
+                        pc.colors[index - dist] = [dist / 5] * 3
                     if index + dist < len(pc.colors):
-                        pc.colors[index + dist] = (0, 0, 1.0 / dist)
+                        pc.colors[index + dist] = [dist / 5] * 3
                 pc.points[index] = positions[i]
+    #start, end = 500, 510
+    #for i in range(start, end): pc.colors[i] = [(i - start) / (end - start)] * 2 + [0]
 
     fig = pv.figure()
     fig.add_geometry(pc)

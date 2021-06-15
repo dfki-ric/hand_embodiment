@@ -13,6 +13,7 @@ MANO2HAND_MARKERS = pt.invert_transform(pt.transform_from(
     p=np.array([0.0, -0.03, 0.065])))
 
 
+VERTEX_OFFSET = 0.008  # marker radius: 0.006
 MANO_CONFIG = {
     "pose_parameters_per_finger":
         {
@@ -24,11 +25,21 @@ MANO_CONFIG = {
         },
     "vertex_indices_per_finger":
         {
-            "thumb": [724, 706],
-            "index": [314],
-            "middle": [426],
-            "little": [651],
-            "ring": [534],
+            "thumb": [724,  # tip
+                      706,  # middle
+                      ],
+            "index": [314,  # tip
+                      261,  # middle
+                      ],
+            "middle": [426,  # tip
+                       399,  # middle
+                       ],
+            "little": [651,  # tip
+                       627,  # middle
+                       ],
+            "ring": [534,  # tip
+                     509,  # middle
+                     ],
         },
     "joint_indices_per_finger":
         {
@@ -42,10 +53,14 @@ MANO_CONFIG = {
         {
             "thumb": [np.array([0.006, 0.006, 0.003]),
                       np.array([0.006, 0.006, 0.003])],
-            "index": [np.array([0, 0.006, 0])],
-            "middle": [np.array([0, 0.006, 0])],
-            "ring": [np.array([0, 0.006, 0])],
-            "little": [np.array([0, 0.006, 0])]
+            "index": [np.array([0, VERTEX_OFFSET, 0]),
+                      np.array([0, VERTEX_OFFSET, 0])],
+            "middle": [np.array([0, VERTEX_OFFSET, 0]),
+                       np.array([0, VERTEX_OFFSET, 0])],
+            "ring": [np.array([0, VERTEX_OFFSET, 0]),
+                     np.array([0, VERTEX_OFFSET, 0])],
+            "little": [np.array([0, VERTEX_OFFSET, 0]),
+                       np.array([0, VERTEX_OFFSET, 0])]
         },
     "action_weights_per_finger":
         {
@@ -360,6 +375,9 @@ class FingerError:
     def __call__(self, finger_pose, desired_finger_pos):
         positions = self.forward_kinematics(finger_pose)
         desired_finger_pos = np.atleast_2d(desired_finger_pos)
+
+        # in case there are no middle markers available:
+        positions = positions[:len(desired_finger_pos)]
 
         pos_finger_pose = np.maximum(0.0, finger_pose)
         neg_finger_pose = -np.minimum(0.0, finger_pose)
