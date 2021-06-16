@@ -53,9 +53,9 @@ for finger_name in emb.finger_names_:
         finger_name, joint_angles[finger_name])
     for p in desired_positions[finger_name]:
         p = pt.translate_transform(np.eye(4), p)
-        fig.plot_sphere(0.005, p, c=(0, 1, 0))
+        fig.plot_sphere(0.006, p, c=(0, 1, 0))
     for p in actual_positions:
-        fig.plot_sphere(0.005, p, c=(1, 0, 0))
+        fig.plot_sphere(0.006, p, c=(1, 0, 0))
 
 graph = pv.Graph(
     emb.target_kin.tm, MIA_CONFIG["base_frame"], show_frames=False,
