@@ -104,9 +104,12 @@ class MiaVirtualThumbJoint:
         return {self.real_joint_name: angle}
 
 
-manobase2miabase = pt.transform_from(
-    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-1.634, 1.662, -0.182])),
-    p=np.array([0.002, 0.131, -0.024]))
+# TODO make this configurable
+#manobase2miabase = pt.transform_from(
+#    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-1.634, 1.662, -0.182])),
+#    p=np.array([0.002, 0.131, -0.024]))
+manobase2miabase = pt.transform_from_exponential_coordinates(
+    [-1.099, 0.772, -1.458, -0.105, 0.12, 0.041])
 MIA_CONFIG = {
     "joint_names":
         {  # map finger names to a list of joint names that control the finger

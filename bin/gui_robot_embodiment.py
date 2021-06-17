@@ -136,7 +136,7 @@ def make_mano_widgets(fig, hand_state, graph, tm, embodiment, show_mano, hand_co
         pose_control_layout = gui.Horiz()
         pose_control_layout.add_child(gui.Label(f"{i + 1}"))
         slider = gui.Slider(gui.Slider.DOUBLE)
-        slider.set_limits(-0.5, 0.5)
+        slider.set_limits(-np.pi, np.pi)
         slider.double_value = mano_pos_state.pose[i]
         slider.set_on_value_changed(partial(mano_pos_state.pos_changed, i=i))
         pose_control_layout.add_child(slider)
@@ -145,7 +145,7 @@ def make_mano_widgets(fig, hand_state, graph, tm, embodiment, show_mano, hand_co
         pose_control_layout = gui.Horiz()
         pose_control_layout.add_child(gui.Label(f"{i + 4}"))
         slider = gui.Slider(gui.Slider.DOUBLE)
-        slider.set_limits(-np.pi, np.pi)
+        slider.set_limits(-0.5, 0.5)
         slider.double_value = mano_pos_state.pose[i + 3]
         slider.set_on_value_changed(partial(mano_pos_state.pos_changed, i=i + 3))
         pose_control_layout.add_child(slider)
@@ -249,9 +249,7 @@ class OnManoPoseSlider(OnMano):
         super(OnManoPoseSlider, self).__init__(
             fig, hand_state, graph, tm, show_mano)
         mano2robot = hand_config["handbase2robotbase"]
-        euler = pr.intrinsic_euler_xyz_from_active_matrix(mano2robot[:3, :3])
-        pos = mano2robot[:3, 3]
-        self.pose = np.hstack((pos, euler))
+        self.pose = pt.exponential_coordinates_from_transform(mano2robot)
         self.hand_state.pose[:] = mano_pose
         self.embodiment = embodiment
         self.mano_index_kin = make_finger_kinematics(hand_state, "index")
@@ -272,9 +270,7 @@ class OnManoPoseSlider(OnMano):
 
     def update_pose(self):
         self.hand_state.recompute_mesh(
-            pt.transform_from(
-                R=pr.active_matrix_from_intrinsic_euler_xyz(self.pose[3:]),
-                p=self.pose[:3]))
+            pt.transform_from_exponential_coordinates(self.pose))
 
 
 def parse_args():
