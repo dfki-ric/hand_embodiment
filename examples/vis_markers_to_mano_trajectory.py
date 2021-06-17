@@ -2,6 +2,7 @@
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/Qualisys_pnp/20151005_r_AV82_PickAndPlace_BesMan_labeled_02.tsv --mocap-config examples/config/markers/20151005_besman.yaml --mano-config examples/config/mano/20151005_besman.yaml
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/QualisysAprilTest/april_test_005.tsv
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210610_april/Measurement2.tsv --mocap-config examples/config/markers/20210610_april.yaml --mano-config examples/config/mano/20210610_april.yaml
+python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210616_april/Measurement16.tsv --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210610_april.yaml
 """
 
 import argparse
@@ -14,6 +15,20 @@ from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.vis_utils import ManoHand
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 from hand_embodiment.config import load_mano_config
+
+
+MARKER_COLORS = [
+    (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
+    (1, 0, 0), (0.5, 0, 0),
+    (0, 1, 0), (0, 0.5, 0),
+    (0, 0, 1), (0, 0, 0.5),
+    (1, 1, 0), (0.5, 0.5, 0),
+    (0, 1, 1), (0, 0.5, 0.5),
+    (1, 0, 1), (0.5, 0, 0.5),
+    (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
+    (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
+    (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
+]
 
 
 def parse_args():
@@ -74,7 +89,8 @@ def main():
 
     fig = pv.figure()
     fig.plot_transform(np.eye(4), s=1)
-    markers = scatter(fig, dataset.get_markers(0), s=0.006)
+    markers = dataset.get_markers(0)
+    markers = scatter(fig, markers, s=0.006, c=MARKER_COLORS[:len(markers)])
 
     if args.hide_mano:
         hand = None

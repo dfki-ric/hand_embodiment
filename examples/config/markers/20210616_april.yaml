@@ -3,6 +3,7 @@ finger_names:
 - index
 - middle
 - ring
+- little
 hand_marker_names:
 - hand_top
 - hand_left
@@ -10,16 +11,23 @@ hand_marker_names:
 finger_marker_names:
     thumb:
     - thumb_tip
+    - thumb_middle
     index:
     - index_tip
-    #- index_middle
+    - index_middle
     middle:
     - middle_tip
     #- middle_middle
     ring:
     - ring_tip
     #- ring_middle
+    little:
+    - little_tip
+    #- little_middle
 additional_markers:
-- index_middle
+#- index_middle
 - middle_middle
 - ring_middle
+- little_middle
+- insole_front
+- insole_back
