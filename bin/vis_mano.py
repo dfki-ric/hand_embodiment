@@ -11,6 +11,7 @@ import pytransform3d.rotations as pr
 import pytransform3d.transformations as pt
 from pytransform3d import visualizer as pv
 from mocap.mano import HandState
+from mocap.visualization import PointCollection
 
 from hand_embodiment.vis_utils import make_coordinate_system
 from hand_embodiment.config import load_mano_config
@@ -56,6 +57,9 @@ def parse_args():
     parser.add_argument(
         "--show-tips", action="store_true",
         help="Show tip vertices of fingers in green color.")
+    parser.add_argument(
+        "--show-spheres", action="store_true",
+        help="Show spheres at tip positions.")
     parser.add_argument(
         "--color-fingers", action="store_true",
         help="Show finger vertices in uniform color.")
@@ -154,8 +158,10 @@ def main():
             for index in kin.all_finger_vertex_indices:
                 pc.colors[index] = c
 
+    spheres = None
     if args.show_tips:
         vipf = MANO_CONFIG["vertex_indices_per_finger"]
+        all_positions = []
         for finger in vipf:
             indices = vipf[finger]
             kin = make_finger_kinematics(hand_state, finger)
@@ -168,6 +174,10 @@ def main():
                     if index + dist < len(pc.colors):
                         pc.colors[index + dist] = [dist / 5] * 3
                 pc.points[index] = positions[i]
+            all_positions.extend(positions.tolist())
+
+        if args.show_spheres:
+            spheres = PointCollection(all_positions, s=0.006, c=(0, 1, 0))
     #start, end = 500, 510
     #for i in range(start, end): pc.colors[i] = [(i - start) / (end - start)] * 2 + [0]
 
@@ -187,6 +197,8 @@ def main():
     if args.show_transforms:
         fig.plot_transform(np.eye(4), s=0.05)
         fig.plot_transform(pt.invert_transform(mano2hand_markers), s=0.05)
+    if spheres is not None:
+        spheres.add_artist(fig)
     fig.show()
 
 

@@ -13,7 +13,7 @@ MANO2HAND_MARKERS = pt.invert_transform(pt.transform_from(
     p=np.array([0.0, -0.03, 0.065])))
 
 
-VERTEX_OFFSET = 0.008  # marker radius: 0.006
+VERTEX_OFFSET = 0.007  # marker radius: 0.006
 MANO_CONFIG = {
     "pose_parameters_per_finger":
         {
