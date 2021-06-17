@@ -27,7 +27,7 @@ def kinematic_model_hook_mia(kin):
     kin.tm.add_transform(
         "index_tip", "index_fle",
         np.array([
-            [1, 0, 0, -0.02],
+            [1, 0, 0, -0.015],
             [0, 1, 0, 0.09],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
@@ -41,7 +41,7 @@ def kinematic_model_hook_mia(kin):
     kin.tm.add_transform(
         "middle_tip", "middle_fle",
         np.array([
-            [1, 0, 0, -0.02],
+            [1, 0, 0, -0.015],
             [0, 1, 0, 0.09],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
@@ -55,7 +55,7 @@ def kinematic_model_hook_mia(kin):
     kin.tm.add_transform(
         "ring_tip", "ring_fle",
         np.array([
-            [1, 0, 0, -0.017],
+            [1, 0, 0, -0.012],
             [0, 1, 0, 0.083],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
@@ -69,7 +69,7 @@ def kinematic_model_hook_mia(kin):
     kin.tm.add_transform(
         "little_tip", "little_fle",
         np.array([
-            [1, 0, 0, -0.015],
+            [1, 0, 0, -0.01],
             [0, 1, 0, 0.068],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
@@ -105,11 +105,11 @@ class MiaVirtualThumbJoint:
 
 
 # TODO make this configurable
-#manobase2miabase = pt.transform_from(
-#    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-1.634, 1.662, -0.182])),
-#    p=np.array([0.002, 0.131, -0.024]))
-manobase2miabase = pt.transform_from_exponential_coordinates(
-    [-1.099, 0.772, -1.458, -0.105, 0.12, 0.041])
+manobase2miabase = pt.transform_from(
+    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-1.634, 1.662, -0.182])),
+    p=np.array([0.002, 0.131, -0.024]))
+#manobase2miabase = pt.transform_from_exponential_coordinates(
+#    [-1.099, 0.772, -1.458, -0.105, 0.12, 0.041])
 MIA_CONFIG = {
     "joint_names":
         {  # map finger names to a list of joint names that control the finger
