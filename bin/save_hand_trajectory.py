@@ -7,12 +7,9 @@ import argparse
 import time
 import numpy as np
 import tqdm
-from hand_embodiment.record_markers import MarkerBasedRecordMapping
-from hand_embodiment.embodiment import HandEmbodiment
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
-from hand_embodiment.target_configurations import TARGET_CONFIG
-from hand_embodiment.config import load_mano_config
 from hand_embodiment.target_dataset import RoboticHandDataset
+from hand_embodiment.pipelines import MoCapToRobot
 
 
 def parse_args():
@@ -59,35 +56,23 @@ def main():
         skip_frames=args.skip_frames, start_idx=args.start_idx,
         end_idx=args.end_idx)
 
-    hand_config = TARGET_CONFIG[args.hand]
+    pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names)
 
-    mano2hand_markers, betas = load_mano_config(args.mano_config)
-    mbrm = MarkerBasedRecordMapping(
-        left=False, mano2hand_markers=mano2hand_markers,
-        shape_parameters=betas, verbose=0)
-    emb = HandEmbodiment(
-        mbrm.hand_state_, hand_config,
-        use_fingers=dataset.finger_names,
-        mano_finger_kinematics=mbrm.mano_finger_kinematics_,
-        initial_handbase2world=mbrm.mano2world_, verbose=0)
     if args.hand == "mia":
         if args.mia_thumb_adducted:
-            emb.target_kin.tm.set_joint("j_thumb_opp_binary", 1.0)
+            pipeline.transform_manager_.set_joint("j_thumb_opp_binary", 1.0)
         else:
-            emb.target_kin.tm.set_joint("j_thumb_opp_binary", -1.0)
+            pipeline.transform_manager_.set_joint("j_thumb_opp_binary", -1.0)
 
     output_dataset = RoboticHandDataset(finger_names=dataset.finger_names)
     start_time = time.time()
     for t in tqdm.tqdm(range(dataset.n_steps)):
-        mbrm.estimate(dataset.get_hand_markers(t),
-                      dataset.get_finger_markers(t))
-        joint_angles = emb.solve(
-            mbrm.mano2world_, use_cached_forward_kinematics=True)
-        ee_pose = emb.transform_manager_.get_transform(
-            hand_config["base_frame"], "world")
+        ee_pose, joint_angles = pipeline.estimate(
+            dataset.get_hand_markers(t), dataset.get_finger_markers(t))
+
         joint_angles_t = joint_angles.copy()
         if args.hand == "mia":  # TODO refactor
-            j_min, j_max = emb.transform_manager_.get_joint_limits("j_thumb_opp")
+            j_min, j_max = pipeline.transform_manager_.get_joint_limits("j_thumb_opp")
             if args.mia_thumb_adducted:
                 thumb_opp = j_max
             else:
@@ -101,7 +86,7 @@ def main():
     print(f"Embodiment mapping done after {duration:.2f} s, "
           f"{time_per_frame:.4f} s per frame, {frequency:.1f} Hz")
 
-    output_dataset.export(args.output, args.hand, hand_config)
+    output_dataset.export(args.output, args.hand, pipeline.hand_config_)
     # TODO convert frequency
     print(f"Saved demonstration to '{args.output}'")
 

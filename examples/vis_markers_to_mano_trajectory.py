@@ -15,6 +15,7 @@ from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.vis_utils import ManoHand
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 from hand_embodiment.config import load_mano_config
+from hand_embodiment.pipelines import MoCapToRobot
 
 
 MARKER_COLORS = [
@@ -61,13 +62,16 @@ def parse_args():
     return parser.parse_args()
 
 
-def animation_callback(t, markers, hand, mbrm, dataset, delay):
+def animation_callback(t, markers, hand, dataset, pipeline, delay):
     if t == 1:
-        mbrm.reset()
+        pipeline.reset()
         time.sleep(delay)
+
     markers.set_data(dataset.get_markers(t))
+
     if hand is not None:
-        mbrm.estimate(dataset.get_hand_markers(t), dataset.get_finger_markers(t))
+        pipeline.estimate_hand(
+            dataset.get_hand_markers(t), dataset.get_finger_markers(t))
         hand.set_data()
         return markers, hand
     else:
@@ -82,10 +86,8 @@ def main():
         skip_frames=args.skip_frames, start_idx=args.start_idx,
         end_idx=args.end_idx)
 
-    mano2hand_markers, betas = load_mano_config(args.mano_config)
-    mbrm = MarkerBasedRecordMapping(
-        left=False, mano2hand_markers=mano2hand_markers, shape_parameters=betas,
-        verbose=1)
+    pipeline = MoCapToRobot("mia", args.mano_config, dataset.finger_names,
+                            verbose=1)
 
     fig = pv.figure()
     fig.plot_transform(np.eye(4), s=1)
@@ -95,14 +97,14 @@ def main():
     if args.hide_mano:
         hand = None
     else:
-        hand = ManoHand(mbrm, show_mesh=True, show_vertices=False)
+        hand = pipeline.make_hand_artist()
         hand.add_artist(fig)
 
     fig.view_init(azim=45)
     fig.set_zoom(0.3)
     fig.animate(
         animation_callback, dataset.n_steps, loop=True,
-        fargs=(markers, hand, mbrm, dataset, args.delay))
+        fargs=(markers, hand, dataset, pipeline, args.delay))
 
     fig.show()
 

@@ -10,12 +10,8 @@ import time
 import numpy as np
 from pytransform3d import visualizer as pv
 from mocap.visualization import scatter
-from hand_embodiment.record_markers import MarkerBasedRecordMapping
-from hand_embodiment.vis_utils import ManoHand
-from hand_embodiment.embodiment import HandEmbodiment
-from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
-from hand_embodiment.config import load_mano_config
+from hand_embodiment.pipelines import MoCapToRobot
 
 
 def parse_args():
@@ -57,13 +53,15 @@ def parse_args():
     return parser.parse_args()
 
 
-def animation_callback(t, markers, hand, robot, hse, dataset, emb, delay):
+def animation_callback(t, markers, hand, robot, dataset, pipeline, delay):
     if t == 1:
-        hse.reset()
+        pipeline.reset()
         time.sleep(delay)
+
+    pipeline.estimate(dataset.get_hand_markers(t),
+                      dataset.get_finger_markers(t))
+
     markers.set_data(dataset.get_markers(t))
-    hse.estimate(dataset.get_hand_markers(t), dataset.get_finger_markers(t))
-    emb.solve(hse.mano2world_, use_cached_forward_kinematics=True)
     robot.set_data()
     if hand is not None:
         hand.set_data()
@@ -80,34 +78,22 @@ def main():
         skip_frames=args.skip_frames, start_idx=args.start_idx,
         end_idx=args.end_idx)
 
-    hand_config = TARGET_CONFIG[args.hand]
+    pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names,
+                            verbose=1)
 
-    mano2hand_markers, betas = load_mano_config(args.mano_config)
-    mbrm = MarkerBasedRecordMapping(
-        left=False, mano2hand_markers=mano2hand_markers,
-        shape_parameters=betas, verbose=1)
-    emb = HandEmbodiment(
-        mbrm.hand_state_, hand_config,
-        use_fingers=dataset.finger_names,
-        mano_finger_kinematics=mbrm.mano_finger_kinematics_,
-        initial_handbase2world=mbrm.mano2world_, verbose=1)
     if args.hand == "mia":
         if args.mia_thumb_adducted:
-            emb.target_kin.tm.set_joint("j_thumb_opp_binary", 1.0)
+            pipeline.transform_manager_.set_joint("j_thumb_opp_binary", 1.0)
         else:
-            emb.target_kin.tm.set_joint("j_thumb_opp_binary", -1.0)
+            pipeline.transform_manager_.set_joint("j_thumb_opp_binary", -1.0)
 
     fig = pv.figure()
     fig.plot_transform(np.eye(4), s=1)
     markers = scatter(fig, dataset.get_markers(0), s=0.006)
-    robot = pv.Graph(
-        emb.target_kin.tm, "world", show_frames=True,
-        whitelist=[hand_config["base_frame"]], show_connections=False,
-        show_visuals=True, show_collision_objects=False, show_name=False,
-        s=0.02)
+    robot = pipeline.make_robot_artist()
     robot.add_artist(fig)
     if args.show_mano:
-        hand = ManoHand(mbrm, show_mesh=True, show_vertices=False)
+        hand = pipeline.make_hand_artist()
         hand.add_artist(fig)
     else:
         hand = None
@@ -116,7 +102,7 @@ def main():
     fig.set_zoom(0.3)
     fig.animate(
         animation_callback, dataset.n_steps, loop=True,
-        fargs=(markers, hand, robot, mbrm, dataset, emb, args.delay))
+        fargs=(markers, hand, robot, dataset, pipeline, args.delay))
 
     fig.show()
 
