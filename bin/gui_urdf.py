@@ -4,8 +4,7 @@ import open3d as o3d
 import pytransform3d.visualizer as pv
 from open3d.visualization import gui
 from hand_embodiment.embodiment import load_kinematic_model
-from hand_embodiment.target_configurations import (
-    MIA_CONFIG, SHADOW_HAND_CONFIG)
+from hand_embodiment.target_configurations import TARGET_CONFIG
 
 
 def parse_args():
@@ -53,12 +52,17 @@ class Figure:
         self.main_scene = self.scene_widget.scene
         self.geometry_names = []
 
-    def _on_layout(self, theme):
+    def _on_layout(self, layout_context):
+        # The on_layout callback should set the frame (position + size) of every
+        # child correctly. After the callback is done the window will layout
+        # the grandchildren.
         r = self.window.content_rect
         self.scene_widget.frame = r
-        width = 17 * theme.font_size
+        width = 17 * layout_context.theme.font_size
         height = min(
-            r.height, self.layout.calc_preferred_size(theme).height)
+            r.height,
+            self.layout.calc_preferred_size(
+                layout_context, gui.Widget.Constraints()).height)
         self.layout.frame = gui.Rect(r.get_right() - width, r.y, width, height)
 
     def show(self):
@@ -187,22 +191,18 @@ class OnCollisionObjectsCheckbox(On):
 def main(args):
     fig = Figure("URDF visualization", 1920, 1080, ax_s=0.2)
 
-    if args.hand == "shadow_hand":
-        hand_config = SHADOW_HAND_CONFIG
-    elif args.hand == "mia":
-        hand_config = MIA_CONFIG
-    else:
-        raise Exception(f"Unknown hand: '{args.hand}'")
+    hand_config = TARGET_CONFIG[args.hand]
 
     tm = load_kinematic_model(hand_config).tm
     if args.only_link_frames:
         whitelist = [
             node for node in tm.nodes
             if not (node.startswith("visual:") or
-                    node.startswith("collision_object:") or
+                    node.startswith("collision:") or
                     node.startswith("inertial_frame:"))]
     else:
         whitelist = None
+    print(whitelist)
     graph = pv.Graph(
         tm, hand_config["base_frame"], show_frames=True,
         show_connections=False, show_visuals=True, show_collision_objects=True,

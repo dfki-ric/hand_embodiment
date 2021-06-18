@@ -328,7 +328,7 @@ emb = HandEmbodiment(
 whitelist = [
     node for node in emb.transform_manager_.nodes
     if not (node.startswith("visual:") or
-            node.startswith("collision_object:") or
+            node.startswith("collision:") or
             node.startswith("inertial_frame:"))]
 graph = pv.Graph(
     emb.transform_manager_, "world", show_frames=True,
