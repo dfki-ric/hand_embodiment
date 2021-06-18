@@ -61,18 +61,7 @@ def main():
         angle = 1.0 if args.mia_thumb_adducted else -1.0
         pipeline.set_constant_joint("j_thumb_opp_binary", angle)
 
-    output_dataset = RoboticHandDataset(finger_names=dataset.finger_names)
-    start_time = time.time()
-    for t in tqdm.tqdm(range(dataset.n_steps)):
-        ee_pose, joint_angles = pipeline.estimate(
-            dataset.get_hand_markers(t), dataset.get_finger_markers(t))
-        output_dataset.append(ee_pose, joint_angles)
-
-    duration = time.time() - start_time
-    time_per_frame = duration / dataset.n_steps
-    frequency = dataset.n_steps / duration
-    print(f"Embodiment mapping done after {duration:.2f} s, "
-          f"{time_per_frame:.4f} s per frame, {frequency:.1f} Hz")
+    output_dataset = convert_mocap_to_robot(dataset, pipeline, verbose=1)
 
     if args.hand == "mia":
         j_min, j_max = pipeline.transform_manager_.get_joint_limits("j_thumb_opp")
@@ -82,6 +71,24 @@ def main():
     output_dataset.export(args.output, pipeline.hand_config_)
     # TODO convert frequency
     print(f"Saved demonstration to '{args.output}'")
+
+
+def convert_mocap_to_robot(dataset, pipeline, verbose=0):
+    output_dataset = RoboticHandDataset(finger_names=dataset.finger_names)
+
+    start_time = time.time()
+    for t in tqdm.tqdm(range(dataset.n_steps)):
+        ee_pose, joint_angles = pipeline.estimate(
+            dataset.get_hand_markers(t), dataset.get_finger_markers(t))
+        output_dataset.append(ee_pose, joint_angles)
+
+    if verbose:
+        duration = time.time() - start_time
+        time_per_frame = duration / dataset.n_steps
+        frequency = dataset.n_steps / duration
+        print(f"Embodiment mapping done after {duration:.2f} s, "
+              f"{time_per_frame:.4f} s per frame, {frequency:.1f} Hz")
+    return output_dataset
 
 
 if __name__ == "__main__":
