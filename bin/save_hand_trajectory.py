@@ -5,7 +5,6 @@ python bin/save_hand_trajectory.py mia --mia-thumb-adducted --demo-file data/Qua
 """
 import argparse
 import time
-import numpy as np
 import tqdm
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 from hand_embodiment.target_dataset import RoboticHandDataset
@@ -69,16 +68,7 @@ def main():
     for t in tqdm.tqdm(range(dataset.n_steps)):
         ee_pose, joint_angles = pipeline.estimate(
             dataset.get_hand_markers(t), dataset.get_finger_markers(t))
-
-        joint_angles_t = joint_angles.copy()
-        if args.hand == "mia":  # TODO refactor
-            j_min, j_max = pipeline.transform_manager_.get_joint_limits("j_thumb_opp")
-            if args.mia_thumb_adducted:
-                thumb_opp = j_max
-            else:
-                thumb_opp = j_min
-            joint_angles_t["thumb"] = np.hstack((joint_angles_t["thumb"], [thumb_opp]))
-        output_dataset.append(ee_pose, joint_angles_t)
+        output_dataset.append(ee_pose, joint_angles)
 
     duration = time.time() - start_time
     time_per_frame = duration / dataset.n_steps
@@ -86,7 +76,12 @@ def main():
     print(f"Embodiment mapping done after {duration:.2f} s, "
           f"{time_per_frame:.4f} s per frame, {frequency:.1f} Hz")
 
-    output_dataset.export(args.output, args.hand, pipeline.hand_config_)
+    if args.hand == "mia":
+        j_min, j_max = pipeline.transform_manager_.get_joint_limits("j_thumb_opp")
+        thumb_opp = j_max if args.mia_thumb_adducted else j_min
+        output_dataset.add_constant_finger_joint("j_thumb_opp", thumb_opp)
+
+    output_dataset.export(args.output, pipeline.hand_config_)
     # TODO convert frequency
     print(f"Saved demonstration to '{args.output}'")
 

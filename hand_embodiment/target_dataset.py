@@ -11,19 +11,23 @@ class RoboticHandDataset:
         self.n_samples = 0
         self.ee_poses = []
         self.finger_joint_angles = []
+        self.additional_finger_joint_angles = {}
 
     def append(self, ee_pose, finger_joint_angles):
         self.n_samples += 1
         self.ee_poses.append(ee_pose)
         self.finger_joint_angles.append(finger_joint_angles)
 
-    def export(self, filename, hand, hand_config):
+    def add_constant_finger_joint(self, joint_name, angle):
+        self.additional_finger_joint_angles[joint_name] = angle
+
+    def export(self, filename, hand_config):
         pose_columns = ["base_x", "base_y", "base_z", "base_qw", "base_qx", "base_qy", "base_qz"]
         column_names = []
         for finger in self.finger_names:
             column_names += hand_config["joint_names"][finger]
-            if hand == "mia" and finger == "thumb":  # TODO refactor
-                column_names.append("j_thumb_opp")
+        additional_joints = list(sorted(self.additional_finger_joint_angles.keys()))
+        column_names += additional_joints
         column_names += pose_columns
 
         raw_data = []
@@ -31,6 +35,8 @@ class RoboticHandDataset:
             joint_angles = []
             for finger in self.finger_names:
                 joint_angles += self.finger_joint_angles[t][finger].tolist()
+            for joint_name in additional_joints:
+                joint_angles.append(self.additional_finger_joint_angles[joint_name])
             pose = pt.pq_from_transform(self.ee_poses[t])
             raw_data.append(np.hstack((joint_angles, pose)))
 
