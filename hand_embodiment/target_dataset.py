@@ -48,6 +48,7 @@ class RoboticHandDataset:
 
 def convert_mocap_to_robot(dataset, pipeline, verbose=0):
     output_dataset = RoboticHandDataset(finger_names=dataset.finger_names)
+    pipeline.reset()
 
     start_time = time.time()
     for t in tqdm.tqdm(range(dataset.n_steps)):
