@@ -11,10 +11,7 @@ import numpy as np
 import pytransform3d.visualizer as pv
 from mocap.visualization import scatter
 
-from hand_embodiment.record_markers import MarkerBasedRecordMapping
-from hand_embodiment.vis_utils import ManoHand
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
-from hand_embodiment.config import load_mano_config
 from hand_embodiment.pipelines import MoCapToRobot
 
 
