@@ -4,11 +4,9 @@ Example call:
 python bin/save_hand_trajectory.py mia --mia-thumb-adducted --demo-file data/QualisysAprilTest/april_test_009.tsv --output trajectory_009.csv
 """
 import argparse
-import time
-import tqdm
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
-from hand_embodiment.target_dataset import RoboticHandDataset
 from hand_embodiment.pipelines import MoCapToRobot
+from hand_embodiment.target_dataset import convert_mocap_to_robot
 
 
 def parse_args():
@@ -71,24 +69,6 @@ def main():
     output_dataset.export(args.output, pipeline.hand_config_)
     # TODO convert frequency
     print(f"Saved demonstration to '{args.output}'")
-
-
-def convert_mocap_to_robot(dataset, pipeline, verbose=0):
-    output_dataset = RoboticHandDataset(finger_names=dataset.finger_names)
-
-    start_time = time.time()
-    for t in tqdm.tqdm(range(dataset.n_steps)):
-        ee_pose, joint_angles = pipeline.estimate(
-            dataset.get_hand_markers(t), dataset.get_finger_markers(t))
-        output_dataset.append(ee_pose, joint_angles)
-
-    if verbose:
-        duration = time.time() - start_time
-        time_per_frame = duration / dataset.n_steps
-        frequency = dataset.n_steps / duration
-        print(f"Embodiment mapping done after {duration:.2f} s, "
-              f"{time_per_frame:.4f} s per frame, {frequency:.1f} Hz")
-    return output_dataset
 
 
 if __name__ == "__main__":

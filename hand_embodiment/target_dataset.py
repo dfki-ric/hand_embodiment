@@ -1,3 +1,5 @@
+import time
+import tqdm
 import numpy as np
 import pandas as pd
 from pytransform3d import transformations as pt
@@ -42,3 +44,21 @@ class RoboticHandDataset:
 
         df = pd.DataFrame(raw_data, columns=column_names)
         df.to_csv(filename)
+
+
+def convert_mocap_to_robot(dataset, pipeline, verbose=0):
+    output_dataset = RoboticHandDataset(finger_names=dataset.finger_names)
+
+    start_time = time.time()
+    for t in tqdm.tqdm(range(dataset.n_steps)):
+        ee_pose, joint_angles = pipeline.estimate(
+            dataset.get_hand_markers(t), dataset.get_finger_markers(t))
+        output_dataset.append(ee_pose, joint_angles)
+
+    if verbose:
+        duration = time.time() - start_time
+        time_per_frame = duration / dataset.n_steps
+        frequency = dataset.n_steps / duration
+        print(f"Embodiment mapping done after {duration:.2f} s, "
+              f"{time_per_frame:.4f} s per frame, {frequency:.1f} Hz")
+    return output_dataset
