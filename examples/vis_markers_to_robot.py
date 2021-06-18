@@ -82,10 +82,8 @@ def main():
                             verbose=1)
 
     if args.hand == "mia":
-        if args.mia_thumb_adducted:
-            pipeline.transform_manager_.set_joint("j_thumb_opp_binary", 1.0)
-        else:
-            pipeline.transform_manager_.set_joint("j_thumb_opp_binary", -1.0)
+        angle = 1.0 if args.mia_thumb_adducted else -1.0
+        pipeline.set_constant_joint("j_thumb_opp_binary", angle)
 
     fig = pv.figure()
     fig.plot_transform(np.eye(4), s=1)

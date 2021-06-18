@@ -43,6 +43,9 @@ class MoCapToRobot:
         """Reset record mapping."""
         self.record_mapping_.reset()
 
+    def set_constant_joint(self, joint_name, angle):
+        self.transform_manager_.set_joint(joint_name, angle)
+
     def estimate_hand(self, hand_markers, finger_markers):
         """Estimate MANO pose and joint angles."""
         self.record_mapping_.estimate(hand_markers, finger_markers)

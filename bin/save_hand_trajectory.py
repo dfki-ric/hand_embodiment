@@ -58,10 +58,8 @@ def main():
     pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names)
 
     if args.hand == "mia":
-        if args.mia_thumb_adducted:
-            pipeline.transform_manager_.set_joint("j_thumb_opp_binary", 1.0)
-        else:
-            pipeline.transform_manager_.set_joint("j_thumb_opp_binary", -1.0)
+        angle = 1.0 if args.mia_thumb_adducted else -1.0
+        pipeline.set_constant_joint("j_thumb_opp_binary", angle)
 
     output_dataset = RoboticHandDataset(finger_names=dataset.finger_names)
     start_time = time.time()
