@@ -1,3 +1,9 @@
+"""
+Example call:
+python bin/vis_mano.py \
+    --config-filename examples/config/april_test_mano2.yaml \
+    --show-tips --show-mesh --show-transforms
+"""
 import argparse
 import numpy as np
 import open3d as o3d
@@ -5,8 +11,12 @@ import pytransform3d.rotations as pr
 import pytransform3d.transformations as pt
 from pytransform3d import visualizer as pv
 from mocap.mano import HandState
+from mocap.visualization import PointCollection
 
 from hand_embodiment.vis_utils import make_coordinate_system
+from hand_embodiment.config import load_mano_config
+from hand_embodiment.record_markers import MANO_CONFIG, make_finger_kinematics
+
 
 POSE = np.array([
     0, 0, 0,
@@ -42,8 +52,23 @@ def parse_args():
         "--show-reference", action="store_true",
         help="Show coordinate frame for size reference.")
     parser.add_argument(
+        "--show-transforms", action="store_true",
+        help="Show reference frames of markers and MANO.")
+    parser.add_argument(
+        "--show-tips", action="store_true",
+        help="Show tip vertices of fingers in green color.")
+    parser.add_argument(
+        "--show-spheres", action="store_true",
+        help="Show spheres at tip positions.")
+    parser.add_argument(
+        "--color-fingers", action="store_true",
+        help="Show finger vertices in uniform color.")
+    parser.add_argument(
         "--zero-pose", action="store_true",
         help="Set all pose parameters to 0.")
+    parser.add_argument(
+        "--config-filename", type=str, default=None,
+        help="MANO configuration that includes shape parameters.")
 
     return parser.parse_args()
 
@@ -90,15 +115,23 @@ def main():
 
     hand_state = HandState(left=False)
 
+    if args.config_filename is None:
+        mano2hand_markers, betas = np.eye(4), np.zeros(
+            hand_state.n_shape_parameters)
+    else:
+        mano2hand_markers, betas = load_mano_config(args.config_filename)
+
     if args.zero_pose:
         pose = np.zeros_like(POSE)
     else:
         pose = POSE
-    hand_state.pose[:] = pose
-    hand_state.mesh_updated = True
 
-    pose = pose.reshape(-1, 3)
-    J = joint_poses(pose, hand_state.pose_parameters["J"],
+    hand_state.betas[:] = betas
+    hand_state.recompute_shape()
+    hand_state.pose[:] = pose
+    hand_state.recompute_mesh()
+
+    J = joint_poses(pose.reshape(-1, 3), hand_state.pose_parameters["J"],
                     hand_state.pose_parameters["kintree_table"])
 
     pc = hand_state.hand_pointcloud
@@ -111,6 +144,42 @@ def main():
             else:
                 colors.append((0, 0, 0))
         pc.colors = o3d.utility.Vector3dVector(colors)
+
+    if args.color_fingers:
+        colors = [
+            (1, 0, 0),
+            (1, 1, 0),
+            (0, 1, 1),
+            (0, 0, 1),
+            (1, 0, 1),
+        ]
+        for finger, c in zip(MANO_CONFIG["vertex_indices_per_finger"], colors):
+            kin = make_finger_kinematics(hand_state, finger)
+            for index in kin.all_finger_vertex_indices:
+                pc.colors[index] = c
+
+    spheres = None
+    if args.show_tips:
+        vipf = MANO_CONFIG["vertex_indices_per_finger"]
+        all_positions = []
+        for finger in vipf:
+            indices = vipf[finger]
+            kin = make_finger_kinematics(hand_state, finger)
+            positions = kin.forward(pose[kin.finger_pose_param_indices])
+            for i, index in enumerate(indices):
+                pc.colors[index] = (0, 1, 0)
+                for dist in range(1, 6):
+                    if index - dist >= 0:
+                        pc.colors[index - dist] = [dist / 5] * 3
+                    if index + dist < len(pc.colors):
+                        pc.colors[index + dist] = [dist / 5] * 3
+                pc.points[index] = positions[i]
+            all_positions.extend(positions.tolist())
+
+        if args.show_spheres:
+            spheres = PointCollection(all_positions, s=0.006, c=(0, 1, 0))
+    #start, end = 500, 510
+    #for i in range(start, end): pc.colors[i] = [(i - start) / (end - start)] * 2 + [0]
 
     fig = pv.figure()
     fig.add_geometry(pc)
@@ -125,6 +194,11 @@ def main():
     if args.show_reference:
         coordinate_system = make_coordinate_system(s=0.2)
         fig.add_geometry(coordinate_system)
+    if args.show_transforms:
+        fig.plot_transform(np.eye(4), s=0.05)
+        fig.plot_transform(pt.invert_transform(mano2hand_markers), s=0.05)
+    if spheres is not None:
+        spheres.add_artist(fig)
     fig.show()
 
 

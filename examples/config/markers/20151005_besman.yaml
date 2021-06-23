@@ -1,0 +1,23 @@
+finger_names:
+- thumb
+- index
+- middle
+hand_marker_names:
+- Hand top
+- Hand left
+- Hand right
+finger_marker_names:
+    thumb:
+    - Thumb
+    index:
+    - Index
+    middle:
+    - Middle
+additional_markers:
+- Box left
+- Box back
+- Elbow
+- Back right
+- Back top
+- Back left
+- Shoulder

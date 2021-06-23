@@ -7,7 +7,8 @@ except ImportError:
 
 
 def write_png(self, filename, prog=None, show_visuals=False,
-              show_collision_objects=False, show_matrix=False):
+              show_collision_objects=False, show_inertial_frames=False,
+              show_matrix=False):
     """Create PNG from dot graph of the transformations.
 
     .. warning::
@@ -31,6 +32,9 @@ def write_png(self, filename, prog=None, show_visuals=False,
     show_collision_objects : bool, optional (default: False)
         Show collision objects in graph
 
+    show_collision_objects : bool, optional (default: False)
+        Show inertial frames in graph
+
     show_matrix : bool, optional (default: False)
         Show transformation matrix in connection
     """
@@ -46,6 +50,8 @@ def write_png(self, filename, prog=None, show_visuals=False,
         if not show_visuals and frame.startswith("visual:"):
             continue
         elif not show_collision_objects and frame.startswith("collision:"):
+            continue
+        elif not show_inertial_frames and frame.startswith("inertial_frame:"):
             continue
 
         available_frames.append(frame)

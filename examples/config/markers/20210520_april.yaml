@@ -1,0 +1,25 @@
+finger_names:
+- thumb
+- index
+- middle
+- ring
+hand_marker_names:
+- hand_top
+- hand_left
+- hand_right
+finger_marker_names:
+    thumb:
+    - thumb_tip
+    index:
+    - index_tip
+    #- index_middle
+    middle:
+    - middle_tip
+    #- middle_middle
+    ring:
+    - ring_tip
+    #- ring_middle
+additional_markers:
+- index_middle
+- middle_middle
+- ring_middle

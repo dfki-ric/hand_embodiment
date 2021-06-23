@@ -1,8 +1,10 @@
 import time
+import warnings
 import numpy as np
 
 from .kinematics import Kinematics
 from .record_markers import make_finger_kinematics
+from .target_configurations import TARGET_CONFIG
 import pytransform3d.transformations as pt
 
 
@@ -16,8 +18,9 @@ class HandEmbodiment:
         parameters, and whether it is a left or right hand. It also
         stores the mesh.
 
-    target_config : dict
-        Configuration for the target system.
+    target_config : dict or str
+        Configuration for the target system as a dictionary or string that
+        identifies the target hand.
 
     use_fingers : tuple of str, optional (default: ('thumb', 'index', 'middle'))
         Fingers for which we compute the embodiment mapping.
@@ -28,6 +31,9 @@ class HandEmbodiment:
 
     initial_handbase2world : array-like, shape (4, 4), optional (default: None)
         Initial transform from hand base to world coordinates.
+
+    only_tip : bool, optional (default: False)
+        Use only tip frames in inverse kinematics.
 
     verbose : int, optional (default: 0)
         Verbosity level
@@ -54,7 +60,9 @@ class HandEmbodiment:
             self, hand_state, target_config,
             use_fingers=("thumb", "index", "middle"),
             mano_finger_kinematics=None, initial_handbase2world=None,
-            verbose=0):
+            only_tip=False, verbose=0):
+        if isinstance(target_config, str):
+            target_config = TARGET_CONFIG[target_config]
         self.finger_names_ = use_fingers
         self.hand_state_ = hand_state
         if mano_finger_kinematics is None:
@@ -72,18 +80,26 @@ class HandEmbodiment:
         self.target_finger_chains = {}
         self.joint_angles = {}
         self.base_frame = target_config["base_frame"]
-        for finger_name in use_fingers:
+        for finger_name in target_config["ee_frames"].keys():
             assert finger_name in target_config["joint_names"]
             assert finger_name in target_config["ee_frames"]
+            ee_frames = [target_config["ee_frames"][finger_name]]
+            if not only_tip and "intermediate_frames" in target_config:
+                ee_frames.append(
+                    target_config["intermediate_frames"][finger_name])
             self.target_finger_chains[finger_name] = \
-                self.target_kin.create_chain(
+                self.target_kin.create_multi_chain(
                     target_config["joint_names"][finger_name],
-                    self.base_frame,
-                    target_config["ee_frames"][finger_name])
+                    self.base_frame, ee_frames)
             self.joint_angles[finger_name] = \
                 np.zeros(len(target_config["joint_names"][finger_name]))
 
         self._update_hand_base_pose(initial_handbase2world)
+
+        if "coupled_joints" in target_config:
+            self.coupled_joints = target_config["coupled_joints"]
+        else:
+            self.coupled_joints = None
 
         self.verbose = verbose
 
@@ -123,31 +139,8 @@ class HandEmbodiment:
         if self.verbose:
             start = time.time()
 
-        if return_desired_positions:
-            desired_positions = {}
-
-        for finger_name in self.finger_names_:
-            # MANO forward kinematics
-            if use_cached_forward_kinematics:  # because it has been computed during embodiment mapping
-                finger_tip_in_handbase = self.mano_finger_kinematics[finger_name].forward(
-                    None, return_cached_result=True)
-            else:
-                finger_tip_in_handbase = self.mano_finger_kinematics[finger_name].forward(
-                    self.hand_state_.pose[
-                        self.mano_finger_kinematics[
-                            finger_name].finger_pose_param_indices])
-            finger_tip_in_robotbase = pt.transform(
-                self.handbase2robotbase,
-                pt.vector_to_point(finger_tip_in_handbase))[:3]
-
-            # Hand inverse kinematics
-            self.joint_angles[finger_name] = \
-                self.target_finger_chains[finger_name].inverse_position(
-                    finger_tip_in_robotbase, self.joint_angles[finger_name])
-
-            if return_desired_positions:
-                desired_positions[finger_name] = finger_tip_in_robotbase
-
+        desired_positions = self._mano_forward_kinematics(use_cached_forward_kinematics)
+        self._robotic_hand_inverse_kinematics(desired_positions)
         self._update_hand_base_pose(handbase2world)
 
         if self.verbose:
@@ -160,6 +153,62 @@ class HandEmbodiment:
             return self.joint_angles, desired_positions
         else:
             return self.joint_angles
+
+    def _mano_forward_kinematics(self, use_cached_forward_kinematics):
+        """MANO forward kinematics."""
+        desired_positions = {}
+        for finger_name in self.finger_names_:
+            if use_cached_forward_kinematics:  # because it has been computed during embodiment mapping
+                markers_in_handbase = self.mano_finger_kinematics[finger_name].forward(
+                    None, return_cached_result=True)
+            else:
+                markers_in_handbase = self.mano_finger_kinematics[finger_name].forward(
+                    self.hand_state_.pose[
+                        self.mano_finger_kinematics[
+                            finger_name].finger_pose_param_indices])
+
+            markers_in_robotbase = pt.transform(
+                self.handbase2robotbase,
+                pt.vectors_to_points(markers_in_handbase))[:, :3]
+            n_ee_frames = len(self.target_finger_chains[finger_name].ee_frames)
+            desired_positions[finger_name] = markers_in_robotbase[:n_ee_frames]
+        return desired_positions
+
+    def _robotic_hand_inverse_kinematics(self, desired_positions):
+        """Robotic hand inverse kinematics."""
+        for finger_name in self.finger_names_:
+            self.joint_angles[finger_name] = \
+                self.target_finger_chains[finger_name].inverse_position(
+                    desired_positions[finger_name],
+                    self.joint_angles[finger_name])
+
+        if self.coupled_joints is not None:
+            self._average_coupled_joints()
+
+    def _average_coupled_joints(self):
+        angle_sum = 0.0
+        n_joints = 0
+        for finger_name, joint_name in self.coupled_joints:
+            if finger_name not in self.finger_names_:
+                continue
+            angle_sum += self.joint_angles[finger_name][
+                self.target_finger_chains[
+                    finger_name].joint_names.index(joint_name)]
+            n_joints += 1
+
+        if n_joints == 0:
+            return
+
+        average_angle = angle_sum / n_joints
+        updated_fingers = set()
+        for finger_name, joint_name in self.coupled_joints:
+            self.joint_angles[finger_name][
+                self.target_finger_chains[finger_name].joint_names.index(
+                    joint_name)] = average_angle
+            updated_fingers.add(finger_name)
+        for finger_name in updated_fingers:
+            self.finger_forward_kinematics(
+                finger_name, self.joint_angles[finger_name])
 
     def _update_hand_base_pose(self, handbase2world):
         if handbase2world is None:
@@ -189,4 +238,13 @@ def load_kinematic_model(hand_config):
     if "virtual_joints_callbacks" in hand_config:
         for joint_name, callback in hand_config["virtual_joints_callbacks"].items():
             kin.tm.add_virtual_joint(joint_name, callback)
+    if "world" in kin.tm.nodes:
+        warnings.warn(
+            "'world' frame is already in URDF. Removing all connections to it.")
+        invalid_connections = []
+        for from_frame, to_frame in kin.tm.transforms:
+            if "world" in (from_frame, to_frame):
+                invalid_connections.append((from_frame, to_frame))
+        for from_frame, to_frame in invalid_connections:
+            kin.tm.remove_transform(from_frame, to_frame)
     return kin

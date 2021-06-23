@@ -1,5 +1,6 @@
 import numpy as np
 import open3d as o3d
+from pytransform3d import visualizer as pv
 
 
 def make_coordinate_system(s):
@@ -34,3 +35,30 @@ def make_coordinate_system(s):
         coordinate_system.lines = o3d.utility.Vector2iVector(lines)
         coordinate_system.colors = o3d.utility.Vector3dVector(colors)
     return coordinate_system
+
+
+class ManoHand(pv.Artist):
+    """Representation of hand mesh as artist for 3D visualization in Open3D."""
+    def __init__(self, mbrm, show_mesh=True, show_vertices=False):
+        self.mbrm = mbrm
+        self.show_mesh = show_mesh
+        self.show_vertices = show_vertices
+
+    def set_data(self):
+        pass
+
+    @property
+    def geometries(self):
+        """Expose geometries.
+
+        Returns
+        -------
+        geometries : list
+            List of geometries that can be added to the visualizer.
+        """
+        geoms = []
+        if self.show_mesh:
+            geoms.append(self.mbrm.hand_state_.hand_mesh)
+        if self.show_vertices:
+            geoms.append(self.mbrm.hand_state_.hand_pointcloud)
+        return geoms

@@ -51,12 +51,17 @@ class Figure:
         self.main_scene = self.scene_widget.scene
         self.geometry_names = []
 
-    def _on_layout(self, theme):
+    def _on_layout(self, layout_context):
+        # The on_layout callback should set the frame (position + size) of every
+        # child correctly. After the callback is done the window will layout
+        # the grandchildren.
         r = self.window.content_rect
         self.scene_widget.frame = r
-        width = 30 * theme.font_size
+        width = 30 * layout_context.theme.font_size
         height = min(
-            r.height, self.layout.calc_preferred_size(theme).height)
+            r.height,
+            self.layout.calc_preferred_size(
+                layout_context, gui.Widget.Constraints()).height)
         self.layout.frame = gui.Rect(r.get_right() - width, r.y, width, height)
 
     def show(self):
@@ -131,7 +136,7 @@ def make_mano_widgets(fig, hand_state, graph, tm, embodiment, show_mano, hand_co
         pose_control_layout = gui.Horiz()
         pose_control_layout.add_child(gui.Label(f"{i + 1}"))
         slider = gui.Slider(gui.Slider.DOUBLE)
-        slider.set_limits(-0.5, 0.5)
+        slider.set_limits(-np.pi, np.pi)
         slider.double_value = mano_pos_state.pose[i]
         slider.set_on_value_changed(partial(mano_pos_state.pos_changed, i=i))
         pose_control_layout.add_child(slider)
@@ -140,7 +145,7 @@ def make_mano_widgets(fig, hand_state, graph, tm, embodiment, show_mano, hand_co
         pose_control_layout = gui.Horiz()
         pose_control_layout.add_child(gui.Label(f"{i + 4}"))
         slider = gui.Slider(gui.Slider.DOUBLE)
-        slider.set_limits(-np.pi, np.pi)
+        slider.set_limits(-0.5, 0.5)
         slider.double_value = mano_pos_state.pose[i + 3]
         slider.set_on_value_changed(partial(mano_pos_state.pos_changed, i=i + 3))
         pose_control_layout.add_child(slider)
@@ -244,9 +249,7 @@ class OnManoPoseSlider(OnMano):
         super(OnManoPoseSlider, self).__init__(
             fig, hand_state, graph, tm, show_mano)
         mano2robot = hand_config["handbase2robotbase"]
-        euler = pr.intrinsic_euler_xyz_from_active_matrix(mano2robot[:3, :3])
-        pos = mano2robot[:3, 3]
-        self.pose = np.hstack((pos, euler))
+        self.pose = pt.exponential_coordinates_from_transform(mano2robot)
         self.hand_state.pose[:] = mano_pose
         self.embodiment = embodiment
         self.mano_index_kin = make_finger_kinematics(hand_state, "index")
@@ -267,9 +270,7 @@ class OnManoPoseSlider(OnMano):
 
     def update_pose(self):
         self.hand_state.recompute_mesh(
-            pt.transform_from(
-                R=pr.active_matrix_from_intrinsic_euler_xyz(self.pose[3:]),
-                p=self.pose[:3]))
+            pt.transform_from_exponential_coordinates(self.pose))
 
 
 def parse_args():
@@ -279,6 +280,10 @@ def parse_args():
         help="Name of the hand. Possible options: mia, shadow_hand")
     parser.add_argument(
         "--hide-mano", action="store_true", help="Don't show MANO mesh")
+    parser.add_argument(
+        "--config_filename", type=str,
+        default="examples/config/april_test_mano.yaml",
+        help="MANO configuration file.")
 
     return parser.parse_args()
 
@@ -320,10 +325,15 @@ emb = HandEmbodiment(
     hand_state, hand_config,
     use_fingers=("thumb", "index", "middle", "ring", "little"))
 
+whitelist = [
+    node for node in emb.transform_manager_.nodes
+    if not (node.startswith("visual:") or
+            node.startswith("collision:") or
+            node.startswith("inertial_frame:"))]
 graph = pv.Graph(
     emb.transform_manager_, "world", show_frames=True,
     show_connections=False, show_visuals=True, show_collision_objects=True,
-    show_name=False, s=0.02)
+    show_name=False, s=0.02, whitelist=whitelist)
 graph.add_artist(fig)
 
 make_mia_widgets(fig, graph, emb.transform_manager_)

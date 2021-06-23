@@ -1,4 +1,3 @@
-import math
 import numpy as np
 import pytransform3d.transformations as pt
 import pytransform3d.rotations as pr
@@ -12,48 +11,84 @@ from pkg_resources import resource_filename
 def kinematic_model_hook_mia(kin):
     """Extends kinematic model to include links for embodiment mapping."""
     kin.tm.add_transform(
-        "thumb_tip", "MCP1",
+        "thumb_tip", "thumb_fle",
         np.array([
-            [1, 0, 0, 0.025],
-            [0, 1, 0, 0.08],
+            [1, 0, 0, 0.03],
+            [0, 1, 0, 0.07],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "index_tip", "MCP2",
+        "thumb_middle", "thumb_fle",
         np.array([
-            [1, 0, 0, -0.02],
+            [1, 0, 0, 0.03],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "index_tip", "index_fle",
+        np.array([
+            [1, 0, 0, -0.015],
             [0, 1, 0, 0.09],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "middle_tip", "MCP3",
+        "index_middle", "index_fle",
         np.array([
-            [1, 0, 0, -0.02],
+            [1, 0, 0, 0.02],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "middle_tip", "middle_fle",
+        np.array([
+            [1, 0, 0, -0.015],
             [0, 1, 0, 0.09],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "ring_tip", "MCP4",
+        "middle_middle", "middle_fle",
         np.array([
-            [1, 0, 0, -0.013],
+            [1, 0, 0, 0.02],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "ring_tip", "ring_fle",
+        np.array([
+            [1, 0, 0, -0.012],
             [0, 1, 0, 0.083],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "little_tip", "MCP5",
+        "ring_middle", "ring_fle",
         np.array([
-            [1, 0, 0, -0.009],
-            [0, 1, 0, 0.065],
+            [1, 0, 0, 0.017],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "little_tip", "little_fle",
+        np.array([
+            [1, 0, 0, -0.01],
+            [0, 1, 0, 0.068],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "little_middle", "little_fle",
+        np.array([
+            [1, 0, 0, 0.015],
+            [0, 1, 0, 0.015],
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
 
 
 class MiaVirtualThumbJoint:
+    """Positive values will be mapped to max limit, negative values to min."""
     def __init__(self, real_joint_name):
         self.real_joint_name = real_joint_name
-        self.angle_threshold = 0.25 * math.pi
-        self.min_angle = 0.0
-        self.max_angle = 0.5 * math.pi
+        self.min_angle = -0.628
+        self.max_angle = 0.0
+        self.angle_threshold = 0.5 * (self.min_angle + self.max_angle)
 
     def make_virtual_joint(self, joint_name, tm):
         limits = tm.get_joint_limits(self.real_joint_name)
@@ -62,52 +97,144 @@ class MiaVirtualThumbJoint:
                 np.array([0, 0, 0]), limits, "revolute")
 
     def __call__(self, value):
-        if value >= self.angle_threshold:
+        if value >= 0:
             angle = self.max_angle
         else:
             angle = self.min_angle
         return {self.real_joint_name: angle}
 
 
+# TODO make this configurable
 manobase2miabase = pt.transform_from(
     R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-1.634, 1.662, -0.182])),
     p=np.array([0.002, 0.131, -0.024]))
+#manobase2miabase = pt.transform_from_exponential_coordinates(
+#    [-1.099, 0.772, -1.458, -0.105, 0.12, 0.041])
 MIA_CONFIG = {
     "joint_names":
-        {
-            "thumb": ["jMCP1", "jmetacarpus_binary"],
-            "index": ["jMCP2"],
-            "middle": ["jMCP3"],
-            "ring": ["jMCP4"],
-            "little": ["jMCP5"],
+        {  # map finger names to a list of joint names that control the finger
+            "thumb": ["j_thumb_fle"],
+            "index": ["j_index_fle"],
+            "middle": ["j_mrl_fle"],
+            "ring": ["j_ring_fle"],
+            "little": ["j_little_fle"],
         },
-    "base_frame": "wrist",
+    "base_frame": "palm",  # base frame of the hand
     "ee_frames":
-        {
+        {  # map finger name to the name of the tip frame in the kinematic model
             "thumb": "thumb_tip",
             "index": "index_tip",
             "middle": "middle_tip",
             "ring": "ring_tip",
             "little": "little_tip"
         },
-    "handbase2robotbase": manobase2miabase,
-    "model":
+    "intermediate_frames":
         {
+            "thumb": "thumb_middle",
+            "index": "index_middle",
+            "middle": "middle_middle",
+            "ring": "ring_middle",
+            "little": "little_middle"
+        },
+    "handbase2robotbase": manobase2miabase,  # transform from MANO base to hand base
+    "model":  # kinematic model definition
+        {
+            # this xacro is actually just plain urdf:
             "urdf": resource_filename(
                 "hand_embodiment",
-                "model/mia_hand_description/urdf/mia_hand.urdf"),
+                "model/mia_hand_description/urdf/mia_hand.urdf.xacro"),
             "package_dir": resource_filename("hand_embodiment", "model/"),
             "kinematic_model_hook": kinematic_model_hook_mia
         },
     "virtual_joints_callbacks":
-        {
-            "jmetacarpus_binary": MiaVirtualThumbJoint("jmetacarpus"),
-        }
+        {  # here we can introduce virtual joints that compute the state of real joints in a callback
+            "j_thumb_opp_binary": MiaVirtualThumbJoint("j_thumb_opp"),
+        },
+    "coupled_joints":
+    [  # coupled joints always have the same angle
+        ("middle", "j_mrl_fle"),
+        ("ring", "j_ring_fle"),
+        ("little", "j_little_fle"),
+    ]
 }
+
 
 ###############################################################################
 # Shadow dexterous hand
 ###############################################################################
+
+def kinematic_model_hook_shadow(kin):
+    """Extends kinematic model to include links for embodiment mapping."""
+    kin.tm.add_transform(
+        "thumb_tip", "rh_thtip",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.013],
+            [0, 0, 1, -0.01],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "thumb_middle", "rh_thmiddle",
+        np.array([
+            [1, 0, 0, 0.015],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0.01],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "index_tip", "rh_fftip",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.01],
+            [0, 0, 1, -0.01],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "index_middle", "rh_ffproximal",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0.02],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "middle_tip", "rh_mftip",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.01],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "middle_middle", "rh_mfproximal",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0.02],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "ring_tip", "rh_rftip",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.01],
+            [0, 0, 1, -0.013],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "ring_middle", "rh_rfproximal",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0.02],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "little_tip", "rh_lftip",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.01],
+            [0, 0, 1, -0.025],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "little_middle", "rh_lfproximal",
+        np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0.015],
+            [0, 0, 1, 0.02],
+            [0, 0, 0, 1]]))
 
 
 class ShadowVirtualF0Joint:
@@ -151,11 +278,19 @@ SHADOW_HAND_CONFIG = {
     "base_frame": "rh_forearm",
     "ee_frames":
         {
-            "thumb": "rh_thtip",
-            "index": "rh_fftip",
-            "middle": "rh_mftip",
-            "ring": "rh_rftip",
-            "little": "rh_lftip"
+            "thumb": "thumb_tip",
+            "index": "index_tip",
+            "middle": "middle_tip",
+            "ring": "ring_tip",
+            "little": "little_tip"
+        },
+    "intermediate_frames":
+        {
+            "thumb": "thumb_middle",
+            "index": "index_middle",
+            "middle": "middle_middle",
+            "ring": "ring_middle",
+            "little": "little_middle"
         },
     "handbase2robotbase": manobase2shadowbase,
     "model":
@@ -165,7 +300,7 @@ SHADOW_HAND_CONFIG = {
                 "model/sr_common/sr_description/urdf/shadow_hand.urdf"),
             "package_dir": resource_filename(
                 "hand_embodiment", "model/sr_common/"),
-            "kinematic_model_hook": lambda x: x  # TODO
+            "kinematic_model_hook": kinematic_model_hook_shadow
         },
     "virtual_joints_callbacks":
         {
@@ -174,4 +309,15 @@ SHADOW_HAND_CONFIG = {
             "rh_RFJ0": ShadowVirtualF0Joint("rh_RFJ2", "rh_RFJ1"),
             "rh_LFJ0": ShadowVirtualF0Joint("rh_LFJ2", "rh_LFJ1"),
         }
+}
+
+
+###############################################################################
+# Selection
+###############################################################################
+
+TARGET_CONFIG = {
+    "mia": MIA_CONFIG,
+    "shadow_hand": SHADOW_HAND_CONFIG,
+    "shadow": SHADOW_HAND_CONFIG
 }

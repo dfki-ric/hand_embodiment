@@ -136,6 +136,30 @@ class Kinematics:
         """
         return Chain(self.tm, joint_names, base_frame, ee_frame, verbose)
 
+    def create_multi_chain(self, joint_names, base_frame, ee_frames, verbose=0):
+        """Create kinematic chain with multiple tips.
+
+        Parameters
+        ----------
+        joint_names : list
+            Names of joints that should be used
+
+        base_frame : str
+            Name of the base link
+
+        ee_frames : list of str
+            Name of the end-effector links
+
+        verbose : int, optional (default: 0)
+            Verbosity level
+
+        Returns
+        -------
+        chain : MultiChain
+            Kinematic chain
+        """
+        return MultiChain(self.tm, joint_names, base_frame, ee_frames, verbose)
+
 
 class Chain:
     """Kinematic chain.
@@ -338,6 +362,111 @@ class Chain:
                 bounds[:, 1] = Q[t - 1] + interval
                 Q[t] = self.inverse(H[t], Q[t - 1], False, bounds)
         return Q
+
+
+class MultiChain:
+    """Kinematic chain with multiple end effectors.
+
+    Parameters
+    ----------
+    tm : FastUrdfTransformManager
+        Transformation manager
+
+    joint_names : list
+        Names of joints that should be used
+
+    base_frame : str
+        Name of the base link
+
+    ee_frames : list of str
+        Name of the end-effector links
+
+    verbose : int, optional (default: 0)
+        Verbosity level
+    """
+    def __init__(self, tm, joint_names, base_frame, ee_frames, verbose=0):
+        self.tm = tm
+        self.joint_names = joint_names
+        self.base_frame = base_frame
+        self.ee_frames = ee_frames
+        self.verbose = verbose
+
+        self.joint_limits = np.array([self.tm._joints[jn][4] for jn in self.joint_names])
+        for i in range(len(self.joint_limits)):
+            if np.isinf(self.joint_limits[i, 0]):
+                self.joint_limits[i, 0] = -math.pi
+            if np.isinf(self.joint_limits[i, 1]):
+                self.joint_limits[i, 1] = math.pi
+
+        self.n_joints = len(self.joint_names)
+        assert len(self.joint_limits) == self.n_joints
+
+        self.ee_indices = [self.tm.nodes.index(ee_frame)
+                           for ee_frame in self.ee_frames]
+        self.base_index = self.tm.nodes.index(base_frame)
+
+    def forward(self, joint_angles):
+        """Forward kinematics.
+
+        Parameters
+        ----------
+        joint_angles : array, shape (n_joints,)
+            Joint angles
+
+        Returns
+        -------
+        ee2base : array, shape (4, 4)
+            Transformation from end-effector to base frame
+        """
+        for i in range(self.n_joints):
+            self.tm.set_joint(self.joint_names[i], joint_angles[i])
+        return [self.tm.get_ee2base(ee_index, self.base_index)
+                for ee_index in self.ee_indices]
+
+    def ee_pos_error(self, joint_angles, desired_positions):
+        actual_positions = self.forward(joint_angles)
+        return np.linalg.norm(
+            [desired_pos - actual_pos[:3, 3]
+             for desired_pos, actual_pos in zip(
+                desired_positions, actual_positions)]).sum()
+
+    def inverse_position(self, desired_positions, initial_joint_angles, return_error=False, bounds=None):
+        """Inverse kinematics.
+
+        Parameters
+        ----------
+        desired_positions : array, shape (n_ee_frames, 3)
+            Desired positions of end-effectors in base frame
+
+        initial_joint_angles : array, shape (n_joints,)
+            Initial guess for joint angles
+
+        return_error : bool, optional (default: False)
+            Return error in addition to joint angles
+
+        bounds : array, shape (n_joints, 2), optional (default: joint limits)
+            Bounds for joint angle optimization
+
+        Returns
+        -------
+        joint_angles : array, shape (n_joints,)
+            Solution
+
+        error : float, optional
+            Pose error
+        """
+        if bounds is None:
+            bounds = self.joint_limits
+        res = minimize(
+            self.ee_pos_error, initial_joint_angles,
+            (desired_positions,), method="SLSQP", bounds=bounds)
+
+        if self.verbose >= 2:
+            print("Error: %g" % res["fun"])
+        if return_error:
+            return res["x"], res["fun"]
+        else:
+            return res["x"]
 
 
 @numba.jit(nopython=True, cache=True)

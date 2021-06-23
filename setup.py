@@ -16,7 +16,8 @@ if __name__ == "__main__":
         license="None",
         packages=["hand_embodiment"],
         package_data={"mocap": ["model/*"]},
-        install_requires=["numpy", "scipy", "pytransform3d", "open3d"],
+        install_requires=["numpy", "scipy", "pytransform3d", "open3d",
+                          "pyyaml", "tqdm"],
         extras_require={
             "test": ["pytest", "pytest-cov"]}
         )
