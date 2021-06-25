@@ -1,10 +1,10 @@
 """
 Example call:
 
-python bin/save_hand_trajectory.py mia --mia-thumb-adducted --demo-file data/QualisysAprilTest/april_test_009.tsv --output trajectory_009.csv
+python bin/convert_segments.py mia close --mia-thumb-adducted --demo-file data/20210616_april/metadata/Measurement24.json --output dataset_24_segment_%d.csv
 """
 import argparse
-from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
+from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.target_dataset import convert_mocap_to_robot
 
@@ -14,6 +14,9 @@ def parse_args():
     parser.add_argument(
         "hand", type=str,
         help="Name of the hand. Possible options: mia, shadow_hand")
+    parser.add_argument(
+        "segment_label", type=str,
+        help="Label of the segment that should be used.")
     parser.add_argument(
         "--demo-file", type=str,
         default="data/QualisysAprilTest/april_test_010.tsv",
@@ -27,12 +30,8 @@ def parse_args():
         default="examples/config/mano/20210520_april.yaml",
         help="MANO configuration file.")
     parser.add_argument(
-        "--output", type=str, default="trajectory.csv",
-        help="Output file (.csv).")
-    parser.add_argument(
-        "--start-idx", type=int, default=None, help="Start index.")
-    parser.add_argument(
-        "--end-idx", type=int, default=None, help="Start index.")
+        "--output", type=str, default="segment_%02d.csv",
+        help="Output file pattern (.csv).")
     parser.add_argument(
         "--show-mano", action="store_true", help="Show MANO mesh")
     parser.add_argument(
@@ -48,10 +47,8 @@ def parse_args():
 def main():
     args = parse_args()
 
-    dataset = HandMotionCaptureDataset(
-        args.demo_file, mocap_config=args.mocap_config,
-        skip_frames=args.skip_frames, start_idx=args.start_idx,
-        end_idx=args.end_idx)
+    dataset = SegmentedHandMotionCaptureDataset(
+        args.demo_file, args.segment_label, mocap_config=args.mocap_config)
 
     pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names)
 
@@ -59,16 +56,20 @@ def main():
         angle = 1.0 if args.mia_thumb_adducted else -1.0
         pipeline.set_constant_joint("j_thumb_opp_binary", angle)
 
-    output_dataset = convert_mocap_to_robot(dataset, pipeline, verbose=1)
+    for i in range(dataset.n_segments):
+        dataset.select_segment(i)
 
-    if args.hand == "mia":
-        j_min, j_max = pipeline.transform_manager_.get_joint_limits("j_thumb_opp")
-        thumb_opp = j_max if args.mia_thumb_adducted else j_min
-        output_dataset.add_constant_finger_joint("j_thumb_opp", thumb_opp)
+        output_dataset = convert_mocap_to_robot(dataset, pipeline, verbose=1)
 
-    output_dataset.export(args.output, pipeline.hand_config_)
-    # TODO convert frequency
-    print(f"Saved demonstration to '{args.output}'")
+        if args.hand == "mia":
+            j_min, j_max = pipeline.transform_manager_.get_joint_limits("j_thumb_opp")
+            thumb_opp = j_max if args.mia_thumb_adducted else j_min
+            output_dataset.add_constant_finger_joint("j_thumb_opp", thumb_opp)
+
+        output_filename = args.output % i
+        output_dataset.export(output_filename, pipeline.hand_config_)
+        # TODO convert frequency
+        print(f"Saved demonstration to '{output_filename}'")
 
 
 if __name__ == "__main__":
