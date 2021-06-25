@@ -1,6 +1,8 @@
 """
 Example call:
 
+python bin/convert_segments.py mia close --mia-thumb-adducted --demo-file data/20210616_april/metadata/Measurement16.json --output dataset_16_segment_%d.csv
+python bin/convert_segments.py mia close --mia-thumb-adducted --demo-file data/20210616_april/metadata/Measurement23.json --output dataset_23_segment_%d.csv
 python bin/convert_segments.py mia close --mia-thumb-adducted --demo-file data/20210616_april/metadata/Measurement24.json --output dataset_24_segment_%d.csv
 """
 import argparse
