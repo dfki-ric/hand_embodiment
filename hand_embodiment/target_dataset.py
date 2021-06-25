@@ -1,5 +1,6 @@
 import time
 import tqdm
+import copy
 import numpy as np
 import pandas as pd
 from pytransform3d import transformations as pt
@@ -18,7 +19,7 @@ class RoboticHandDataset:
     def append(self, ee_pose, finger_joint_angles):
         self.n_samples += 1
         self.ee_poses.append(ee_pose)
-        self.finger_joint_angles.append(finger_joint_angles)
+        self.finger_joint_angles.append(copy.deepcopy(finger_joint_angles))
 
     def add_constant_finger_joint(self, joint_name, angle):
         self.additional_finger_joint_angles[joint_name] = angle
