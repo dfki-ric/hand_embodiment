@@ -48,6 +48,7 @@ class MoCapToRobot:
 
     def estimate_hand(self, hand_markers, finger_markers):
         """Estimate MANO pose and joint angles."""
+        assert len(hand_markers) == 3, hand_markers
         self.record_mapping_.estimate(hand_markers, finger_markers)
 
     def estimate_robot(self):

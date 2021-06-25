@@ -1,8 +1,5 @@
 """Example calls:
-python examples/vis_markers_to_robot.py mia --demo-file data/Qualisys_pnp/20151005_r_AV82_PickAndPlace_BesMan_labeled_02.tsv --mocap-config examples/config/markers/20151005_besman.yaml --mano-config examples/config/mano/20151005_besman.yaml
-python examples/vis_markers_to_robot.py mia --demo-file data/QualisysAprilTest/april_test_005.tsv
-python examples/vis_markers_to_robot.py mia --demo-file data/20210610_april/Measurement2.tsv --mocap-config examples/config/markers/20210610_april.yaml --mano-config examples/config/mano/20210610_april.yaml --mia-thumb-adducted
-python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210616_april.yaml --skip-frames 1 --show-mano --demo-file data/20210616_april/Measurement24.tsv
+python examples/vis_segment_to_robot.py mia close --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement24.json --segment 0
 """
 
 import argparse
@@ -10,7 +7,7 @@ import time
 import numpy as np
 from pytransform3d import visualizer as pv
 from mocap.visualization import scatter
-from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
+from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 
 
@@ -20,9 +17,15 @@ def parse_args():
         "hand", type=str,
         help="Name of the hand. Possible options: mia, shadow_hand")
     parser.add_argument(
+        "segment_label", type=str,
+        help="Label of the segment that should be used.")
+    parser.add_argument(
         "--demo-file", type=str,
         default="data/QualisysAprilTest/april_test_010.tsv",
         help="Demonstration that should be used.")
+    parser.add_argument(
+        "--segment", type=int, default=0,
+        help="Segment of demonstration that should be used.")
     parser.add_argument(
         "--mocap-config", type=str,
         default="examples/config/markers/20210520_april.yaml",
@@ -32,14 +35,7 @@ def parse_args():
         default="examples/config/mano/20210520_april.yaml",
         help="MANO configuration file.")
     parser.add_argument(
-        "--start-idx", type=int, default=0, help="Start index.")
-    parser.add_argument(
-        "--end-idx", type=int, default=None, help="Start index.")
-    parser.add_argument(
         "--show-mano", action="store_true", help="Show MANO mesh")
-    parser.add_argument(
-        "--skip-frames", type=int, default=15,
-        help="Skip this number of frames between animated frames.")
     parser.add_argument(
         "--mia-thumb-adducted", action="store_true",
         help="Adduct thumb of Mia hand.")
@@ -70,10 +66,9 @@ def animation_callback(t, markers, hand, robot, dataset, pipeline, delay):
 def main():
     args = parse_args()
 
-    dataset = HandMotionCaptureDataset(
-        args.demo_file, mocap_config=args.mocap_config,
-        skip_frames=args.skip_frames, start_idx=args.start_idx,
-        end_idx=args.end_idx)
+    dataset = SegmentedHandMotionCaptureDataset(
+        args.demo_file, args.segment_label, mocap_config=args.mocap_config)
+    dataset.select_segment(args.segment)
 
     pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names,
                             verbose=1)
