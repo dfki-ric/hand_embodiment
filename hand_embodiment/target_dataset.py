@@ -47,14 +47,15 @@ class RoboticHandDataset:
         df.to_csv(filename)
 
 
-def convert_mocap_to_robot(dataset, pipeline, verbose=0):
+def convert_mocap_to_robot(dataset, pipeline, ee2origin=None, verbose=0):
     output_dataset = RoboticHandDataset(finger_names=dataset.finger_names)
     pipeline.reset()
 
     start_time = time.time()
     for t in tqdm.tqdm(range(dataset.n_steps)):
         ee_pose, joint_angles = pipeline.estimate(
-            dataset.get_hand_markers(t), dataset.get_finger_markers(t))
+            dataset.get_hand_markers(t), dataset.get_finger_markers(t),
+            ee2origin=ee2origin)
         output_dataset.append(ee_pose, joint_angles)
 
     if verbose:

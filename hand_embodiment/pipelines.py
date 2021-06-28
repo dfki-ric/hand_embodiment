@@ -51,19 +51,21 @@ class MoCapToRobot:
         assert len(hand_markers) == 3, hand_markers
         self.record_mapping_.estimate(hand_markers, finger_markers)
 
-    def estimate_robot(self):
+    def estimate_robot(self, ee2origin=None):
         """Estimate end-effector pose and joint angles of target system from MANO."""
         joint_angles = self.embodiment_mapping_.solve(
             self.record_mapping_.mano2world_,
             use_cached_forward_kinematics=True)
         ee_pose = self.transform_manager_.get_transform(
             self.hand_config_["base_frame"], "world")
+        if ee2origin is not None:
+            ee_pose = ee2origin.dot(ee_pose)
         return ee_pose, joint_angles
 
-    def estimate(self, hand_markers, finger_markers):
+    def estimate(self, hand_markers, finger_markers, ee2origin=None):
         """Estimate state of target system from MoCap markers."""
         self.estimate_hand(hand_markers, finger_markers)
-        return self.estimate_robot()
+        return self.estimate_robot(ee2origin)
 
     def make_hand_artist(self):
         """Create artist that visualizes internal state of the hand."""
