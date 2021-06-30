@@ -53,9 +53,13 @@ def convert_mocap_to_robot(dataset, pipeline, ee2origin=None, verbose=0):
 
     start_time = time.time()
     for t in tqdm.tqdm(range(dataset.n_steps)):
+        if ee2origin is not None and ee2origin.ndim == 3:
+            ee2origin_t = ee2origin[t]
+        else:
+            ee2origin_t = ee2origin
         ee_pose, joint_angles = pipeline.estimate(
             dataset.get_hand_markers(t), dataset.get_finger_markers(t),
-            ee2origin=ee2origin)
+            ee2origin=ee2origin_t)
         output_dataset.append(ee_pose, joint_angles)
 
     if verbose:
