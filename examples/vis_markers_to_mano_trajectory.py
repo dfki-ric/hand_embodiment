@@ -6,15 +6,13 @@ python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210616_apri
 """
 
 import argparse
-import time
 import numpy as np
 import pytransform3d.visualizer as pv
 from mocap.visualization import scatter
 
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
-from hand_embodiment.vis_utils import Insole
-
+from hand_embodiment.vis_utils import AnimationCallback
 
 MARKER_COLORS = [
     (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
@@ -60,47 +58,6 @@ def parse_args():
         "--insole", action="store_true", help="Visualize insole mesh.")
 
     return parser.parse_args()
-
-
-class AnimationCallback:
-    def __init__(self, fig, pipeline, args):
-        self.fig = fig
-        self.args = args
-
-        if args.hide_mano:
-            self.hand = None
-        else:
-            self.hand = pipeline.make_hand_artist()
-            self.hand.add_artist(self.fig)
-
-        if self.args.insole:
-            self.mesh = Insole()
-            self.mesh.add_artist(self.fig)
-
-    def __call__(self, t, markers, dataset, pipeline):
-        if t == 1:
-            pipeline.reset()
-            time.sleep(self.args.delay)
-
-        markers.set_data(dataset.get_markers(t))
-
-        artists = [markers]
-
-        if self.args.insole:
-            marker_names = dataset.config.get("additional_markers", ())
-            additional_markers = dataset.get_additional_markers(t)
-            insole_back = additional_markers[marker_names.index("insole_back")]
-            insole_front = additional_markers[marker_names.index("insole_front")]
-            self.mesh.set_data(insole_back, insole_front)
-            artists.append(self.mesh)
-
-        if not self.args.hide_mano:
-            pipeline.estimate_hand(
-                dataset.get_hand_markers(t), dataset.get_finger_markers(t))
-            self.hand.set_data()
-            artists.append(self.hand)
-
-        return artists
 
 
 def main():

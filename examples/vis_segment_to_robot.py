@@ -3,12 +3,12 @@ python examples/vis_segment_to_robot.py mia close --mocap-config examples/config
 """
 
 import argparse
-import time
 import numpy as np
 from pytransform3d import visualizer as pv
 from mocap.visualization import scatter
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
+from hand_embodiment.vis_utils import AnimationCallback
 
 
 def parse_args():
@@ -42,25 +42,10 @@ def parse_args():
     parser.add_argument(
         "--delay", type=float, default=0,
         help="Delay in seconds before starting the animation")
+    parser.add_argument(
+        "--insole", action="store_true", help="Visualize insole mesh.")
 
     return parser.parse_args()
-
-
-def animation_callback(t, markers, hand, robot, dataset, pipeline, delay):
-    if t == 1:
-        pipeline.reset()
-        time.sleep(delay)
-
-    pipeline.estimate(dataset.get_hand_markers(t),
-                      dataset.get_finger_markers(t))
-
-    markers.set_data(dataset.get_markers(t))
-    robot.set_data()
-    if hand is not None:
-        hand.set_data()
-        return markers, hand, robot
-    else:
-        return markers, robot
 
 
 def main():
@@ -80,19 +65,13 @@ def main():
     fig = pv.figure()
     fig.plot_transform(np.eye(4), s=1)
     markers = scatter(fig, dataset.get_markers(0), s=0.006)
-    robot = pipeline.make_robot_artist()
-    robot.add_artist(fig)
-    if args.show_mano:
-        hand = pipeline.make_hand_artist()
-        hand.add_artist(fig)
-    else:
-        hand = None
 
+    animation_callback = AnimationCallback(fig, pipeline, args, show_robot=True)
     fig.view_init(azim=45)
     fig.set_zoom(0.3)
     fig.animate(
         animation_callback, dataset.n_steps, loop=True,
-        fargs=(markers, hand, robot, dataset, pipeline, args.delay))
+        fargs=(markers, dataset, pipeline))
 
     fig.show()
 

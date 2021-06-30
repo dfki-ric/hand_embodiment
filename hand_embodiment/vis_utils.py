@@ -1,3 +1,5 @@
+import time
+
 from pkg_resources import resource_filename
 import numpy as np
 import open3d as o3d
@@ -89,7 +91,7 @@ class Insole(pv.Artist):
 
         self.mesh.transform(pt.invert_transform(pt.concat(self.insole_mesh2insole, self.insole2origin)))
 
-        self.insole2origin = insole_pose(insole_back, insole_front)
+        self.insole2origin = insole_pose(self.insole_back, self.insole_front)
 
         self.mesh.transform(pt.concat(self.insole_mesh2insole, self.insole2origin))
 
@@ -113,3 +115,56 @@ def insole_pose(insole_back, insole_front):
     z_axis = pr.norm_vector(pr.perpendicular_to_vectors(x_axis, y_axis))
     R = np.column_stack((x_axis, y_axis, z_axis))
     return pt.transform_from(R=R, p=insole_back)
+
+
+class AnimationCallback:
+    def __init__(self, fig, pipeline, args, show_robot=False):
+        self.fig = fig
+        self.args = args
+        self.show_robot = show_robot
+
+        self.show_mano = (hasattr(args, "hide_mano") and not args.hide_mano
+                          or hasattr(args, "show_mano") and args.show_mano)
+        if self.show_mano:
+            self.hand = pipeline.make_hand_artist()
+            self.hand.add_artist(self.fig)
+
+        if self.args.insole:
+            self.mesh = Insole()
+            self.mesh.add_artist(self.fig)
+
+        if show_robot:
+            self.robot = pipeline.make_robot_artist()
+            self.robot.add_artist(self.fig)
+
+    def __call__(self, t, markers, dataset, pipeline):
+        if t == 1:
+            pipeline.reset()
+            time.sleep(self.args.delay)
+
+        markers.set_data(dataset.get_markers(t))
+
+        artists = [markers]
+
+        if self.args.insole:
+            marker_names = dataset.config.get("additional_markers", ())
+            additional_markers = dataset.get_additional_markers(t)
+            insole_back = additional_markers[marker_names.index("insole_back")]
+            insole_front = additional_markers[marker_names.index("insole_front")]
+            self.mesh.set_data(insole_back, insole_front)
+            artists.append(self.mesh)
+
+        if self.show_mano or self.show_robot:
+            pipeline.estimate_hand(
+                dataset.get_hand_markers(t), dataset.get_finger_markers(t))
+
+        if self.show_mano:
+            self.hand.set_data()
+            artists.append(self.hand)
+
+        if self.show_robot:
+            pipeline.estimate_robot()
+            self.robot.set_data()
+            artists.append(self.robot)
+
+        return artists
