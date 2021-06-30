@@ -79,7 +79,7 @@ class Insole(pv.Artist):
         self.insole_front = np.array([1, 0, 0])
         self.insole_mesh2insole = pt.transform_from(
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([180, 0, -7])),
-            p=np.array([0.03, 0, 0]))
+            p=np.array([0.03, 0.07, -0.007]))
         self.insole2origin = np.copy(self.insole_mesh2insole)
         self.set_data(insole_back, insole_front)
 
