@@ -2,7 +2,7 @@
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/Qualisys_pnp/20151005_r_AV82_PickAndPlace_BesMan_labeled_02.tsv --mocap-config examples/config/markers/20151005_besman.yaml --mano-config examples/config/mano/20151005_besman.yaml
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/QualisysAprilTest/april_test_005.tsv
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210610_april/Measurement2.tsv --mocap-config examples/config/markers/20210610_april.yaml --mano-config examples/config/mano/20210610_april.yaml
-python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210616_april/Measurement16.tsv --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210610_april.yaml
+python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210616_april/Measurement16.tsv --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210610_april.yaml --insole
 """
 
 import argparse
@@ -13,6 +13,7 @@ from mocap.visualization import scatter
 
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
+from hand_embodiment.vis_utils import Insole
 
 
 MARKER_COLORS = [
@@ -55,24 +56,51 @@ def parse_args():
     parser.add_argument(
         "--delay", type=float, default=0,
         help="Delay in seconds before starting the animation")
+    parser.add_argument(
+        "--insole", action="store_true", help="Visualize insole mesh.")
 
     return parser.parse_args()
 
 
-def animation_callback(t, markers, hand, dataset, pipeline, delay):
-    if t == 1:
-        pipeline.reset()
-        time.sleep(delay)
+class AnimationCallback:
+    def __init__(self, fig, pipeline, args):
+        self.fig = fig
+        self.args = args
 
-    markers.set_data(dataset.get_markers(t))
+        if args.hide_mano:
+            self.hand = None
+        else:
+            self.hand = pipeline.make_hand_artist()
+            self.hand.add_artist(self.fig)
 
-    if hand is not None:
-        pipeline.estimate_hand(
-            dataset.get_hand_markers(t), dataset.get_finger_markers(t))
-        hand.set_data()
-        return markers, hand
-    else:
-        return markers
+        if self.args.insole:
+            self.mesh = Insole()
+            self.mesh.add_artist(self.fig)
+
+    def __call__(self, t, markers, dataset, pipeline):
+        if t == 1:
+            pipeline.reset()
+            time.sleep(self.args.delay)
+
+        markers.set_data(dataset.get_markers(t))
+
+        artists = [markers]
+
+        if self.args.insole:
+            marker_names = dataset.config.get("additional_markers", ())
+            additional_markers = dataset.get_additional_markers(t)
+            insole_back = additional_markers[marker_names.index("insole_back")]
+            insole_front = additional_markers[marker_names.index("insole_front")]
+            self.mesh.set_data(insole_back, insole_front)
+            artists.append(self.mesh)
+
+        if not self.args.hide_mano:
+            pipeline.estimate_hand(
+                dataset.get_hand_markers(t), dataset.get_finger_markers(t))
+            self.hand.set_data()
+            artists.append(self.hand)
+
+        return artists
 
 
 def main():
@@ -91,17 +119,13 @@ def main():
     markers = dataset.get_markers(0)
     markers = scatter(fig, markers, s=0.006, c=MARKER_COLORS[:len(markers)])
 
-    if args.hide_mano:
-        hand = None
-    else:
-        hand = pipeline.make_hand_artist()
-        hand.add_artist(fig)
+    animation_callback = AnimationCallback(fig, pipeline, args)
 
     fig.view_init(azim=45)
     fig.set_zoom(0.3)
     fig.animate(
         animation_callback, dataset.n_steps, loop=True,
-        fargs=(markers, hand, dataset, pipeline, args.delay))
+        fargs=(markers, dataset, pipeline))
 
     fig.show()
 

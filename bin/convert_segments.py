@@ -9,6 +9,7 @@ import argparse
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.target_dataset import convert_mocap_to_robot
+from hand_embodiment.vis_utils import insole_pose
 
 
 def parse_args():
@@ -69,9 +70,10 @@ def main():
             ####################################################################
             # python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement16.json --output dataset_16_segment_%d.csv --insole-hack
             import numpy as np
-            import pytransform3d.rotations as pr
             import pytransform3d.transformations as pt
             ee2origin = np.empty((dataset.n_steps, 4, 4))
+            insole_back = np.zeros(3)
+            insole_front = np.array([1, 0, 0])
             for t in range(dataset.n_steps):
                 additional_markers = dataset.get_additional_markers(t)
                 marker_names = dataset.config.get("additional_markers", ())
@@ -79,14 +81,7 @@ def main():
                     insole_front = additional_markers[marker_names.index("insole_front")]
                 if not any(np.isnan(additional_markers[marker_names.index("insole_back")])):
                     insole_back = additional_markers[marker_names.index("insole_back")]
-
-                x_axis = pr.norm_vector(insole_front - insole_back)
-                z_axis = pr.norm_vector(pr.perpendicular_to_vectors(x_axis, pr.unity))
-                if z_axis[2] < 0.0:  # make sure that z points up
-                    z_axis *= -1.0
-                y_axis = pr.norm_vector(pr.perpendicular_to_vectors(z_axis, x_axis))
-                R = np.column_stack((x_axis, y_axis, z_axis))
-                origin_pose = pt.transform_from(R=R, p=insole_back)
+                origin_pose = insole_pose(insole_back, insole_front)
                 ee2origin[t] = pt.invert_transform(origin_pose)
             ####################################################################
             ####################################################################
