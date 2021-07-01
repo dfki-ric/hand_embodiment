@@ -69,12 +69,11 @@ def main():
         pipeline.set_constant_joint("j_thumb_opp_binary", angle)
 
     fig = pv.figure()
-    fig.plot_transform(np.eye(4), s=1)
+    fig.plot_transform(np.eye(4), s=0.5)
     markers = scatter(fig, dataset.get_markers(0), s=0.006)
 
     animation_callback = AnimationCallback(fig, pipeline, args, show_robot=True)
     fig.view_init(azim=45)
-    fig.set_zoom(0.3)
     fig.animate(
         animation_callback, dataset.n_steps, loop=True,
         fargs=(markers, dataset, pipeline))

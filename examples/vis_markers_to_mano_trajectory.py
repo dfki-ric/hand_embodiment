@@ -73,14 +73,13 @@ def main():
                             verbose=1)
 
     fig = pv.figure()
-    fig.plot_transform(np.eye(4), s=1)
+    fig.plot_transform(np.eye(4), s=0.5)
     markers = dataset.get_markers(0)
     markers = scatter(fig, markers, s=0.006, c=MARKER_COLORS[:len(markers)])
 
     animation_callback = AnimationCallback(fig, pipeline, args)
 
     fig.view_init(azim=45)
-    fig.set_zoom(0.3)
     fig.animate(
         animation_callback, dataset.n_steps, loop=True,
         fargs=(markers, dataset, pipeline))
