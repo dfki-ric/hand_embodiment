@@ -75,6 +75,8 @@ class Insole(pv.Artist):
         filename = resource_filename(
             "hand_embodiment", "model/objects/insole.stl")
         self.mesh = o3d.io.read_triangle_mesh(filename)
+        self.mesh.paint_uniform_color(np.array([0.37, 0.28, 0.26]))
+        self.mesh.compute_triangle_normals()
         self.insole_back = np.zeros(3)
         self.insole_front = np.array([1, 0, 0])
         self.insole_mesh2insole = pt.transform_from(
