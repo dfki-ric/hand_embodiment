@@ -1,5 +1,6 @@
 """Example calls:
 python examples/vis_segment_to_robot.py mia close --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement24.json --segment 0
+python examples/vis_segment_to_robot.py mia close --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210701_april.yaml --mia-thumb-adducted --demo-file data/20210701_april/Measurement30.json --segment 0 --insole
 """
 
 import argparse
@@ -24,8 +25,8 @@ def parse_args():
         default="data/QualisysAprilTest/april_test_010.tsv",
         help="Demonstration that should be used.")
     parser.add_argument(
-        "--segment", type=int, default=0,
-        help="Segment of demonstration that should be used.")
+        "--segments", type=int, default=None, nargs="+",
+        help="Segments of demonstration that should be used.")
     parser.add_argument(
         "--mocap-config", type=str,
         default="examples/config/markers/20210520_april.yaml",
@@ -53,7 +54,11 @@ def main():
 
     dataset = SegmentedHandMotionCaptureDataset(
         args.demo_file, args.segment_label, mocap_config=args.mocap_config)
-    dataset.select_segment(args.segment)
+
+    segments = args.segments
+    if segments is None:
+        segments = list(range(dataset.n_segments))
+    dataset.select_segment(segments[0])
 
     pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names,
                             verbose=1)
@@ -69,9 +74,12 @@ def main():
     animation_callback = AnimationCallback(fig, pipeline, args, show_robot=True)
     fig.view_init(azim=45)
     fig.set_zoom(0.3)
-    fig.animate(
-        animation_callback, dataset.n_steps, loop=True,
-        fargs=(markers, dataset, pipeline))
+    while fig.visualizer.poll_events():
+        for segment_idx in segments:
+            dataset.select_segment(segment_idx)
+            fig.animate(
+                animation_callback, dataset.n_steps, loop=False,
+                fargs=(markers, dataset, pipeline))
 
     fig.show()
 
