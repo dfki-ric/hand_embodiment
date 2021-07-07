@@ -15,8 +15,8 @@ def parse_args():
         default="data/QualisysAprilTest/april_test_010.tsv",
         help="Demonstration that should be used.")
     parser.add_argument(
-        "--marker", type=str, default="index_tip",
-        help="Marker that should be used.")
+        "--markers", type=list, default=["index_tip", "hand_top"],
+        help="Markers that should be used.")
     parser.add_argument(
         "--frequency", type=float, default=40,
         help="Frequency at which the segmentation should be computed.")
@@ -25,19 +25,25 @@ def parse_args():
 
 def segment(args):
     trajectory = qualisys.read_qualisys_tsv(filename=args.filename)
-    trajectory = pandas_utils.extract_markers(trajectory, args.marker).copy()
+    trajectory = pandas_utils.extract_markers(trajectory, args.markers).copy()
     trajectory = interpolate_nan(trajectory)
     #trajectory = median_filter(trajectory, 3).iloc[2:]
     downsampled_trajectory = normalization.to_frequency(trajectory, args.frequency)
 
+    downsampled_trajectory = downsampled_trajectory
+
     time = conversion.array_from_dataframe(downsampled_trajectory, ["Time"])
     columns = pandas_utils.match_columns(
-        downsampled_trajectory, [args.marker], keep_time=False)
+        downsampled_trajectory, args.markers, keep_time=False)
     positions = conversion.array_from_dataframe(downsampled_trajectory, columns)
-    velocities = np.empty((len(time), 1))
+    velocities = np.empty((len(time), len(args.markers)))
     velocities[0] = 0.0
     for t in range(1, len(velocities)):
-        velocities[t] = np.linalg.norm(positions[t] - positions[t - 1]) / (time[t] - time[t - 1])
+        for m in range(len(args.markers)):
+            dp = (positions[t, m * 3:(m + 1) * 3]
+                  - positions[t - 1, m * 3:(m + 1) * 3])
+            dt = time[t] - time[t - 1]
+            velocities[t, m] = np.linalg.norm(dp) / dt
 
     positions, velocities = normalize_differences(positions, velocities)
 
@@ -76,7 +82,7 @@ LABEL = "label"
 SECOND_LABEL = "second_label"
 
 
-def save_metadata(filename, marker, trajectory, changepoints, output_filename):
+def save_metadata(filename, markers, trajectory, changepoints, output_filename):
     out = dict()
     out[LABELED_BY] = getpass.getuser()  # current username
     out[SUBJECT] = None
@@ -87,17 +93,19 @@ def save_metadata(filename, marker, trajectory, changepoints, output_filename):
     out[SEGMENTS] = []
 
     start_idx = 0
-    for changepoint in changepoints + [len(trajectory)]:
+    for changepoint in changepoints + [len(trajectory) - 1]:
         # create new segment and add it
+        start_time = float(trajectory["Time"].iloc[start_idx])
+        end_time = float(trajectory["Time"].iloc[changepoint])
         segment = {
             START_FRAME: start_idx,
-            START: float(trajectory["Time"].iloc[start_idx]),
+            START: start_time,
             END_FRAME: changepoint,
-            END: float(trajectory["Time"].iloc[changepoint]),
+            END: end_time,
             L1: "unknown",
             L2: "",
             LENGTH: int(changepoint) - int(start_idx),
-            MARKER: marker
+            MARKER: markers[0]
         }
         out[SEGMENTS].append(segment)
         start_idx = changepoint
@@ -106,10 +114,14 @@ def save_metadata(filename, marker, trajectory, changepoints, output_filename):
         json.dump(out, f, indent=4)
 
 
-if __name__ == "__main__":  # TODO make script part of segmentation library
+def main():
     args = parse_args()
     trajectory, changepoints = segment(args)
     output_filename = args.filename.replace(".tsv", ".json")
-    save_metadata(args.filename, args.marker, trajectory, changepoints,
+    save_metadata(args.filename, args.markers, trajectory, changepoints,
                   output_filename)
     print(f"Saved segments to '{output_filename}'.")
+
+
+if __name__ == "__main__":  # TODO make script part of segmentation library
+    main()
