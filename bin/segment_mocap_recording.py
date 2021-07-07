@@ -87,7 +87,7 @@ def save_metadata(filename, marker, trajectory, changepoints, output_filename):
     out[SEGMENTS] = []
 
     start_idx = 0
-    for changepoint in changepoints:
+    for changepoint in changepoints + [len(trajectory)]:
         # create new segment and add it
         segment = {
             START_FRAME: start_idx,
