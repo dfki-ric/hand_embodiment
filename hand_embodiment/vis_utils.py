@@ -75,13 +75,15 @@ class Insole(pv.Artist):
         filename = resource_filename(
             "hand_embodiment", "model/objects/insole.stl")
         self.mesh = o3d.io.read_triangle_mesh(filename)
+        scale = 0.30 / 0.27486159
+        self.mesh.vertices = o3d.utility.Vector3dVector(np.array(self.mesh.vertices) * scale)
         self.mesh.paint_uniform_color(np.array([0.37, 0.28, 0.26]))
         self.mesh.compute_triangle_normals()
         self.insole_back = np.zeros(3)
         self.insole_front = np.array([1, 0, 0])
         self.insole_mesh2insole = pt.transform_from(
-            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([180, 0, -7])),
-            p=np.array([0.03, 0.07, -0.007]))
+            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([180, 0, -4.5])),
+            p=np.array([0.04, 0.075, -0.007]))
         self.insole2origin = np.copy(self.insole_mesh2insole)
         self.set_data(insole_back, insole_front)
 
