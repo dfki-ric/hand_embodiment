@@ -8,7 +8,7 @@ import pytransform3d.transformations as pt
 import pytransform3d.visualizer as pv
 
 
-def make_coordinate_system(s):
+def make_coordinate_system(s, short_tick_length=0.01, long_tick_length=0.05):
     coordinate_system = o3d.geometry.LineSet()
     points = []
     lines = []
@@ -26,13 +26,13 @@ def make_coordinate_system(s):
         lines.append([len(points) - 2, len(points) - 1])
         colors.append(color)
         for i, step in enumerate(np.arange(-s, s + 0.01, 0.01)):
-            length = 0.05 if i % 5 == 0 else 0.01
+            tick_length = long_tick_length if i % 5 == 0 else short_tick_length
             start = [0, 0, 0]
             start[d] = step
-            start[(d + 2) % 3] = -length
+            start[(d + 2) % 3] = -tick_length
             end = [0, 0, 0]
             end[d] = step
-            end[(d + 2) % 3] = length
+            end[(d + 2) % 3] = tick_length
             points.extend([start, end])
             lines.append([len(points) - 2, len(points) - 1])
             colors.append(color)
@@ -81,10 +81,10 @@ class Insole(pv.Artist):
         self.mesh.compute_triangle_normals()
         self.insole_back = np.zeros(3)
         self.insole_front = np.array([1, 0, 0])
-        self.insole_mesh2insole = pt.transform_from(
+        self.insole_mesh2insole_markers = pt.transform_from(
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([180, 0, -4.5])),
             p=np.array([0.04, 0.075, -0.007]))
-        self.insole2origin = np.copy(self.insole_mesh2insole)
+        self.insole_markers2origin = np.copy(self.insole_mesh2insole_markers)
         self.set_data(insole_back, insole_front)
 
     def set_data(self, insole_back, insole_front):
@@ -93,11 +93,11 @@ class Insole(pv.Artist):
         if not any(np.isnan(insole_front)):
             self.insole_front = insole_front
 
-        self.mesh.transform(pt.invert_transform(pt.concat(self.insole_mesh2insole, self.insole2origin)))
+        self.mesh.transform(pt.invert_transform(pt.concat(self.insole_mesh2insole_markers, self.insole_markers2origin)))
 
-        self.insole2origin = insole_pose(self.insole_back, self.insole_front)
+        self.insole_markers2origin = insole_pose(self.insole_back, self.insole_front)
 
-        self.mesh.transform(pt.concat(self.insole_mesh2insole, self.insole2origin))
+        self.mesh.transform(pt.concat(self.insole_mesh2insole_markers, self.insole_markers2origin))
 
     @property
     def geometries(self):
