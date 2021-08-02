@@ -24,13 +24,17 @@ def parse_args():
         "--markers", type=list, default=["index_tip", "hand_top"],
         help="Markers that should be used.")
     parser.add_argument(
-        "--frequency", type=float, default=40,
+        "--frequency", type=float, default=25,
         help="Frequency at which the segmentation should be computed.")
+    parser.add_argument(
+        "--verbose", action="store_true", help="Print information.")
     return parser.parse_args()
 
 
 def segment(args):
-    trajectory = qualisys.read_qualisys_tsv(filename=args.filename)
+    assert args.filename.endswith(".tsv"), f"Not a tsv file: {args.filename}"
+    trajectory = qualisys.read_qualisys_tsv(
+        filename=args.filename, verbose=int(args.verbose))
     trajectory = pandas_utils.extract_markers(trajectory, args.markers).copy()
     trajectory = interpolate_nan(trajectory)
     #trajectory = median_filter(trajectory, 3).iloc[2:]

@@ -11,7 +11,6 @@ def main():
     insole_back = np.array([244.92, 539.448, 130.386]) / 1000.0
     insole_front = np.array([183.12, 362.562, 131.816]) / 1000.0
 
-    # TODO convert to VTK
     fig = pv.figure()
     coordinate_system = make_coordinate_system(s=0.3, short_tick_length=0.01, long_tick_length=0.1)
     fig.add_geometry(coordinate_system)
