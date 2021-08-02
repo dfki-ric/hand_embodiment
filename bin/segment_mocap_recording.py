@@ -1,3 +1,8 @@
+"""
+Example call:
+
+python bin/segment_mocap_recording.py data/20210701_april/Measurement31.tsv  --verbose
+"""
 import argparse
 import numpy as np
 from mocap import qualisys, pandas_utils, conversion, normalization
