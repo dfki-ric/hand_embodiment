@@ -132,8 +132,10 @@ class AnimationCallback:
             self.hand.add_artist(self.fig)
 
         if self.args.insole:
-            self.mesh = Insole()
-            self.mesh.add_artist(self.fig)
+            self.object_mesh = Insole()
+            self.object_mesh.add_artist(self.fig)
+            self.object_frame = pv.Frame(np.eye(4), s=0.1)
+            self.object_frame.add_artist(self.fig)
 
         if show_robot:
             self.robot = pipeline.make_robot_artist()
@@ -153,8 +155,10 @@ class AnimationCallback:
             additional_markers = dataset.get_additional_markers(t)
             insole_back = additional_markers[marker_names.index("insole_back")]
             insole_front = additional_markers[marker_names.index("insole_front")]
-            self.mesh.set_data(insole_back, insole_front)
-            artists.append(self.mesh)
+            self.object_mesh.set_data(insole_back, insole_front)
+            artists.append(self.object_mesh)
+            self.object_frame.set_data(insole_pose(insole_back, insole_front))
+            artists.append(self.object_frame)
 
         if self.show_mano or self.show_robot:
             pipeline.estimate_hand(
