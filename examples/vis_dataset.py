@@ -35,7 +35,7 @@ def main():
     tm.add_transform("world", hand_config["base_frame"], np.eye(4))
 
     fig = pv.figure()
-    fig.plot_transform(np.eye(4), s=0.1)
+    fig.plot_transform(np.eye(4), s=0.3)
     graph = pv.Graph(
         tm, "world", show_frames=True,
         whitelist=[hand_config["base_frame"]], show_connections=False,
