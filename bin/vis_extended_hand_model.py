@@ -1,7 +1,7 @@
 import argparse
 import pytransform3d.visualizer as pv
 from hand_embodiment.embodiment import load_kinematic_model
-from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
+from hand_embodiment.target_configurations import TARGET_CONFIG
 
 
 def main():
@@ -16,13 +16,7 @@ def main():
 
     fig = pv.figure()
 
-    if args.hand == "shadow_hand":
-        hand_config = SHADOW_HAND_CONFIG
-    elif args.hand == "mia":
-        hand_config = MIA_CONFIG
-    else:
-        raise Exception(f"Unknown hand: '{args.hand}'")
-
+    hand_config = TARGET_CONFIG[args.hand]
     kin = load_kinematic_model(hand_config)
 
     for jn in kin.tm._joints:
