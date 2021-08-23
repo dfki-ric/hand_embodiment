@@ -114,8 +114,10 @@ class MiaVirtualThumbJoint:
 #manobase2miabase = pt.transform_from(
 #    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-1.634, 1.662, -0.182])),
 #    p=np.array([0.002, 0.131, -0.024]))
+#manobase2miabase = pt.transform_from_exponential_coordinates(
+#    [-1.348, 0.865, -1.38, -0.105, 0.12, 0.041])
 manobase2miabase = pt.transform_from_exponential_coordinates(
-    [-1.348, 0.865, -1.38, -0.105, 0.12, 0.041])
+    [-1.006, 0.865, -1.723, -0.108, 0.088, 0.011])
 #manobase2miabase = pt.transform_from_exponential_coordinates(
 #    [-1.348, 0.476, -1.707, -0.088, 0.078, 0.014])
 MIA_CONFIG = {

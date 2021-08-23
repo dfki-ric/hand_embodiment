@@ -2,9 +2,9 @@
 python examples/vis_markers_to_robot.py mia --demo-file data/Qualisys_pnp/20151005_r_AV82_PickAndPlace_BesMan_labeled_02.tsv --mocap-config examples/config/markers/20151005_besman.yaml --mano-config examples/config/mano/20151005_besman.yaml
 python examples/vis_markers_to_robot.py mia --demo-file data/QualisysAprilTest/april_test_005.tsv
 python examples/vis_markers_to_robot.py mia --demo-file data/20210610_april/Measurement2.tsv --mocap-config examples/config/markers/20210610_april.yaml --mano-config examples/config/mano/20210610_april.yaml --mia-thumb-adducted
-python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210616_april.yaml --skip-frames 1 --show-mano --demo-file data/20210616_april/Measurement24.tsv
-python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210616_april.yaml --skip-frames 1 --demo-file data/20210701_april/Measurement30.tsv --insole
-python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20210616_april.yaml --skip-frames 1 --demo-file data/20210819_april/20210819_r_WK37_insole_set0.tsv --insole
+python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210616_april.yaml --skip-frames 1 --show-mano --demo-file data/20210616_april/Measurement24.tsv --mia-thumb-adducted
+python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210616_april.yaml --skip-frames 1 --demo-file data/20210701_april/Measurement30.tsv --insole --mia-thumb-adducted
+python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20210616_april.yaml --skip-frames 1 --demo-file data/20210819_april/20210819_r_WK37_insole_set0.tsv --insole --show-mano --mia-thumb-adducted
 """
 
 import argparse

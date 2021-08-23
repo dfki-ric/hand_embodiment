@@ -5,11 +5,11 @@ import open3d as o3d
 from open3d.visualization import gui
 import pytransform3d.visualizer as pv
 import pytransform3d.transformations as pt
-import pytransform3d.rotations as pr
-from mocap.mano import HandState
+from mocap.mano import HandState, apply_shape_parameters
 from hand_embodiment.record_markers import make_finger_kinematics
 from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
 from hand_embodiment.embodiment import HandEmbodiment
+from hand_embodiment.config import load_mano_config
 
 
 class Figure:
@@ -180,14 +180,14 @@ class On:
             collision_objects = self.graph.collision_objects
             self.graph.collision_objects = {}
 
-        graph.set_data()
+        self.graph.set_data()
 
         # self.fig.main_scene.update_geometry(g) does not exist yet
         # remove and add everything
         for g in self.fig.geometry_names:
             self.fig.main_scene.remove_geometry(g)
         self.fig.geometry_names = []
-        graph.add_artist(self.fig)
+        self.graph.add_artist(self.fig)
 
         if not self.graph.show_visuals:
             self.graph.visuals = visuals
@@ -281,63 +281,75 @@ def parse_args():
     parser.add_argument(
         "--hide-mano", action="store_true", help="Don't show MANO mesh")
     parser.add_argument(
-        "--config_filename", type=str,
+        "--config-filename", type=str,
         default="examples/config/april_test_mano.yaml",
         help="MANO configuration file.")
 
     return parser.parse_args()
 
 
-args = parse_args()
+def main():
+    args = parse_args()
 
-if args.hand == "shadow_hand":
-    hand_config = SHADOW_HAND_CONFIG
-    mano_pose = np.zeros(48)
-elif args.hand == "mia":
-    hand_config = MIA_CONFIG
-    mano_pose = np.array([
-        0, 0, 0,
-        -0.068, 0, 0.068,
-        0, 0.068, 0.068,
-        0, 0, 0.615,
-        0, 0.137, 0.068,
-        0, 0, 0.137,
-        0, 0, 0.683,
-        0, 0.205, -0.137,
-        0, 0.068, 0.205,
-        0, 0, 0.205,
-        0, 0.137, -0.137,
-        0, -0.068, 0.273,
-        0, 0, 0.478,
-        0.615, 0.068, 0.273,
-        0, 0, 0,
-        0, 0, 0
-    ])
-else:
-    raise Exception(f"Unknown hand: '{args.hand}'")
+    if args.hand == "shadow_hand":
+        hand_config = SHADOW_HAND_CONFIG
+        mano_pose = np.zeros(48)
+    elif args.hand == "mia":
+        hand_config = MIA_CONFIG
+        mano_pose = np.array([
+            0, 0, 0,
+            -0.068, 0, 0.068,
+            0, 0.068, 0.068,
+            0, 0, 0.615,
+            0, 0.137, 0.068,
+            0, 0, 0.137,
+            0, 0, 0.683,
+            0, 0.205, -0.137,
+            0, 0.068, 0.205,
+            0, 0, 0.205,
+            0, 0.137, -0.137,
+            0, -0.068, 0.273,
+            0, 0, 0.478,
+            0.615, 0.068, 0.273,
+            0, 0, 0,
+            0, 0, 0
+        ])
+    else:
+        raise Exception(f"Unknown hand: '{args.hand}'")
 
-fig = Figure(args.hand, 1920, 1080, ax_s=0.2)
+    fig = Figure(args.hand, 1920, 1080, ax_s=0.2)
 
-hand_state = HandState(left=False)
-if not args.hide_mano:
-    fig.add_hand_mesh(hand_state.hand_mesh, hand_state.material)
-emb = HandEmbodiment(
-    hand_state, hand_config,
-    use_fingers=("thumb", "index", "middle", "ring", "little"))
+    hand_state = HandState(left=False)
+    # TODO refactor
+    _, shape_parameters = load_mano_config(args.config_filename)
+    hand_state.betas[:] = shape_parameters
+    hand_state.pose_parameters["J"], \
+        hand_state.pose_parameters["v_template"] = \
+        apply_shape_parameters(betas=shape_parameters,
+                               **hand_state.shape_parameters)
+    if not args.hide_mano:
+        fig.add_hand_mesh(hand_state.hand_mesh, hand_state.material)
+    emb = HandEmbodiment(
+        hand_state, hand_config,
+        use_fingers=("thumb", "index", "middle", "ring", "little"))
 
-whitelist = [
-    node for node in emb.transform_manager_.nodes
-    if not (node.startswith("visual:") or
-            node.startswith("collision:") or
-            node.startswith("inertial_frame:"))]
-graph = pv.Graph(
-    emb.transform_manager_, "world", show_frames=True,
-    show_connections=False, show_visuals=True, show_collision_objects=True,
-    show_name=False, s=0.02, whitelist=whitelist)
-graph.add_artist(fig)
+    whitelist = [
+        node for node in emb.transform_manager_.nodes
+        if not (node.startswith("visual:") or
+                node.startswith("collision:") or
+                node.startswith("inertial_frame:"))]
+    graph = pv.Graph(
+        emb.transform_manager_, "world", show_frames=True,
+        show_connections=False, show_visuals=True, show_collision_objects=True,
+        show_name=False, s=0.02, whitelist=whitelist)
+    graph.add_artist(fig)
 
-make_mia_widgets(fig, graph, emb.transform_manager_)
-make_mano_widgets(fig, hand_state, graph, emb.transform_manager_, emb,
-                  not args.hide_mano, hand_config, mano_pose)
+    make_mia_widgets(fig, graph, emb.transform_manager_)
+    make_mano_widgets(fig, hand_state, graph, emb.transform_manager_, emb,
+                      not args.hide_mano, hand_config, mano_pose)
 
-fig.show()
+    fig.show()
+
+
+if __name__ == "__main__":
+    main()
