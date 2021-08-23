@@ -32,7 +32,7 @@ class MotionCaptureDatasetBase:
             with open(mocap_config, "r") as f:
                 self.config = yaml.safe_load(f)
         else:
-            self.config = dict()
+            self.config = dict(scale=1.0)
         self.config.update(kwargs)
 
         self.finger_names = self.config["finger_names"]
@@ -164,6 +164,7 @@ class HandMotionCaptureDataset(MotionCaptureDatasetBase):
         super(HandMotionCaptureDataset, self).__init__(mocap_config, **kwargs)
 
         trajectory = qualisys.read_qualisys_tsv(filename=filename)
+        trajectory *= self.config["scale"]
         trajectory = pandas_utils.extract_markers(
             trajectory, self.marker_names).copy()
         trajectory = self._convert_zeros_to_nans(trajectory, self.marker_names)
