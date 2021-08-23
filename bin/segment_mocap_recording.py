@@ -42,7 +42,7 @@ def segment(args):
         filename=args.filename, verbose=int(args.verbose))
     trajectory = pandas_utils.extract_markers(trajectory, args.markers).copy()
     trajectory = interpolate_nan(trajectory)
-    #trajectory = median_filter(trajectory, 3).iloc[2:]
+    #trajectory = median_filter(trajectory, 3)
     downsampled_trajectory = normalization.to_frequency(trajectory, args.frequency)
 
     downsampled_trajectory = downsampled_trajectory

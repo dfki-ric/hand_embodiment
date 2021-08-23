@@ -51,6 +51,13 @@ class MotionCaptureDatasetBase:
         self.finger_trajectories = {}
         self.additional_trajectories = []
 
+    def _scale(self, trajectory):
+        data_columns = list(trajectory.columns)
+        data_columns.remove("Time")
+        new_trajectory = trajectory.copy()
+        new_trajectory[data_columns] *= self.config["scale"]
+        return new_trajectory
+
     def _hand_trajectories(self, hand_marker_names, trajectory):
         hand_trajectories = []
         assert len(hand_marker_names) == 3, hand_marker_names
@@ -166,7 +173,7 @@ class HandMotionCaptureDataset(MotionCaptureDatasetBase):
         super(HandMotionCaptureDataset, self).__init__(mocap_config, **kwargs)
 
         trajectory = qualisys.read_qualisys_tsv(filename=filename)
-        trajectory *= self.config["scale"]
+        trajectory = self._scale(trajectory)
         trajectory = pandas_utils.extract_markers(
             trajectory, self.marker_names).copy()
         trajectory = self._convert_zeros_to_nans(trajectory, self.marker_names)
@@ -174,7 +181,7 @@ class HandMotionCaptureDataset(MotionCaptureDatasetBase):
         trajectory = trajectory.iloc[::skip_frames]
         if interpolate_missing_markers:
             trajectory = interpolate_nan(trajectory)
-            trajectory = median_filter(trajectory, 3).iloc[2:]
+            trajectory = median_filter(trajectory, 3)
 
         self.n_steps = len(trajectory)
 
@@ -231,6 +238,7 @@ class SegmentedHandMotionCaptureDataset(MotionCaptureDatasetBase):
         self.selected_segment = i
 
         trajectory = self.segments[self.selected_segment]
+        trajectory = self._scale(trajectory)
 
         self.n_steps = len(trajectory)
         self._hand_trajectories(self.config["hand_marker_names"], trajectory)
