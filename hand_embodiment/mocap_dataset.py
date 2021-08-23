@@ -32,7 +32,9 @@ class MotionCaptureDatasetBase:
             with open(mocap_config, "r") as f:
                 self.config = yaml.safe_load(f)
         else:
-            self.config = dict(scale=1.0)
+            self.config = dict()
+        if "scale" not in self.config:
+            self.config["scale"] = 1.0
         self.config.update(kwargs)
 
         self.finger_names = self.config["finger_names"]
