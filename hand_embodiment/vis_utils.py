@@ -121,11 +121,11 @@ def insole_pose(insole_back, insole_front):
 
 def pillow_pose(pillow_left, pillow_right, pillow_top):
     """Compute pose of pillow."""
-    pillow_middle = 0.5 * (pillow_left + pillow_right)
-    middle2top = pillow_top - pillow_middle
-    middle2right = pillow_right - pillow_middle
+    right2top = pillow_top - pillow_right
+    right2left = pillow_left - pillow_right
     pose = np.eye(4)
-    pose[:3, :3] = pr.matrix_from_two_vectors(middle2top, middle2right)
+    pose[:3, :3] = pr.matrix_from_two_vectors(right2top, right2left)
+    pillow_middle = 0.5 * (pillow_left + pillow_right) + 0.5 * right2top
     pose[:3, 3] = pillow_middle
     return pose
 
@@ -145,6 +145,11 @@ class AnimationCallback:
         if self.args.insole:
             self.object_mesh = Insole()
             self.object_mesh.add_artist(self.fig)
+            self.object_frame = pv.Frame(np.eye(4), s=0.1)
+            self.object_frame.add_artist(self.fig)
+
+        if self.args.pillow:
+            # TODO self.object_mesh
             self.object_frame = pv.Frame(np.eye(4), s=0.1)
             self.object_frame.add_artist(self.fig)
 
@@ -169,6 +174,16 @@ class AnimationCallback:
             self.object_mesh.set_data(insole_back, insole_front)
             artists.append(self.object_mesh)
             self.object_frame.set_data(insole_pose(insole_back, insole_front))
+            artists.append(self.object_frame)
+
+        if self.args.pillow:
+            marker_names = dataset.config.get("additional_markers", ())
+            additional_markers = dataset.get_additional_markers(t)
+            pillow_left = additional_markers[marker_names.index("pillow_left")]
+            pillow_right = additional_markers[marker_names.index("pillow_right")]
+            pillow_top = additional_markers[marker_names.index("pillow_top")]
+            self.object_frame.set_data(pillow_pose(
+                pillow_left, pillow_right, pillow_top))
             artists.append(self.object_frame)
 
         if self.show_mano or self.show_robot:
