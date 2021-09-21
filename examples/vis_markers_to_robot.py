@@ -5,6 +5,7 @@ python examples/vis_markers_to_robot.py mia --demo-file data/20210610_april/Meas
 python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210616_april.yaml --skip-frames 1 --show-mano --demo-file data/20210616_april/Measurement24.tsv --mia-thumb-adducted
 python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210616_april.yaml --skip-frames 1 --demo-file data/20210701_april/Measurement30.tsv --insole --mia-thumb-adducted
 python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20210616_april.yaml --skip-frames 1 --demo-file data/20210819_april/20210819_r_WK37_insole_set0.tsv --insole --show-mano --mia-thumb-adducted
+python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --skip-frames 1 --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.tsv --show-mano --mia-thumb-adducted
 """
 
 import argparse

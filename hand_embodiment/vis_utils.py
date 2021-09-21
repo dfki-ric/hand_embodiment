@@ -119,6 +119,17 @@ def insole_pose(insole_back, insole_front):
     return pt.transform_from(R=R, p=insole_back)
 
 
+def pillow_pose(pillow_left, pillow_right, pillow_top):
+    """Compute pose of pillow."""
+    pillow_middle = 0.5 * (pillow_left + pillow_right)
+    middle2top = pillow_top - pillow_middle
+    middle2right = pillow_right - pillow_middle
+    pose = np.eye(4)
+    pose[:3, :3] = pr.matrix_from_two_vectors(middle2top, middle2right)
+    pose[:3, 3] = pillow_middle
+    return pose
+
+
 class AnimationCallback:
     def __init__(self, fig, pipeline, args, show_robot=False):
         self.fig = fig

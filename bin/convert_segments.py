@@ -6,12 +6,13 @@ python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config exa
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement24.json --output dataset_24_segment_%d.csv
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210701_april/Measurement30.json --output dataset_30_segment_%d.csv --insole-hack
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210819_april.yaml --demo-file data/20210819_april/20210819_r_WK37_insole_set0.json --output 20210819_r_WK37_insole_set0_%d.csv --insole-hack
+python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210826_april.yaml --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.json --output 20210826_r_WK37_small_pillow_set0_%d.csv --pillow-hack
 """
 import argparse
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.target_dataset import convert_mocap_to_robot
-from hand_embodiment.vis_utils import insole_pose
+from hand_embodiment.vis_utils import insole_pose, pillow_pose
 
 
 def parse_args():
@@ -48,6 +49,9 @@ def parse_args():
     parser.add_argument(
         "--insole-hack", action="store_true",
         help="Save insole pose at the beginning of the segment.")
+    parser.add_argument(
+        "--pillow-hack", action="store_true",
+        help="Save pillow pose at the beginning of the segment.")
 
     return parser.parse_args()
 
@@ -87,6 +91,24 @@ def main():
                 ee2origin[t] = pt.invert_transform(origin_pose)
             ####################################################################
             ####################################################################
+        elif args.pillow_hack:
+            import numpy as np
+            import pytransform3d.transformations as pt
+            ee2origin = np.empty((dataset.n_steps, 4, 4))
+            pillow_left = np.zeros(3)
+            pillow_right = np.array([1, 0, 0])
+            pillow_top = np.array([1, 1, 0])
+            for t in range(dataset.n_steps):
+                additional_markers = dataset.get_additional_markers(t)
+                marker_names = dataset.config.get("additional_markers", ())
+                if not any(np.isnan(additional_markers[marker_names.index("pillow_left")])):
+                    pillow_left = additional_markers[marker_names.index("pillow_left")]
+                if not any(np.isnan(additional_markers[marker_names.index("pillow_right")])):
+                    pillow_right = additional_markers[marker_names.index("pillow_right")]
+                if not any(np.isnan(additional_markers[marker_names.index("pillow_top")])):
+                    pillow_top = additional_markers[marker_names.index("pillow_top")]
+                origin_pose = pillow_pose(pillow_left, pillow_right, pillow_top)
+                ee2origin[t] = pt.invert_transform(origin_pose)
         else:
             ee2origin = None
 
