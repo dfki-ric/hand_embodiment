@@ -37,4 +37,4 @@ additional_markers:
 - pillow_top
 - pillow_left
 - pillow_right
-scale: 1.0  # TODO check
+scale: 1.0

@@ -51,6 +51,8 @@ def parse_args():
         help="Delay in seconds before starting the animation")
     parser.add_argument(
         "--insole", action="store_true", help="Visualize insole mesh.")
+    parser.add_argument(
+        "--pillow", action="store_true", help="Visualize pillow.")
 
     return parser.parse_args()
 

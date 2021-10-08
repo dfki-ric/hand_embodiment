@@ -119,6 +119,50 @@ def insole_pose(insole_back, insole_front):
     return pt.transform_from(R=R, p=insole_back)
 
 
+class PillowSmall(pv.Artist):
+    """Representation of small pillow mesh."""
+    def __init__(
+            self, pillow_left=np.array([0, 1, 0]),
+            pillow_right=np.array([0, 0, 0]), pillow_top=np.array([1, 0, 0])):
+        filename = resource_filename(
+            "hand_embodiment", "model/objects/pillow_small.stl")
+        self.mesh = o3d.io.read_triangle_mesh(filename)
+        self.mesh.compute_triangle_normals()
+        self.pillow_left = pillow_left
+        self.pillow_right = pillow_right
+        self.pillow_top = pillow_top
+        self.pillow_mesh2pillow_markers = pt.transform_from(
+            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+            p=np.array([0.195, 0.195, 0.115]))
+        self.pillow_markers2origin = np.copy(self.pillow_mesh2pillow_markers)
+        self.set_data(pillow_left, pillow_right, pillow_top)
+
+    def set_data(self, pillow_left, pillow_right, pillow_top):
+        if not any(np.isnan(pillow_left)):
+            self.pillow_left = pillow_left
+        if not any(np.isnan(pillow_right)):
+            self.pillow_right = pillow_right
+        if not any(np.isnan(pillow_top)):
+            self.pillow_top = pillow_top
+
+        self.mesh.transform(pt.invert_transform(pt.concat(self.pillow_mesh2pillow_markers, self.pillow_markers2origin)))
+
+        self.pillow_markers2origin = pillow_pose(self.pillow_left, self.pillow_right, self.pillow_top)
+
+        self.mesh.transform(pt.concat(self.pillow_mesh2pillow_markers, self.pillow_markers2origin))
+
+    @property
+    def geometries(self):
+        """Expose geometries.
+
+        Returns
+        -------
+        geometries : list
+            List of geometries that can be added to the visualizer.
+        """
+        return [self.mesh]
+
+
 def pillow_pose(pillow_left, pillow_right, pillow_top):
     """Compute pose of pillow."""
     right2top = pillow_top - pillow_right
@@ -149,7 +193,8 @@ class AnimationCallback:
             self.object_frame.add_artist(self.fig)
 
         if self.args.pillow:
-            # TODO self.object_mesh
+            self.object_mesh = PillowSmall()
+            self.object_mesh.add_artist(self.fig)
             self.object_frame = pv.Frame(np.eye(4), s=0.1)
             self.object_frame.add_artist(self.fig)
 
@@ -182,6 +227,8 @@ class AnimationCallback:
             pillow_left = additional_markers[marker_names.index("pillow_left")]
             pillow_right = additional_markers[marker_names.index("pillow_right")]
             pillow_top = additional_markers[marker_names.index("pillow_top")]
+            self.object_mesh.set_data(pillow_left, pillow_right, pillow_top)
+            artists.append(self.object_mesh)
             self.object_frame.set_data(pillow_pose(
                 pillow_left, pillow_right, pillow_top))
             artists.append(self.object_frame)
