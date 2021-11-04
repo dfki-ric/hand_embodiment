@@ -9,6 +9,8 @@ python examples/vis_markers_to_robot.py mia --mocap-config examples/config/marke
 """
 
 import argparse
+import time
+
 import numpy as np
 from pytransform3d import visualizer as pv
 from mocap.visualization import scatter
@@ -50,6 +52,9 @@ def parse_args():
         "--delay", type=float, default=0,
         help="Delay in seconds before starting the animation")
     parser.add_argument(
+        "--measure-time", action="store_true",
+        help="Measure time of record and embodiment mapping.")
+    parser.add_argument(
         "--insole", action="store_true", help="Visualize insole mesh.")
     parser.add_argument(
         "--pillow", action="store_true", help="Visualize pillow.")
@@ -66,7 +71,7 @@ def main():
         end_idx=args.end_idx)
 
     pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names,
-                            verbose=1)
+                            verbose=1, measure_time=args.measure_time)
 
     if args.hand == "mia":
         angle = 1.0 if args.mia_thumb_adducted else -1.0
@@ -78,9 +83,17 @@ def main():
 
     animation_callback = AnimationCallback(fig, pipeline, args, show_robot=True)
     fig.view_init(azim=45)
-    fig.animate(
-        animation_callback, dataset.n_steps, loop=True,
-        fargs=(markers, dataset, pipeline))
+    while True:
+        fig.animate(
+            animation_callback, dataset.n_steps, loop=False,
+            fargs=(markers, dataset, pipeline))
+        if args.measure_time:
+            print(f"Average frequency of record mapping: "
+                  f"{1.0 / np.mean(pipeline.record_mapping_.timings_)} Hz")
+            print(f"Average frequency of embodiment mapping: "
+                  f"{1.0 / np.mean(pipeline.embodiment_mapping_.timings_)} Hz")
+            pipeline.clear_timings()
+            time.sleep(5)
 
     fig.show()
 

@@ -20,19 +20,23 @@ class MoCapToRobot:
 
     verbose : int, optional (default: 0)
         Verbosity level
+
+    measure_time : bool
+        Measure computation time for each frame.
     """
-    def __init__(self, hand, mano_config, use_fingers, verbose=0):
+    def __init__(self, hand, mano_config, use_fingers, verbose=0,
+                 measure_time=False):
         self.hand_config_ = TARGET_CONFIG[hand]
         mano2hand_markers, betas = load_mano_config(mano_config)
         self.record_mapping_ = MarkerBasedRecordMapping(
             left=False, mano2hand_markers=mano2hand_markers,
-            shape_parameters=betas, verbose=verbose)
+            shape_parameters=betas, verbose=verbose, measure_time=measure_time)
         self.embodiment_mapping_ = HandEmbodiment(
             self.record_mapping_.hand_state_, self.hand_config_,
             use_fingers=use_fingers,
             mano_finger_kinematics=self.record_mapping_.mano_finger_kinematics_,
             initial_handbase2world=self.record_mapping_.mano2world_,
-            verbose=verbose)
+            verbose=verbose, measure_time=measure_time)
 
     @property
     def transform_manager_(self):
@@ -81,3 +85,8 @@ class MoCapToRobot:
             whitelist=[self.hand_config_["base_frame"]], show_connections=False,
             show_visuals=True, show_collision_objects=False, show_name=False,
             s=0.02)
+
+    def clear_timings(self):
+        """Clear time measurements."""
+        self.record_mapping_.clear_timings()
+        self.embodiment_mapping_.clear_timings()

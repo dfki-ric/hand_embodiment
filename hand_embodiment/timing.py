@@ -36,3 +36,7 @@ class TimeableMixin:
     def last_timing(self):
         """Get last time measurement."""
         return self._duration
+
+    def clear_timings(self):
+        """Clear time measurements."""
+        self.timings_ = []
