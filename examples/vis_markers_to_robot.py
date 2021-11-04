@@ -83,7 +83,7 @@ def main():
 
     animation_callback = AnimationCallback(fig, pipeline, args, show_robot=True)
     fig.view_init(azim=45)
-    while True:
+    while fig.visualizer.poll_events():
         fig.animate(
             animation_callback, dataset.n_steps, loop=False,
             fargs=(markers, dataset, pipeline))
@@ -93,7 +93,8 @@ def main():
             print(f"Average frequency of embodiment mapping: "
                   f"{1.0 / np.mean(pipeline.embodiment_mapping_.timings_)} Hz")
             pipeline.clear_timings()
-            time.sleep(5)
+            if fig.visualizer.poll_events():
+                time.sleep(5)
 
     fig.show()
 
