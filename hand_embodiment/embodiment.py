@@ -5,10 +5,11 @@ import numpy as np
 from .kinematics import Kinematics
 from .record_markers import make_finger_kinematics
 from .target_configurations import TARGET_CONFIG
+from .timing import TimeableMixin
 import pytransform3d.transformations as pt
 
 
-class HandEmbodiment:
+class HandEmbodiment(TimeableMixin):
     """Solves embodiment mapping from MANO model to robotic hand.
 
     Parameters
@@ -38,6 +39,9 @@ class HandEmbodiment:
     verbose : int, optional (default: 0)
         Verbosity level
 
+    measure_time : bool
+        Measure computation time for each frame.
+
     Attributes
     ----------
     finger_names_ : tuple of str
@@ -60,7 +64,9 @@ class HandEmbodiment:
             self, hand_state, target_config,
             use_fingers=("thumb", "index", "middle"),
             mano_finger_kinematics=None, initial_handbase2world=None,
-            only_tip=False, verbose=0):
+            only_tip=False, verbose=0, measure_time=False):
+        super(HandEmbodiment, self).__init__(verbose or measure_time)
+
         if isinstance(target_config, str):
             target_config = TARGET_CONFIG[target_config]
         self.finger_names_ = use_fingers
@@ -136,18 +142,16 @@ class HandEmbodiment:
             Maps finger names to desired finger tip positions in robot base
             frame.
         """
-        if self.verbose:
-            start = time.time()
+        self.start_measurement()
 
         desired_positions = self._mano_forward_kinematics(use_cached_forward_kinematics)
         self._robotic_hand_inverse_kinematics(desired_positions)
         self._update_hand_base_pose(handbase2world)
 
+        self.stop_measurement()
         if self.verbose:
-            stop = time.time()
-            duration = stop - start
             print(f"[{type(self).__name__}] Time for optimization: "
-                  f"{duration:.4f} s")
+                  f"{self.last_timing():.4f} s")
 
         if return_desired_positions:
             return self.joint_angles, desired_positions

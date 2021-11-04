@@ -4,6 +4,7 @@ import numpy as np
 from mocap.mano import HandState, hand_vertices, apply_shape_parameters
 from pytransform3d import transformations as pt, rotations as pr
 from scipy.optimize import minimize
+from .timing import TimeableMixin
 
 
 # TODO this probably has to be redefined and we have to make sure that this
@@ -113,7 +114,7 @@ def make_finger_kinematics(hand_state, finger_name):
         MANO_CONFIG["tip_vertex_offsets_per_finger"][finger_name])
 
 
-class MarkerBasedRecordMapping:
+class MarkerBasedRecordMapping(TimeableMixin):
     """Estimates pose of hand and finger configuration based on markers.
 
     We estimate the pose parameters of a MANO hand model from a marker-based
@@ -137,6 +138,9 @@ class MarkerBasedRecordMapping:
     verbose : int, optional (default: 0)
         Verbosity level
 
+    measure_time : bool
+        Measure computation time for each frame.
+
     Attributes
     ----------
     hand_state_ : mocap.mano.HandState
@@ -154,7 +158,10 @@ class MarkerBasedRecordMapping:
         MANO base pose in world frame.
     """
     def __init__(self, left=False, mano2hand_markers=None,
-                 shape_parameters=None, hand_state=None, verbose=0):
+                 shape_parameters=None, hand_state=None, verbose=0,
+                 measure_time=False):
+        super(MarkerBasedRecordMapping, self).__init__(verbose or measure_time)
+
         if hand_state is None:
             self.hand_state_ = HandState(left=left)
             if shape_parameters is not None:
@@ -212,8 +219,7 @@ class MarkerBasedRecordMapping:
             self.markers_in_mano[finger_name] = np.dot(
                 pt.vectors_to_points(markers_in_world), world2mano.T)[:, :3]
 
-        if self.verbose:
-            start = time.time()
+        self.start_measurement()
 
         for finger_name in finger_markers.keys():
             fe = self.mano_finger_kinematics_[finger_name]
@@ -234,11 +240,10 @@ class MarkerBasedRecordMapping:
             self.hand_state.pose[pose_indices] = pose
         #"""
 
+        self.stop_measurement()
         if self.verbose:
-            stop = time.time()
-            duration = stop - start
             print(f"[{type(self).__name__}] Time for optimization: "
-                  f"{duration:.4f} s")
+                  f"{self.last_timing():.4f} s")
 
         self.hand_state_.recompute_mesh(self.mano2world_)
 
