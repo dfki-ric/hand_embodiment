@@ -6,13 +6,14 @@ python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config exa
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement24.json --output dataset_24_segment_%d.csv
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210701_april/Measurement30.json --output dataset_30_segment_%d.csv --insole-hack
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210819_april.yaml --demo-file data/20210819_april/20210819_r_WK37_insole_set0.json --output 20210819_r_WK37_insole_set0_%d.csv --insole-hack
-python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210826_april.yaml --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.json --output 20210826_r_WK37_small_pillow_set0_%d.csv --pillow-hack
+python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210826_april.yaml --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.json --output 20210826_r_WK37_small_pillow_set0_%d.csv --pillow-hack --measure-time
 """
 import argparse
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.target_dataset import convert_mocap_to_robot
 from hand_embodiment.vis_utils import insole_pose, pillow_pose
+from hand_embodiment.timing import timing_report
 
 
 def parse_args():
@@ -24,9 +25,9 @@ def parse_args():
         "segment_label", type=str,
         help="Label of the segment that should be used.")
     parser.add_argument(
-        "--demo-file", type=str,
-        default="data/20210616_april/metadata/Measurement24.json",
-        help="Demonstration that should be used.")
+        "--demo-files", type=str, nargs="*",
+        default=["data/20210616_april/metadata/Measurement24.json"],
+        help="Demonstrations that should be used.")
     parser.add_argument(
         "--mocap-config", type=str,
         default="examples/config/markers/20210616_april.yaml",
@@ -47,6 +48,9 @@ def parse_args():
         "--mia-thumb-adducted", action="store_true",
         help="Adduct thumb of Mia hand.")
     parser.add_argument(
+        "--measure-time", action="store_true",
+        help="Measure time of record and embodiment mapping.")
+    parser.add_argument(
         "--insole-hack", action="store_true",
         help="Save insole pose at the beginning of the segment.")
     parser.add_argument(
@@ -60,70 +64,80 @@ def main():
     args = parse_args()
 
     dataset = SegmentedHandMotionCaptureDataset(
-        args.demo_file, args.segment_label, mocap_config=args.mocap_config)
+        args.demo_files[0], args.segment_label, mocap_config=args.mocap_config)
+    pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names,
+                            measure_time=args.measure_time)
 
-    pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names)
-
-    if args.hand == "mia":
-        angle = 1.0 if args.mia_thumb_adducted else -1.0
-        pipeline.set_constant_joint("j_thumb_opp_binary", angle)
-
-    for i in range(dataset.n_segments):
-        dataset.select_segment(i)
-
-        if args.insole_hack:
-            ####################################################################
-            ####################################################################
-            # python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement16.json --output dataset_16_segment_%d.csv --insole-hack
-            import numpy as np
-            import pytransform3d.transformations as pt
-            ee2origin = np.empty((dataset.n_steps, 4, 4))
-            insole_back = np.zeros(3)
-            insole_front = np.array([1, 0, 0])
-            for t in range(dataset.n_steps):
-                additional_markers = dataset.get_additional_markers(t)
-                marker_names = dataset.config.get("additional_markers", ())
-                if not any(np.isnan(additional_markers[marker_names.index("insole_front")])):
-                    insole_front = additional_markers[marker_names.index("insole_front")]
-                if not any(np.isnan(additional_markers[marker_names.index("insole_back")])):
-                    insole_back = additional_markers[marker_names.index("insole_back")]
-                origin_pose = insole_pose(insole_back, insole_front)
-                ee2origin[t] = pt.invert_transform(origin_pose)
-            ####################################################################
-            ####################################################################
-        elif args.pillow_hack:
-            import numpy as np
-            import pytransform3d.transformations as pt
-            ee2origin = np.empty((dataset.n_steps, 4, 4))
-            pillow_left = np.zeros(3)
-            pillow_right = np.array([1, 0, 0])
-            pillow_top = np.array([1, 1, 0])
-            for t in range(dataset.n_steps):
-                additional_markers = dataset.get_additional_markers(t)
-                marker_names = dataset.config.get("additional_markers", ())
-                if not any(np.isnan(additional_markers[marker_names.index("pillow_left")])):
-                    pillow_left = additional_markers[marker_names.index("pillow_left")]
-                if not any(np.isnan(additional_markers[marker_names.index("pillow_right")])):
-                    pillow_right = additional_markers[marker_names.index("pillow_right")]
-                if not any(np.isnan(additional_markers[marker_names.index("pillow_top")])):
-                    pillow_top = additional_markers[marker_names.index("pillow_top")]
-                origin_pose = pillow_pose(pillow_left, pillow_right, pillow_top)
-                ee2origin[t] = pt.invert_transform(origin_pose)
-        else:
-            ee2origin = None
-
-        output_dataset = convert_mocap_to_robot(
-            dataset, pipeline, ee2origin=ee2origin, verbose=1)
+    total_segment_idx = 0
+    for demo_file in args.demo_files:
+        dataset = SegmentedHandMotionCaptureDataset(
+            demo_file, args.segment_label, mocap_config=args.mocap_config)
 
         if args.hand == "mia":
-            j_min, j_max = pipeline.transform_manager_.get_joint_limits("j_thumb_opp")
-            thumb_opp = j_max if args.mia_thumb_adducted else j_min
-            output_dataset.add_constant_finger_joint("j_thumb_opp", thumb_opp)
+            angle = 1.0 if args.mia_thumb_adducted else -1.0
+            pipeline.set_constant_joint("j_thumb_opp_binary", angle)
 
-        output_filename = args.output % i
-        output_dataset.export(output_filename, pipeline.hand_config_)
-        # TODO convert frequency
-        print(f"Saved demonstration to '{output_filename}'")
+        for i in range(dataset.n_segments):
+            dataset.select_segment(i)
+
+            if args.insole_hack:
+                ####################################################################
+                ####################################################################
+                # python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement16.json --output dataset_16_segment_%d.csv --insole-hack
+                import numpy as np
+                import pytransform3d.transformations as pt
+                ee2origin = np.empty((dataset.n_steps, 4, 4))
+                insole_back = np.zeros(3)
+                insole_front = np.array([1, 0, 0])
+                for t in range(dataset.n_steps):
+                    additional_markers = dataset.get_additional_markers(t)
+                    marker_names = dataset.config.get("additional_markers", ())
+                    if not any(np.isnan(additional_markers[marker_names.index("insole_front")])):
+                        insole_front = additional_markers[marker_names.index("insole_front")]
+                    if not any(np.isnan(additional_markers[marker_names.index("insole_back")])):
+                        insole_back = additional_markers[marker_names.index("insole_back")]
+                    origin_pose = insole_pose(insole_back, insole_front)
+                    ee2origin[t] = pt.invert_transform(origin_pose)
+                ####################################################################
+                ####################################################################
+            elif args.pillow_hack:
+                import numpy as np
+                import pytransform3d.transformations as pt
+                ee2origin = np.empty((dataset.n_steps, 4, 4))
+                pillow_left = np.zeros(3)
+                pillow_right = np.array([1, 0, 0])
+                pillow_top = np.array([1, 1, 0])
+                for t in range(dataset.n_steps):
+                    additional_markers = dataset.get_additional_markers(t)
+                    marker_names = dataset.config.get("additional_markers", ())
+                    if not any(np.isnan(additional_markers[marker_names.index("pillow_left")])):
+                        pillow_left = additional_markers[marker_names.index("pillow_left")]
+                    if not any(np.isnan(additional_markers[marker_names.index("pillow_right")])):
+                        pillow_right = additional_markers[marker_names.index("pillow_right")]
+                    if not any(np.isnan(additional_markers[marker_names.index("pillow_top")])):
+                        pillow_top = additional_markers[marker_names.index("pillow_top")]
+                    origin_pose = pillow_pose(pillow_left, pillow_right, pillow_top)
+                    ee2origin[t] = pt.invert_transform(origin_pose)
+            else:
+                ee2origin = None
+
+            output_dataset = convert_mocap_to_robot(
+                dataset, pipeline, ee2origin=ee2origin, verbose=1)
+
+            if args.hand == "mia":
+                j_min, j_max = pipeline.transform_manager_.get_joint_limits("j_thumb_opp")
+                thumb_opp = j_max if args.mia_thumb_adducted else j_min
+                output_dataset.add_constant_finger_joint("j_thumb_opp", thumb_opp)
+
+            output_filename = args.output % total_segment_idx
+            output_dataset.export(output_filename, pipeline.hand_config_)
+            # TODO convert frequency
+            print(f"Saved demonstration to '{output_filename}'")
+            total_segment_idx += 1
+
+    if args.measure_time:
+        timing_report(pipeline.record_mapping_, title="record mapping")
+        timing_report(pipeline.embodiment_mapping_, title="embodiment mapping")
 
 
 if __name__ == "__main__":

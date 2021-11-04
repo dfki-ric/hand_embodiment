@@ -15,9 +15,9 @@ def parse_args():
         "hand", type=str,
         help="Name of the hand. Possible options: mia, shadow_hand")
     parser.add_argument(
-        "--demo-file", type=str,
-        default="data/QualisysAprilTest/april_test_010.tsv",
-        help="Demonstration that should be used.")
+        "--demo-files", type=str, nargs="*",
+        default=["data/QualisysAprilTest/april_test_010.tsv"],
+        help="Demonstrations that should be used.")
     parser.add_argument(
         "--mocap-config", type=str,
         default="examples/config/markers/20210520_april.yaml",
@@ -46,27 +46,29 @@ def parse_args():
 def main():
     args = parse_args()
 
-    dataset = HandMotionCaptureDataset(
-        args.demo_file, mocap_config=args.mocap_config,
-        skip_frames=args.skip_frames, start_idx=args.start_idx,
-        end_idx=args.end_idx)
+    for demo_file in args.demo_files:
+        dataset = HandMotionCaptureDataset(
+            demo_file, mocap_config=args.mocap_config,
+            skip_frames=args.skip_frames, start_idx=args.start_idx,
+            end_idx=args.end_idx)
 
-    pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names)
+        pipeline = MoCapToRobot(
+            args.hand, args.mano_config, dataset.finger_names)
 
-    if args.hand == "mia":
-        angle = 1.0 if args.mia_thumb_adducted else -1.0
-        pipeline.set_constant_joint("j_thumb_opp_binary", angle)
+        if args.hand == "mia":
+            angle = 1.0 if args.mia_thumb_adducted else -1.0
+            pipeline.set_constant_joint("j_thumb_opp_binary", angle)
 
-    output_dataset = convert_mocap_to_robot(dataset, pipeline, verbose=1)
+        output_dataset = convert_mocap_to_robot(dataset, pipeline, verbose=1)
 
-    if args.hand == "mia":
-        j_min, j_max = pipeline.transform_manager_.get_joint_limits("j_thumb_opp")
-        thumb_opp = j_max if args.mia_thumb_adducted else j_min
-        output_dataset.add_constant_finger_joint("j_thumb_opp", thumb_opp)
+        if args.hand == "mia":
+            j_min, j_max = pipeline.transform_manager_.get_joint_limits("j_thumb_opp")
+            thumb_opp = j_max if args.mia_thumb_adducted else j_min
+            output_dataset.add_constant_finger_joint("j_thumb_opp", thumb_opp)
 
-    output_dataset.export(args.output, pipeline.hand_config_)
-    # TODO convert frequency
-    print(f"Saved demonstration to '{args.output}'")
+        output_dataset.export(args.output, pipeline.hand_config_)
+        # TODO convert frequency
+        print(f"Saved demonstration to '{args.output}'")
 
 
 if __name__ == "__main__":
