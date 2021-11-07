@@ -58,6 +58,9 @@ def parse_args():
         "--insole", action="store_true", help="Visualize insole mesh.")
     parser.add_argument(
         "--pillow", action="store_true", help="Visualize pillow.")
+    parser.add_argument(
+        "--electronic", action="store_true",
+        help="Visualize electronic components.")
 
     return parser.parse_args()
 

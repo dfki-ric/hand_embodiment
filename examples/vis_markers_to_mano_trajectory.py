@@ -6,6 +6,7 @@ python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210616_apri
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210701_april/Measurement30.tsv --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210610_april.yaml --insole
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210819_april/20210819_r_WK37_insole_set0.tsv --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20210610_april.yaml --insole
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --pillow
+python examples/vis_markers_to_mano_trajectory.py --demo-file data/20211105_april/20211105_r_WK37_electronic_set0.tsv --mocap-config examples/config/markers/20211105_april.yaml --mano-config examples/config/mano/20210610_april.yaml --electronic
 """
 
 import argparse
@@ -61,6 +62,9 @@ def parse_args():
         "--insole", action="store_true", help="Visualize insole mesh.")
     parser.add_argument(
         "--pillow", action="store_true", help="Visualize pillow.")
+    parser.add_argument(
+        "--electronic", action="store_true",
+        help="Visualize electronic components.")
 
     return parser.parse_args()
 

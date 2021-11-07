@@ -174,6 +174,58 @@ def pillow_pose(pillow_left, pillow_right, pillow_top):
     return pose
 
 
+class ElectronicTarget(pv.Artist):
+    """Representation of electronic target component."""
+    def __init__(self, target_top=np.zeros(3), target_bottom=np.array([1, 0, 0])):
+        filename = resource_filename(
+            "hand_embodiment", "model/objects/electronic_target.stl")
+        self.mesh = o3d.io.read_triangle_mesh(filename)
+        self.mesh.paint_uniform_color(np.array([0.05, 0.05, 0.25]))
+        self.mesh.compute_triangle_normals()
+        self.target_top = np.zeros(3)
+        self.target_bottom = np.array([1, 0, 0])
+        self.electronic_target2markers = pt.transform_from(
+            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+            p=-np.array([0.0625 + 0.014, -0.057 + 0.006, 0.0]) / 2.0)
+        self.markers2origin = np.copy(self.electronic_target2markers)
+        self.set_data(target_top, target_bottom)
+
+    def set_data(self, target_top, target_bottom):
+        if not any(np.isnan(target_top)):
+            self.target_top = target_top
+        if not any(np.isnan(target_bottom)):
+            self.target_bottom = target_bottom
+
+        self.mesh.transform(pt.invert_transform(pt.concat(
+            self.electronic_target2markers, self.markers2origin)))
+
+        self.markers2origin = electronic_target_pose(
+            self.target_top, self.target_bottom)
+
+        self.mesh.transform(pt.concat(self.electronic_target2markers, self.markers2origin))
+
+    @property
+    def geometries(self):
+        """Expose geometries.
+
+        Returns
+        -------
+        geometries : list
+            List of geometries that can be added to the visualizer.
+        """
+        return [self.mesh]
+
+
+def electronic_target_pose(target_top, target_bottom):
+    """Compute pose of insole."""
+    x_axis = pr.norm_vector(target_top - target_bottom)
+    z_axis = np.copy(pr.unitz)
+    y_axis = pr.norm_vector(pr.perpendicular_to_vectors(z_axis, x_axis))
+    z_axis = pr.norm_vector(pr.perpendicular_to_vectors(x_axis, y_axis))
+    R = np.column_stack((x_axis, y_axis, z_axis))
+    return pt.transform_from(R=R, p=target_bottom)
+
+
 class AnimationCallback:
     def __init__(self, fig, pipeline, args, show_robot=False):
         self.fig = fig
@@ -194,6 +246,12 @@ class AnimationCallback:
 
         if self.args.pillow:
             self.object_mesh = PillowSmall()
+            self.object_mesh.add_artist(self.fig)
+            self.object_frame = pv.Frame(np.eye(4), s=0.1)
+            self.object_frame.add_artist(self.fig)
+
+        if self.args.electronic:
+            self.object_mesh = ElectronicTarget()
             self.object_mesh.add_artist(self.fig)
             self.object_frame = pv.Frame(np.eye(4), s=0.1)
             self.object_frame.add_artist(self.fig)
@@ -232,6 +290,18 @@ class AnimationCallback:
             self.object_frame.set_data(pillow_pose(
                 pillow_left, pillow_right, pillow_top))
             artists.append(self.object_frame)
+
+        if self.args.electronic:
+            marker_names = dataset.config.get("additional_markers", ())
+            additional_markers = dataset.get_additional_markers(t)
+            target_top = additional_markers[marker_names.index("target_top")]
+            target_bottom = additional_markers[marker_names.index("target_bottom")]
+            if not any(np.isnan(target_bottom)) and not any(np.isnan(target_top)):
+                self.object_mesh.set_data(target_top, target_bottom)
+                artists.append(self.object_mesh)
+                self.object_frame.set_data(
+                    electronic_target_pose(target_top, target_bottom))
+                artists.append(self.object_frame)
 
         if self.show_mano or self.show_robot:
             pipeline.estimate_hand(
