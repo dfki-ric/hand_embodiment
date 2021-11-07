@@ -1,0 +1,42 @@
+finger_names:
+- thumb
+- index
+- middle
+- ring
+- little
+hand_marker_names:
+- hand_top
+- hand_left
+- hand_right
+finger_marker_names:
+    thumb:
+    - thumb_tip
+    - thumb_middle
+    index:
+    - index_tip
+    - index_middle
+    middle:
+    - middle_tip
+    #- middle_middle
+    ring:
+    - ring_tip
+    #- ring_middle
+    little:
+    - little_tip
+    #- little_middle
+additional_markers:
+#- index_middle
+- middle_middle
+- ring_middle
+- little_middle
+- elbow
+- shoulder
+- back_top
+- back_left
+- back_right
+- target_top
+- target_bottom
+- object_left
+- object_right
+- object_top
+scale: 1.0
