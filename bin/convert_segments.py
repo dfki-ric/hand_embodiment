@@ -7,6 +7,8 @@ python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config exa
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210701_april/Measurement30.json --output dataset_30_segment_%d.csv --insole-hack
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210819_april.yaml --demo-file data/20210819_april/20210819_r_WK37_insole_set0.json --output 20210819_r_WK37_insole_set0_%d.csv --insole-hack
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210826_april.yaml --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.json --output 20210826_r_WK37_small_pillow_set0_%d.csv --pillow-hack --measure-time
+python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210819_april.yaml --demo-file data/20210819_april/2021*_r_WK37_insole_set*.json --output 2021_r_WK37_insole_%d.csv --insole-hack --measure-time
+python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210826_april.yaml --demo-file data/20210826_april/2021*_r_WK37_small_pillow_set*.json --output 2021_r_WK37_small_pillow_%d.csv --pillow-hack --measure-time
 """
 import argparse
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset

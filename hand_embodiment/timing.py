@@ -61,9 +61,16 @@ def timing_report(timeable, decimals=5, title=None):
     print("=" * 80)
     if title is not None:
         print(f"Timing report: {title}")
-    print(f"Mean: {np.round(np.mean(timings), decimals)}")
-    print(f"Standard deviation: {np.round(np.std(timings), decimals)}")
-    print(f"Median: {np.round(np.median(timings), decimals)}")
-    print(f"Range: [{np.round(np.min(timings), decimals)}, "
-          f"{np.round(np.max(timings), decimals)}]")
+    n_measurements = len(timings)
+    print(f"Number of measurements: {n_measurements}")
+    average = np.mean(timings)
+    print(f"Mean: {np.round(average, decimals)} s, {np.round(1.0 / average, decimals)} Hz")
+    std = np.std(timings)
+    print(f"Standard deviation: {np.round(std, decimals)} s, {np.round(1.0 / std, decimals)} Hz")
+    median = np.median(timings)
+    print(f"Median: {np.round(median, decimals)} s, {np.round(1.0 / median, decimals)} Hz")
+    min = np.min(timings)
+    max = np.max(timings)
+    print(f"Range: [{np.round(min, decimals)} s, {np.round(max, decimals)} s], "
+          f"[{np.round(1.0 / max, decimals)} Hz, {np.round(1.0 / min, decimals)} Hz]")
     print("=" * 80)
