@@ -38,6 +38,9 @@ def parse_args():
         default="examples/config/mano/20210520_april.yaml",
         help="MANO configuration file.")
     parser.add_argument(
+        "--record-mapping-config", type=str, default=None,
+        help="Record mapping configuration file.")
+    parser.add_argument(
         "--show-mano", action="store_true", help="Show MANO mesh")
     parser.add_argument(
         "--mia-thumb-adducted", action="store_true",
@@ -49,6 +52,9 @@ def parse_args():
         "--insole", action="store_true", help="Visualize insole mesh.")
     parser.add_argument(
         "--pillow", action="store_true", help="Visualize pillow.")
+    parser.add_argument(
+        "--electronic", action="store_true",
+        help="Visualize electronic components.")
 
     return parser.parse_args()
 
@@ -64,8 +70,9 @@ def main():
         segments = list(range(dataset.n_segments))
     dataset.select_segment(segments[0])
 
-    pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names,
-                            verbose=1)
+    pipeline = MoCapToRobot(
+        args.hand, args.mano_config, dataset.finger_names,
+        record_mapping_config=args.record_mapping_config, verbose=1)
 
     if args.hand == "mia":
         angle = 1.0 if args.mia_thumb_adducted else -1.0

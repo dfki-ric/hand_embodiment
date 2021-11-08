@@ -39,6 +39,9 @@ def parse_args():
         default="examples/config/mano/20210520_april.yaml",
         help="MANO configuration file.")
     parser.add_argument(
+        "--record-mapping-config", type=str, default=None,
+        help="Record mapping configuration file.")
+    parser.add_argument(
         "--output", type=str, default="segment_%02d.csv",
         help="Output file pattern (.csv).")
     parser.add_argument(
@@ -68,6 +71,7 @@ def main():
     dataset = SegmentedHandMotionCaptureDataset(
         args.demo_files[0], args.segment_label, mocap_config=args.mocap_config)
     pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names,
+                            record_mapping_config=args.record_mapping_config,
                             measure_time=args.measure_time)
 
     total_segment_idx = 0

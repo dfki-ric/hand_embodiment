@@ -6,7 +6,7 @@ python examples/vis_markers_to_robot.py mia --mocap-config examples/config/marke
 python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210616_april.yaml --skip-frames 1 --demo-file data/20210701_april/Measurement30.tsv --insole --mia-thumb-adducted
 python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20210616_april.yaml --skip-frames 1 --demo-file data/20210819_april/20210819_r_WK37_insole_set0.tsv --insole --show-mano --mia-thumb-adducted
 python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --skip-frames 1 --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.tsv --show-mano --mia-thumb-adducted
-python examples/vis_markers_to_robot.py shadow --mocap-config examples/config/markers/20211105_april.yaml --mano-config examples/config/mano/20210610_april.yaml --skip-frames 1 --demo-file data/20211105_april/20211105_r_WK37_electronic_set0.tsv --show-mano --mia-thumb-adducted --electronic
+python examples/vis_markers_to_robot.py shadow --mocap-config examples/config/markers/20211105_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --skip-frames 1 --demo-file data/20211105_april/20211105_r_WK37_electronic_set0.tsv --show-mano --mia-thumb-adducted --electronic
 """
 
 import argparse
@@ -37,6 +37,9 @@ def parse_args():
         "--mano-config", type=str,
         default="examples/config/mano/20210520_april.yaml",
         help="MANO configuration file.")
+    parser.add_argument(
+        "--record-mapping-config", type=str, default=None,
+        help="Record mapping configuration file.")
     parser.add_argument(
         "--start-idx", type=int, default=0, help="Start index.")
     parser.add_argument(
@@ -75,6 +78,7 @@ def main():
         end_idx=args.end_idx)
 
     pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names,
+                            record_mapping_config=args.record_mapping_config,
                             verbose=1, measure_time=args.measure_time)
 
     if args.hand == "mia":

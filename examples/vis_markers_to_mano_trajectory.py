@@ -44,12 +44,12 @@ def parse_args():
         default="examples/config/markers/20210520_april.yaml",
         help="MoCap configuration file.")
     parser.add_argument(
-        "--record-mapping-config", type=str,
-        default=None, help="Record mapping configuration file.")
-    parser.add_argument(
         "--mano-config", type=str,
         default="examples/config/mano/20210520_april.yaml",
         help="MANO configuration file.")
+    parser.add_argument(
+        "--record-mapping-config", type=str, default=None,
+        help="Record mapping configuration file.")
     parser.add_argument(
         "--start-idx", type=int, default=None, help="Start index.")
     parser.add_argument(
