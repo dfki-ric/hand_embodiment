@@ -55,6 +55,8 @@ class Figure:
         self.layout.add_tab("MANO Shape", self.tab1)
         self.tab2 = gui.Vert(0, gui.Margins(0.5 * em, 0.5 * em, 0.5 * em, 0.5 * em))
         self.layout.add_tab("Transform", self.tab2)
+        self.tab3 = gui.Vert(0, gui.Margins(0.5 * em, 0.5 * em, 0.5 * em, 0.5 * em))
+        self.layout.add_tab("Frame", self.tab3)
 
         self.scene_widget = gui.SceneWidget()
         self.scene_widget.scene = o3d.visualization.rendering.Open3DScene(self.window.renderer)
@@ -110,6 +112,10 @@ class Figure:
 
         material : Material, optional (default: None)
             Open3D material.
+
+        Returns
+        ---------
+        name of geometry
         """
         name = str(len(self.geometry_names))
         self.geometry_names.append(name)
@@ -117,8 +123,25 @@ class Figure:
             material = o3d.visualization.rendering.Material()
         self.main_scene.add_geometry(name, geometry, material)
 
+    def clear_all_geometries(self):
+        for name in self.geometry_names:
+            self.main_scene.remove_geometry(name)
+        self.geometry_names = []
+
+    def add_markers_in_mano(self, marker_points):
+        for p in marker_points:  # TODO refactor
+            marker = o3d.geometry.TriangleMesh.create_sphere(radius=0.006)
+            n_vertices = len(marker.vertices)
+            colors = np.zeros((n_vertices, 3))
+            colors[:] = (0.3, 0.3, 0.3)
+            marker.vertex_colors = o3d.utility.Vector3dVector(colors)
+            marker.translate(p)
+            marker.compute_vertex_normals()
+            marker.compute_triangle_normals()
+            self.add_geometry(marker)
+
     def add_hand_mesh(self, mesh, material):
-        self.main_scene.add_geometry("MANO", mesh, material)
+        return self.main_scene.add_geometry("MANO", mesh, material)
 
     def save_mano_parameters(self):
         if self.mbrm is None:
@@ -128,10 +151,10 @@ class Figure:
                 self.config_filename, self.mbrm.mano2hand_markers_,
                 self.mbrm.hand_state_.betas)
 
-    def make_mano_widgets(self, mbrm):
+    def make_mano_widgets(self, mbrm, dataset, frame_num, fit_fingers=True):
         self.mbrm = mbrm
         self.tab1.add_child(gui.Label("MANO shape"))
-        mano_change = OnManoChange(self, mbrm)
+        mano_change = OnManoChange(self, mbrm, dataset, frame_num, fit_fingers=fit_fingers)
         for i in range(mbrm.hand_state_.n_shape_parameters):
             pose_control_layout = gui.Horiz()
             pose_control_layout.add_child(gui.Label(f"{(i + 1):02d}"))
@@ -155,38 +178,93 @@ class Figure:
             slider.set_on_value_changed(partial(mano_change.pos_changed, i=i))
             pose_control_layout.add_child(slider)
             self.tab2.add_child(pose_control_layout)
+
+        self.tab3.add_child(gui.Label("MoCap Frame"))
+        pose_control_layout = gui.Horiz()
+        pose_control_layout.add_child(gui.Label("frame"))
+        slider = gui.Slider(gui.Slider.INT)
+        slider.set_limits(0, dataset.n_steps - 1)
+        slider.int_value = frame_num
+        slider.set_on_value_changed(partial(mano_change.frame_changed))
+        pose_control_layout.add_child(slider)
+
+        self.tab3.add_child(pose_control_layout)
+
+        mano_change.frame_changed(frame_num)
         mano_change.update_mesh()
 
 
 class OnMano:
-    def __init__(self, fig, mbrm):
+    def __init__(self, fig, mbrm, dataset, frame_num):
         self.fig = fig
         self.mbrm = mbrm
+        self.dataset = dataset
+        self.frame_num = frame_num
 
-    def redraw(self):
+
+
+    def draw_markers(self):
+        world2mano = pt.invert_transform(self.mbrm.mano2world_)
+        markers_in_world = self.dataset.get_markers(self.frame_num)
+        markers_in_mano = pt.transform(
+            self.mbrm.mano2hand_markers_, pt.transform(
+                world2mano, pt.vectors_to_points(markers_in_world)))[:, :3]
+        self.fig.add_markers_in_mano(markers_in_mano)
+
+    def redraw_mano(self):
         self.fig.main_scene.remove_geometry("MANO")
         self.fig.add_hand_mesh(
             self.mbrm.hand_state_.hand_mesh, self.mbrm.hand_state_.material)
 
+    def redraw_all(self):
+        self.fig.clear_all_geometries()
+        self.redraw_mano()
+        self.draw_markers()
+
 
 class OnManoChange(OnMano):
-    def __init__(self, fig, mbrm):
-        super(OnManoChange, self).__init__(fig, mbrm)
+    def __init__(self, fig, mbrm, dataset, frame_num, fit_fingers=True):
+        super(OnManoChange, self).__init__(fig, mbrm, dataset, frame_num)
         self.mbrm = mbrm
+        self.dataset = dataset
+        self.fit_fingers = fit_fingers
+        if self.fit_fingers:
+            self.finger_markers = self.dataset.get_finger_markers(frame_num)
+        else:
+            self.finger_markers = {}
+        self.hand_markers = self.dataset.get_hand_markers(frame_num)
+        self.fig = fig
         self.update_mesh()
-        self.redraw()
+        self.redraw_all()
 
     def shape_changed(self, value, i):
         self.mbrm.hand_state_.betas[i] = value
         self.update_mesh()
-        self.redraw()
+        self.redraw_mano()
+
+    def frame_changed(self, value):
+        frame_num = int(value)
+        self.frame_num = frame_num
+        if self.fit_fingers:
+            self.finger_markers = self.dataset.get_finger_markers(frame_num)
+        else:
+            self.finger_markers = {}
+
+        self.hand_markers = self.dataset.get_hand_markers(frame_num)
+        self.mbrm.estimate(self.hand_markers, self.finger_markers)
+        pose = pt.exponential_coordinates_from_transform(self.mbrm.mano2hand_markers_)
+        self.mbrm.mano2hand_markers_ = pt.transform_from_exponential_coordinates(pose)
+
+        self.update_mesh()
+        self.redraw_all()
 
     def pos_changed(self, value, i):
+        self.mbrm.estimate(self.hand_markers, self.finger_markers)
         pose = pt.exponential_coordinates_from_transform(self.mbrm.mano2hand_markers_)
         pose[i] = value
         self.mbrm.mano2hand_markers_ = pt.transform_from_exponential_coordinates(pose)
         self.update_mesh()
-        self.redraw()
+        self.redraw_mano()
 
     def update_mesh(self):
         self.mbrm.hand_state_.recompute_shape()
@@ -208,35 +286,10 @@ def main():
     mbrm = MarkerBasedRecordMapping(
         left=False, shape_parameters=betas, mano2hand_markers=mano2hand_markers)
 
-    if args.fit_fingers:
-        finger_markers = dataset.get_finger_markers(args.start_idx)
-    else:
-        finger_markers = {}
-    mbrm.estimate(dataset.get_hand_markers(args.start_idx), finger_markers)
-    world2mano = pt.invert_transform(mbrm.mano2world_)
-    markers_in_world = dataset.get_markers(args.start_idx)
-    markers_in_mano = pt.transform(
-        mano2hand_markers, pt.transform(
-            world2mano, pt.vectors_to_points(markers_in_world)))[:, :3]
-
     fig = Figure("MANO shape", 1920, 1080, config_filename, ax_s=0.2)
-
-    for p in markers_in_mano:  # TODO refactor
-        marker = o3d.geometry.TriangleMesh.create_sphere(radius=0.006)
-        n_vertices = len(marker.vertices)
-        colors = np.zeros((n_vertices, 3))
-        colors[:] = (0.3, 0.3, 0.3)
-        marker.vertex_colors = o3d.utility.Vector3dVector(colors)
-        marker.translate(p)
-        marker.compute_vertex_normals()
-        marker.compute_triangle_normals()
-        fig.add_geometry(marker)
-
+    fig.make_mano_widgets(mbrm, dataset, frame_num=args.start_idx, fit_fingers=args.fit_fingers)
     coordinate_system = make_coordinate_system(s=0.2)
-    fig.add_geometry(coordinate_system)
-
-    fig.make_mano_widgets(mbrm)
-
+    fig.main_scene.add_geometry("COORDINATE_SYSTEM",coordinate_system,o3d.visualization.rendering.Material())
     fig.show()
 
 
