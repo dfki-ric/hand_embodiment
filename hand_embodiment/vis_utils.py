@@ -183,7 +183,7 @@ class Electronic(pv.Artist):
         target_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_target.stl")
         self.target_mesh = o3d.io.read_triangle_mesh(target_filename)
-        self.target_mesh.paint_uniform_color(np.array([0.05, 0.05, 0.25]))
+        self.target_mesh.paint_uniform_color(np.array([0.21, 0.20, 0.46]))
         self.target_mesh.compute_triangle_normals()
 
         self.target_top = np.zeros(3)
@@ -197,7 +197,7 @@ class Electronic(pv.Artist):
         target_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_object.stl")
         self.object_mesh = o3d.io.read_triangle_mesh(target_filename)
-        self.object_mesh.paint_uniform_color(np.array([1, 0, 0]))
+        self.object_mesh.paint_uniform_color(np.array([0.68, 0.45, 0.23]))
         self.object_mesh.compute_triangle_normals()
 
         self.object_left = np.zeros(3)
