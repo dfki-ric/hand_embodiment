@@ -48,3 +48,30 @@ def save_mano_config(filename, mano2hand_markers, betas):
     }
     with open(filename, "w") as f:
         yaml.dump(config, f)
+
+
+def load_record_mapping_config(filename):
+    """Load record mapping configuration.
+
+    Parameters
+    ----------
+    filename : str
+        Configuration file
+
+    Returns
+    -------
+    record_mapping_config : dict
+        Configuration
+    """
+    with open(filename, "r") as f:
+        record_mapping_config = yaml.safe_load(f)
+    for finger_name in record_mapping_config["action_weights_per_finger"]:
+        record_mapping_config["action_weights_per_finger"][finger_name] = \
+            np.asarray(record_mapping_config["action_weights_per_finger"][finger_name])
+    for finger_name in record_mapping_config["pose_parameters_per_finger"]:
+        record_mapping_config["pose_parameters_per_finger"][finger_name] = \
+            np.asarray(record_mapping_config["pose_parameters_per_finger"][finger_name])
+    for finger_name in record_mapping_config["tip_vertex_offsets_per_finger"]:
+        record_mapping_config["tip_vertex_offsets_per_finger"][finger_name] = \
+            np.asarray(record_mapping_config["tip_vertex_offsets_per_finger"][finger_name])
+    return record_mapping_config

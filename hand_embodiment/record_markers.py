@@ -102,14 +102,14 @@ MANO_CONFIG = {
 }
 
 
-def make_finger_kinematics(hand_state, finger_name):
+def make_finger_kinematics(hand_state, finger_name, mano_config=MANO_CONFIG):
     return ManoFingerKinematics(
         hand_state,
-        MANO_CONFIG["pose_parameters_per_finger"][finger_name],
-        MANO_CONFIG["vertex_indices_per_finger"][finger_name],
-        MANO_CONFIG["joint_indices_per_finger"][finger_name],
-        MANO_CONFIG["action_weights_per_finger"][finger_name],
-        MANO_CONFIG["tip_vertex_offsets_per_finger"][finger_name])
+        mano_config["pose_parameters_per_finger"][finger_name],
+        mano_config["vertex_indices_per_finger"][finger_name],
+        mano_config["joint_indices_per_finger"][finger_name],
+        mano_config["action_weights_per_finger"][finger_name],
+        mano_config["tip_vertex_offsets_per_finger"][finger_name])
 
 
 class MarkerBasedRecordMapping(TimeableMixin):
@@ -132,6 +132,9 @@ class MarkerBasedRecordMapping(TimeableMixin):
     hand_state : mocap.mano.HandState, optional (default: None)
         If there is already a hand state object, this can be reused for the
         record mapping. Otherwise we will create a new one.
+
+    record_mapping_config : dict, optional (default: None)
+        Configuration of record mapping.
 
     verbose : int, optional (default: 0)
         Verbosity level
@@ -156,8 +159,8 @@ class MarkerBasedRecordMapping(TimeableMixin):
         MANO base pose in world frame.
     """
     def __init__(self, left=False, mano2hand_markers=None,
-                 shape_parameters=None, hand_state=None, verbose=0,
-                 measure_time=False):
+                 shape_parameters=None, hand_state=None,
+                 record_mapping_config=None, verbose=0, measure_time=False):
         super(MarkerBasedRecordMapping, self).__init__(verbose or measure_time)
 
         if hand_state is None:
@@ -173,12 +176,20 @@ class MarkerBasedRecordMapping(TimeableMixin):
 
         self.verbose = verbose
 
+        if record_mapping_config is None:
+            record_mapping_config = MANO_CONFIG
+
         self.mano_finger_kinematics_ = {
-            "thumb": make_finger_kinematics(self.hand_state_, "thumb"),
-            "index": make_finger_kinematics(self.hand_state_, "index"),
-            "middle": make_finger_kinematics(self.hand_state_, "middle"),
-            "ring": make_finger_kinematics(self.hand_state_, "ring"),
-            "little": make_finger_kinematics(self.hand_state_, "little"),
+            "thumb": make_finger_kinematics(
+                self.hand_state_, "thumb", record_mapping_config),
+            "index": make_finger_kinematics(
+                self.hand_state_, "index", record_mapping_config),
+            "middle": make_finger_kinematics(
+                self.hand_state_, "middle", record_mapping_config),
+            "ring": make_finger_kinematics(
+                self.hand_state_, "ring", record_mapping_config),
+            "little": make_finger_kinematics(
+                self.hand_state_, "little", record_mapping_config),
         }
 
         if mano2hand_markers is None:

@@ -1,5 +1,5 @@
 from hand_embodiment.target_configurations import TARGET_CONFIG
-from hand_embodiment.config import load_mano_config
+from hand_embodiment.config import load_mano_config, load_record_mapping_config
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.embodiment import HandEmbodiment
 
@@ -18,19 +18,29 @@ class MoCapToRobot:
     use_fingers : list of str
         Fingers that should be used
 
+    record_mapping_config : str, optional (default: None)
+        Path to record mapping configuration
+
     verbose : int, optional (default: 0)
         Verbosity level
 
     measure_time : bool
         Measure computation time for each frame.
     """
-    def __init__(self, hand, mano_config, use_fingers, verbose=0,
-                 measure_time=False):
+    def __init__(self, hand, mano_config, use_fingers,
+                 record_mapping_config=None, verbose=0, measure_time=False):
         self.hand_config_ = TARGET_CONFIG[hand]
         mano2hand_markers, betas = load_mano_config(mano_config)
+
+        if record_mapping_config is not None:
+            record_mapping_config = load_record_mapping_config(
+                record_mapping_config)
+
         self.record_mapping_ = MarkerBasedRecordMapping(
             left=False, mano2hand_markers=mano2hand_markers,
-            shape_parameters=betas, verbose=verbose, measure_time=measure_time)
+            shape_parameters=betas,
+            record_mapping_config=record_mapping_config, verbose=verbose,
+            measure_time=measure_time)
         self.embodiment_mapping_ = HandEmbodiment(
             self.record_mapping_.hand_state_, self.hand_config_,
             use_fingers=use_fingers,

@@ -7,6 +7,7 @@ python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210701_apri
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210819_april/20210819_r_WK37_insole_set0.tsv --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20210610_april.yaml --insole
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --pillow
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20211105_april/20211105_r_WK37_electronic_set0.tsv --mocap-config examples/config/markers/20211105_april.yaml --mano-config examples/config/mano/20210610_april.yaml --electronic
+python examples/vis_markers_to_mano_trajectory.py --demo-file data/20211105_april/20211105_r_WK37_electronic_set0.tsv --mocap-config examples/config/markers/20211105_april.yaml --mano-config examples/config/mano/20211105_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --electronic
 """
 
 import argparse
@@ -43,6 +44,9 @@ def parse_args():
         default="examples/config/markers/20210520_april.yaml",
         help="MoCap configuration file.")
     parser.add_argument(
+        "--record-mapping-config", type=str,
+        default=None, help="Record mapping configuration file.")
+    parser.add_argument(
         "--mano-config", type=str,
         default="examples/config/mano/20210520_april.yaml",
         help="MANO configuration file.")
@@ -77,8 +81,9 @@ def main():
         skip_frames=args.skip_frames, start_idx=args.start_idx,
         end_idx=args.end_idx)
 
-    pipeline = MoCapToRobot("mia", args.mano_config, dataset.finger_names,
-                            verbose=1)
+    pipeline = MoCapToRobot(
+        "mia", args.mano_config, dataset.finger_names,
+        record_mapping_config=args.record_mapping_config, verbose=1)
 
     fig = pv.figure()
     fig.plot_transform(np.eye(4), s=0.5)
