@@ -206,7 +206,7 @@ class Electronic(pv.Artist):
 
         self.electronic_object2object_markers = pt.transform_from(
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
-            p=np.array([0.0, 0.0, 0.012]))
+            p=np.array([0.0, 0.0, -0.01]))
         self.object_markers2origin = np.copy(self.electronic_object2object_markers)
 
         self.set_data(
@@ -263,11 +263,11 @@ def electronic_target_pose(target_top, target_bottom):
 
 def electronic_object_pose(object_left, object_right, object_top):
     """Compute pose of electronic object."""
-    right2top = object_top - object_right
-    right2left = object_left - object_right
+    left2top = object_top - object_left
+    left2right = object_left - object_right
     pose = np.eye(4)
-    pose[:3, :3] = pr.matrix_from_two_vectors(right2top, right2left)
-    object_middle = 0.5 * (object_left + object_right) + 0.5 * right2top
+    pose[:3, :3] = pr.matrix_from_two_vectors(left2right, left2top)
+    object_middle = 0.5 * (object_left + object_right) + 0.5 * left2top
     pose[:3, 3] = object_middle
     return pose
 
