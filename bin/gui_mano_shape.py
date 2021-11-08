@@ -128,10 +128,10 @@ class Figure:
                 self.config_filename, self.mbrm.mano2hand_markers_,
                 self.mbrm.hand_state_.betas)
 
-    def make_mano_widgets(self, mbrm):
+    def make_mano_widgets(self, mbrm, hand_markers, finger_markers):
         self.mbrm = mbrm
         self.tab1.add_child(gui.Label("MANO shape"))
-        mano_change = OnManoChange(self, mbrm)
+        mano_change = OnManoChange(self, mbrm, hand_markers, finger_markers)
         for i in range(mbrm.hand_state_.n_shape_parameters):
             pose_control_layout = gui.Horiz()
             pose_control_layout.add_child(gui.Label(f"{(i + 1):02d}"))
@@ -170,9 +170,11 @@ class OnMano:
 
 
 class OnManoChange(OnMano):
-    def __init__(self, fig, mbrm):
+    def __init__(self, fig, mbrm, hand_markers, finger_markers):
         super(OnManoChange, self).__init__(fig, mbrm)
         self.mbrm = mbrm
+        self.hand_markers = hand_markers
+        self.finger_markers = finger_markers
         self.update_mesh()
         self.redraw()
 
@@ -182,6 +184,7 @@ class OnManoChange(OnMano):
         self.redraw()
 
     def pos_changed(self, value, i):
+        self.mbrm.estimate(self.hand_markers, self.finger_markers)
         pose = pt.exponential_coordinates_from_transform(self.mbrm.mano2hand_markers_)
         pose[i] = value
         self.mbrm.mano2hand_markers_ = pt.transform_from_exponential_coordinates(pose)
@@ -212,7 +215,8 @@ def main():
         finger_markers = dataset.get_finger_markers(args.start_idx)
     else:
         finger_markers = {}
-    mbrm.estimate(dataset.get_hand_markers(args.start_idx), finger_markers)
+    hand_markers = dataset.get_hand_markers(args.start_idx)
+    mbrm.estimate(hand_markers, finger_markers)
     world2mano = pt.invert_transform(mbrm.mano2world_)
     markers_in_world = dataset.get_markers(args.start_idx)
     markers_in_mano = pt.transform(
@@ -235,7 +239,7 @@ def main():
     coordinate_system = make_coordinate_system(s=0.2)
     fig.add_geometry(coordinate_system)
 
-    fig.make_mano_widgets(mbrm)
+    fig.make_mano_widgets(mbrm, hand_markers, finger_markers)
 
     fig.show()
 
