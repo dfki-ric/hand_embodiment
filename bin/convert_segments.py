@@ -9,12 +9,17 @@ python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config exa
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210826_april.yaml --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.json --output 20210826_r_WK37_small_pillow_set0_%d.csv --pillow-hack --measure-time
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210819_april.yaml --demo-file data/20210819_april/2021*_r_WK37_insole_set*.json --output 2021_r_WK37_insole_%d.csv --insole-hack --measure-time
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210826_april.yaml --demo-file data/20210826_april/2021*_r_WK37_small_pillow_set*.json --output 2021_r_WK37_small_pillow_%d.csv --pillow-hack --measure-time
+python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20211105_april.yaml --demo-file data/20211105_april/2021*_r_WK37_electronic_set*.json --output 2021_r_WK37_electronic_%d.csv --electronic-object-hack --measure-time --interpolate-missing-markers
+python bin/convert_segments.py mia insert --mia-thumb-adducted --mocap-config examples/config/markers/20211105_april.yaml --demo-file data/20211105_april/2021*_r_WK37_electronic_set*.json --output 2021_r_WK37_electronic_insert_%d.csv --electronic-target-hack --measure-time --interpolate-missing-markers
 """
 import argparse
+import numpy as np
+import pytransform3d.transformations as pt
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.target_dataset import convert_mocap_to_robot
-from hand_embodiment.vis_utils import insole_pose, pillow_pose
+from hand_embodiment.vis_utils import (
+    insole_pose, pillow_pose, electronic_object_pose, electronic_target_pose)
 from hand_embodiment.timing import timing_report
 
 
@@ -50,6 +55,9 @@ def parse_args():
         "--skip-frames", type=int, default=1,
         help="Skip this number of frames between animated frames.")
     parser.add_argument(
+        "--interpolate-missing-markers", action="store_true",
+        help="Interpolate NaNs.")
+    parser.add_argument(
         "--mia-thumb-adducted", action="store_true",
         help="Adduct thumb of Mia hand.")
     parser.add_argument(
@@ -61,6 +69,12 @@ def parse_args():
     parser.add_argument(
         "--pillow-hack", action="store_true",
         help="Save pillow pose at the beginning of the segment.")
+    parser.add_argument(
+        "--electronic-object-hack", action="store_true",
+        help="Save electronic object pose at the beginning of the segment.")
+    parser.add_argument(
+        "--electronic-target-hack", action="store_true",
+        help="Save electronic target pose at the beginning of the segment.")
 
     return parser.parse_args()
 
@@ -77,7 +91,8 @@ def main():
     total_segment_idx = 0
     for demo_file in args.demo_files:
         dataset = SegmentedHandMotionCaptureDataset(
-            demo_file, args.segment_label, mocap_config=args.mocap_config)
+            demo_file, args.segment_label, mocap_config=args.mocap_config,
+            interpolate_missing_markers=args.interpolate_missing_markers)
 
         if args.hand == "mia":
             angle = 1.0 if args.mia_thumb_adducted else -1.0
@@ -90,8 +105,6 @@ def main():
                 ####################################################################
                 ####################################################################
                 # python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement16.json --output dataset_16_segment_%d.csv --insole-hack
-                import numpy as np
-                import pytransform3d.transformations as pt
                 ee2origin = np.empty((dataset.n_steps, 4, 4))
                 insole_back = np.zeros(3)
                 insole_front = np.array([1, 0, 0])
@@ -107,8 +120,6 @@ def main():
                 ####################################################################
                 ####################################################################
             elif args.pillow_hack:
-                import numpy as np
-                import pytransform3d.transformations as pt
                 ee2origin = np.empty((dataset.n_steps, 4, 4))
                 pillow_left = np.zeros(3)
                 pillow_right = np.array([1, 0, 0])
@@ -123,6 +134,35 @@ def main():
                     if not any(np.isnan(additional_markers[marker_names.index("pillow_top")])):
                         pillow_top = additional_markers[marker_names.index("pillow_top")]
                     origin_pose = pillow_pose(pillow_left, pillow_right, pillow_top)
+                    ee2origin[t] = pt.invert_transform(origin_pose)
+            elif args.electronic_object_hack:
+                ee2origin = np.empty((dataset.n_steps, 4, 4))
+                object_left = np.zeros(3)
+                object_right = np.array([1, 0, 0])
+                object_top = np.array([1, 1, 0])
+                for t in range(dataset.n_steps):
+                    additional_markers = dataset.get_additional_markers(t)
+                    marker_names = dataset.config.get("additional_markers", ())
+                    if not any(np.isnan(additional_markers[marker_names.index("object_left")])):
+                        object_left = additional_markers[marker_names.index("object_left")]
+                    if not any(np.isnan(additional_markers[marker_names.index("object_right")])):
+                        object_right = additional_markers[marker_names.index("object_right")]
+                    if not any(np.isnan(additional_markers[marker_names.index("object_top")])):
+                        object_top = additional_markers[marker_names.index("object_top")]
+                    origin_pose = electronic_object_pose(object_left, object_right, object_top)
+                    ee2origin[t] = pt.invert_transform(origin_pose)
+            elif args.electronic_target_hack:
+                ee2origin = np.empty((dataset.n_steps, 4, 4))
+                target_top = np.zeros(3)
+                target_bottom = np.array([1, 0, 0])
+                for t in range(dataset.n_steps):
+                    additional_markers = dataset.get_additional_markers(t)
+                    marker_names = dataset.config.get("additional_markers", ())
+                    if not any(np.isnan(additional_markers[marker_names.index("target_top")])):
+                        target_top = additional_markers[marker_names.index("target_top")]
+                    if not any(np.isnan(additional_markers[marker_names.index("target_bottom")])):
+                        target_bottom = additional_markers[marker_names.index("target_bottom")]
+                    origin_pose = electronic_target_pose(target_top, target_bottom)
                     ee2origin[t] = pt.invert_transform(origin_pose)
             else:
                 ee2origin = None

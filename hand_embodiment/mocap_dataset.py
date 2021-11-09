@@ -218,9 +218,14 @@ class SegmentedHandMotionCaptureDataset(MotionCaptureDatasetBase):
     mocap_config : str, optional (default: None)
         Path to configuration file that contains finger names, hand marker,
         names, finger marker names, and additional markers.
+
+    interpolate_missing_markers : bool, optional (default: False)
+        Interpolate unknown marker positions (indicated by nan).
     """
-    def __init__(self, filename, segment_label, mocap_config=None, **kwargs):
+    def __init__(self, filename, segment_label, mocap_config=None,
+                 interpolate_missing_markers=False, **kwargs):
         super(SegmentedHandMotionCaptureDataset, self).__init__(mocap_config, **kwargs)
+        self.interpolate_missing_markers = interpolate_missing_markers
 
         record = mocap.load(metadata=filename)
         streams = [f"{mn} .*" for mn in self.marker_names]
@@ -238,6 +243,8 @@ class SegmentedHandMotionCaptureDataset(MotionCaptureDatasetBase):
         self.selected_segment = i
 
         trajectory = self.segments[self.selected_segment]
+        if self.interpolate_missing_markers:
+            trajectory = interpolate_nan(trajectory)
         trajectory = self._scale(trajectory)
 
         self.n_steps = len(trajectory)
