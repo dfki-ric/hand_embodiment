@@ -132,8 +132,8 @@ class PillowSmall(pv.Artist):
         self.pillow_right = pillow_right
         self.pillow_top = pillow_top
         self.pillow_mesh2pillow_markers = pt.transform_from(
-            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
-            p=np.array([0.195, 0.195, 0.115]))
+            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 90])),
+            p=np.array([0.0, -0.02, 0.091]))
         self.pillow_markers2origin = np.copy(self.pillow_mesh2pillow_markers)
         self.set_data(pillow_left, pillow_right, pillow_top)
 
