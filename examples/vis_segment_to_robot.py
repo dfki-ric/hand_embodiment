@@ -12,7 +12,8 @@ from mocap.visualization import scatter
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.vis_utils import AnimationCallback
-from hand_embodiment.command_line import add_animation_arguments
+from hand_embodiment.command_line import (
+    add_animation_arguments, add_configuration_arguments)
 
 
 def parse_args():
@@ -30,17 +31,7 @@ def parse_args():
     parser.add_argument(
         "--segments", type=int, default=None, nargs="+",
         help="Segments of demonstration that should be used.")
-    parser.add_argument(
-        "--mocap-config", type=str,
-        default="examples/config/markers/20210520_april.yaml",
-        help="MoCap configuration file.")
-    parser.add_argument(
-        "--mano-config", type=str,
-        default="examples/config/mano/20210520_april.yaml",
-        help="MANO configuration file.")
-    parser.add_argument(
-        "--record-mapping-config", type=str, default=None,
-        help="Record mapping configuration file.")
+    add_configuration_arguments(parser)
     parser.add_argument(
         "--show-mano", action="store_true", help="Show MANO mesh")
     parser.add_argument(

@@ -21,6 +21,7 @@ from hand_embodiment.target_dataset import convert_mocap_to_robot
 from hand_embodiment.vis_utils import (
     insole_pose, pillow_pose, electronic_object_pose, electronic_target_pose)
 from hand_embodiment.timing import timing_report
+from hand_embodiment.command_line import add_configuration_arguments
 
 
 def parse_args():
@@ -35,17 +36,7 @@ def parse_args():
         "--demo-files", type=str, nargs="*",
         default=["data/20210616_april/metadata/Measurement24.json"],
         help="Demonstrations that should be used.")
-    parser.add_argument(
-        "--mocap-config", type=str,
-        default="examples/config/markers/20210616_april.yaml",
-        help="MoCap configuration file.")
-    parser.add_argument(
-        "--mano-config", type=str,
-        default="examples/config/mano/20210520_april.yaml",
-        help="MANO configuration file.")
-    parser.add_argument(
-        "--record-mapping-config", type=str, default=None,
-        help="Record mapping configuration file.")
+    add_configuration_arguments(parser)
     parser.add_argument(
         "--output", type=str, default="segment_%02d.csv",
         help="Output file pattern (.csv).")

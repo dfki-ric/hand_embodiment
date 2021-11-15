@@ -19,7 +19,10 @@ from mocap.visualization import scatter
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.vis_utils import AnimationCallback
-from hand_embodiment.command_line import add_animation_arguments
+from hand_embodiment.command_line import (
+    add_animation_arguments, add_configuration_arguments,
+    add_playback_control_arguments)
+
 
 MARKER_COLORS = [
     (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
@@ -41,26 +44,10 @@ def parse_args():
         "--demo-file", type=str,
         default="data/QualisysAprilTest/april_test_010.tsv",
         help="Demonstration that should be used.")
-    parser.add_argument(
-        "--mocap-config", type=str,
-        default="examples/config/markers/20210520_april.yaml",
-        help="MoCap configuration file.")
-    parser.add_argument(
-        "--mano-config", type=str,
-        default="examples/config/mano/20210520_april.yaml",
-        help="MANO configuration file.")
-    parser.add_argument(
-        "--record-mapping-config", type=str, default=None,
-        help="Record mapping configuration file.")
-    parser.add_argument(
-        "--start-idx", type=int, default=None, help="Start index.")
-    parser.add_argument(
-        "--end-idx", type=int, default=None, help="Start index.")
+    add_configuration_arguments(parser)
+    add_playback_control_arguments(parser)
     parser.add_argument(
         "--hide-mano", action="store_true", help="Hide MANO mesh")
-    parser.add_argument(
-        "--skip-frames", type=int, default=1,
-        help="Skip this number of frames between animated frames.")
     add_animation_arguments(parser)
     return parser.parse_args()
 
