@@ -8,6 +8,7 @@ python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210819_apri
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --pillow
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20211105_april/20211105_r_WK37_electronic_set0.tsv --mocap-config examples/config/markers/20211105_april.yaml --mano-config examples/config/mano/20210610_april.yaml --electronic
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20211105_april/20211105_r_WK37_electronic_set0.tsv --mocap-config examples/config/markers/20211105_april.yaml --mano-config examples/config/mano/20211105_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --electronic
+python examples/vis_markers_to_mano_trajectory.py --demo-file data/20211112_april/20211112_r_WK37_passport_set0.tsv --mocap-config examples/config/markers/20211112_april.yaml --mano-config examples/config/mano/20211105_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --passport
 """
 
 import argparse
@@ -18,6 +19,7 @@ from mocap.visualization import scatter
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.vis_utils import AnimationCallback
+from hand_embodiment.command_line import add_animation_arguments
 
 MARKER_COLORS = [
     (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
@@ -59,17 +61,7 @@ def parse_args():
     parser.add_argument(
         "--skip-frames", type=int, default=1,
         help="Skip this number of frames between animated frames.")
-    parser.add_argument(
-        "--delay", type=float, default=0,
-        help="Delay in seconds before starting the animation")
-    parser.add_argument(
-        "--insole", action="store_true", help="Visualize insole mesh.")
-    parser.add_argument(
-        "--pillow", action="store_true", help="Visualize pillow.")
-    parser.add_argument(
-        "--electronic", action="store_true",
-        help="Visualize electronic components.")
-
+    add_animation_arguments(parser)
     return parser.parse_args()
 
 

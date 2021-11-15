@@ -175,7 +175,7 @@ def pillow_pose(pillow_left, pillow_right, pillow_top):
 
 
 class Electronic(pv.Artist):
-    """Representation of electronic target component."""
+    """Representation of electronic object and target component."""
     def __init__(
             self, target_top=np.zeros(3), target_bottom=np.array([1, 0, 0]),
             object_left=np.zeros(3), object_right=np.array([0, 1, 0]),
@@ -272,6 +272,61 @@ def electronic_object_pose(object_left, object_right, object_top):
     return pose
 
 
+class Passport(pv.Artist):
+    """Representation of passport."""
+    def __init__(self, passport_left=np.zeros(3),
+                 passport_right=np.array([1, 0, 0])):
+        target_filename = resource_filename(
+            "hand_embodiment", "model/objects/passport_open.stl")
+        self.mesh = o3d.io.read_triangle_mesh(target_filename)
+        self.mesh.paint_uniform_color(np.array([0.38, 0.48, 0.42]))
+        self.mesh.compute_triangle_normals()
+
+        self.passport_left = np.zeros(3)
+        self.passport_right = np.array([1, 0, 0])
+
+        self.passport2markers = pt.transform_from(
+            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+            p=-np.array([0.0, 0.0, 0.0]))
+        self.target_markers2origin = np.copy(self.passport2markers)
+
+        self.set_data(passport_left, passport_right)
+
+    def set_data(self, passport_left, passport_right):
+        if not any(np.isnan(passport_left)):
+            self.passport_left = passport_left
+        if not any(np.isnan(passport_right)):
+            self.passport_right = passport_right
+
+        self.mesh.transform(pt.invert_transform(pt.concat(
+            self.passport2markers, self.target_markers2origin)))
+        self.target_markers2origin = passport_pose(
+            self.passport_left, self.passport_right)
+        self.mesh.transform(pt.concat(
+            self.passport2markers, self.target_markers2origin))
+
+    @property
+    def geometries(self):
+        """Expose geometries.
+
+        Returns
+        -------
+        geometries : list
+            List of geometries that can be added to the visualizer.
+        """
+        return [self.mesh]
+
+
+def passport_pose(passport_left, passport_right):
+    """Compute pose of passport."""
+    x_axis = pr.norm_vector(passport_right - passport_left)
+    z_axis = np.copy(pr.unitz)
+    y_axis = pr.norm_vector(pr.perpendicular_to_vectors(z_axis, x_axis))
+    z_axis = pr.norm_vector(pr.perpendicular_to_vectors(x_axis, y_axis))
+    R = np.column_stack((x_axis, y_axis, z_axis))
+    return pt.transform_from(R=R, p=0.5 * (passport_right + passport_left))
+
+
 class AnimationCallback:
     def __init__(self, fig, pipeline, args, show_robot=False):
         self.fig = fig
@@ -298,6 +353,12 @@ class AnimationCallback:
 
         if self.args.electronic:
             self.object_mesh = Electronic()
+            self.object_mesh.add_artist(self.fig)
+            self.object_frame = pv.Frame(np.eye(4), s=0.1)
+            self.object_frame.add_artist(self.fig)
+
+        if self.args.passport:
+            self.object_mesh = Passport()
             self.object_mesh.add_artist(self.fig)
             self.object_frame = pv.Frame(np.eye(4), s=0.1)
             self.object_frame.add_artist(self.fig)
@@ -352,6 +413,18 @@ class AnimationCallback:
             if not any(np.isnan(np.hstack((target_bottom, target_top)))):
                 self.object_frame.set_data(
                     electronic_target_pose(target_top, target_bottom))
+                artists.append(self.object_frame)
+
+        if self.args.passport:
+            marker_names = dataset.config.get("additional_markers", ())
+            additional_markers = dataset.get_additional_markers(t)
+            passport_left = additional_markers[marker_names.index("passport_left")]
+            passport_right = additional_markers[marker_names.index("passport_right")]
+            self.object_mesh.set_data(passport_left, passport_right)
+            artists.append(self.object_mesh)
+            if not any(np.isnan(np.hstack((passport_left, passport_right)))):
+                self.object_frame.set_data(
+                    passport_pose(passport_left, passport_right))
                 artists.append(self.object_frame)
 
         if self.show_mano or self.show_robot:
