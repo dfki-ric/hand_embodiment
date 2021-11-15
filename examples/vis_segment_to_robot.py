@@ -12,6 +12,7 @@ from mocap.visualization import scatter
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.vis_utils import AnimationCallback
+from hand_embodiment.command_line import add_animation_arguments
 
 
 def parse_args():
@@ -45,17 +46,7 @@ def parse_args():
     parser.add_argument(
         "--mia-thumb-adducted", action="store_true",
         help="Adduct thumb of Mia hand.")
-    parser.add_argument(
-        "--delay", type=float, default=0,
-        help="Delay in seconds before starting the animation")
-    parser.add_argument(
-        "--insole", action="store_true", help="Visualize insole mesh.")
-    parser.add_argument(
-        "--pillow", action="store_true", help="Visualize pillow.")
-    parser.add_argument(
-        "--electronic", action="store_true",
-        help="Visualize electronic components.")
-
+    add_animation_arguments(parser)
     return parser.parse_args()
 
 

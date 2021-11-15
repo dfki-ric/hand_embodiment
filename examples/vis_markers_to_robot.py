@@ -7,6 +7,7 @@ python examples/vis_markers_to_robot.py mia --mocap-config examples/config/marke
 python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20210616_april.yaml --skip-frames 1 --demo-file data/20210819_april/20210819_r_WK37_insole_set0.tsv --insole --show-mano --mia-thumb-adducted
 python examples/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --skip-frames 1 --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.tsv --show-mano --mia-thumb-adducted
 python examples/vis_markers_to_robot.py shadow --mocap-config examples/config/markers/20211105_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --skip-frames 1 --demo-file data/20211105_april/20211105_r_WK37_electronic_set0.tsv --show-mano --mia-thumb-adducted --electronic
+python examples/vis_markers_to_robot.py shadow --mocap-config examples/config/markers/20211112_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --skip-frames 1 --demo-file data/20211112_april/20211112_r_WK37_passport_set0.tsv --show-mano --passport
 """
 
 import argparse
@@ -18,6 +19,7 @@ from mocap.visualization import scatter
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.vis_utils import AnimationCallback
+from hand_embodiment.command_line import add_animation_arguments
 
 
 def parse_args():
@@ -53,19 +55,9 @@ def parse_args():
         "--mia-thumb-adducted", action="store_true",
         help="Adduct thumb of Mia hand.")
     parser.add_argument(
-        "--delay", type=float, default=0,
-        help="Delay in seconds before starting the animation")
-    parser.add_argument(
         "--measure-time", action="store_true",
         help="Measure time of record and embodiment mapping.")
-    parser.add_argument(
-        "--insole", action="store_true", help="Visualize insole mesh.")
-    parser.add_argument(
-        "--pillow", action="store_true", help="Visualize pillow.")
-    parser.add_argument(
-        "--electronic", action="store_true",
-        help="Visualize electronic components.")
-
+    add_animation_arguments(parser)
     return parser.parse_args()
 
 
