@@ -5,6 +5,7 @@ python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210610_apri
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210616_april/Measurement16.tsv --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210610_april.yaml --insole
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210701_april/Measurement30.tsv --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210610_april.yaml --insole
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210819_april/20210819_r_WK37_insole_set0.tsv --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20210610_april.yaml  --record-mapping-config examples/config/record_mapping/20211105_april.yaml --insole
+python examples/vis_markers_to_mano_trajectory.py --demo-file data/20211119_april/20211119_r_WK37_insole_set2.tsv --mocap-config examples/config/markers/20211119_april.yaml --mano-config examples/config/mano/20211105_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --insole --interpolate-missing-markers
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --pillow
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20211105_april/20211105_r_WK37_electronic_set0.tsv --mocap-config examples/config/markers/20211105_april.yaml --mano-config examples/config/mano/20210610_april.yaml --electronic
 python examples/vis_markers_to_mano_trajectory.py --demo-file data/20211105_april/20211105_r_WK37_electronic_set0.tsv --mocap-config examples/config/markers/20211105_april.yaml --mano-config examples/config/mano/20211105_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --electronic
@@ -47,6 +48,9 @@ def parse_args():
     add_configuration_arguments(parser)
     add_playback_control_arguments(parser)
     parser.add_argument(
+        "--interpolate-missing-markers", action="store_true",
+        help="Interpolate NaNs.")
+    parser.add_argument(
         "--hide-mano", action="store_true", help="Hide MANO mesh")
     add_animation_arguments(parser)
     return parser.parse_args()
@@ -58,7 +62,8 @@ def main():
     dataset = HandMotionCaptureDataset(
         args.demo_file, mocap_config=args.mocap_config,
         skip_frames=args.skip_frames, start_idx=args.start_idx,
-        end_idx=args.end_idx)
+        end_idx=args.end_idx,
+        interpolate_missing_markers=args.interpolate_missing_markers)
 
     pipeline = MoCapToRobot(
         "mia", args.mano_config, dataset.finger_names,

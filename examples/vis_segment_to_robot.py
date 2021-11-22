@@ -34,6 +34,9 @@ def parse_args():
         help="Segments of demonstration that should be used.")
     add_configuration_arguments(parser)
     parser.add_argument(
+        "--interpolate-missing-markers", action="store_true",
+        help="Interpolate NaNs.")
+    parser.add_argument(
         "--show-mano", action="store_true", help="Show MANO mesh")
     parser.add_argument(
         "--mia-thumb-adducted", action="store_true",
@@ -46,7 +49,8 @@ def main():
     args = parse_args()
 
     dataset = SegmentedHandMotionCaptureDataset(
-        args.demo_file, args.segment_label, mocap_config=args.mocap_config)
+        args.demo_file, args.segment_label, mocap_config=args.mocap_config,
+        interpolate_missing_markers=args.interpolate_missing_markers)
 
     segments = args.segments
     if segments is None:

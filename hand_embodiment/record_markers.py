@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from mocap.mano import HandState, hand_vertices, apply_shape_parameters
 from pytransform3d import transformations as pt, rotations as pr
@@ -218,7 +220,13 @@ class MarkerBasedRecordMapping(TimeableMixin):
         finger_markers : dict (str to array-like)
             Positions of markers on fingers.
         """
-        self.current_hand_markers2world = estimate_hand_pose(*hand_markers)
+        current_hand_markers2world = estimate_hand_pose(*hand_markers)
+        if np.any(np.isnan(current_hand_markers2world)):
+            warnings.warn(
+                "[MarkerBasedRecordMapping] Cannot estimate hand pose. "
+                "Detected NaN.")
+        else:
+            self.current_hand_markers2world = current_hand_markers2world
         self.mano2world_ = pt.concat(
             self.mano2hand_markers_, self.current_hand_markers2world)
 

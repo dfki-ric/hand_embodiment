@@ -4,6 +4,7 @@ import numpy as np
 import mocap
 from mocap import qualisys, pandas_utils, conversion
 from mocap.cleaning import median_filter, interpolate_nan
+from mocap.pandas_utils import match_columns
 
 
 class MotionCaptureDatasetBase:
@@ -50,6 +51,23 @@ class MotionCaptureDatasetBase:
         self.hand_trajectories = []
         self.finger_trajectories = {}
         self.additional_trajectories = []
+
+    def _validate(self, trajectory, fail_on_error=False):
+        markers = []
+        for fn in self.config["finger_names"]:
+            assert fn in self.config["finger_marker_names"]
+            for mn in self.config["finger_marker_names"][fn]:
+                markers.append(mn)
+
+        markers += self.config["additional_markers"]
+        for marker in markers:
+            try:
+                cols = match_columns(trajectory, [marker], keep_time=False)
+            except ValueError:
+                if fail_on_error:
+                    raise Exception(f"Missing marker: '{marker}'.")
+                else:
+                    warnings.warn(f"Missing marker: '{marker}'.")
 
     def _scale(self, trajectory):
         data_columns = list(trajectory.columns)
@@ -185,6 +203,8 @@ class HandMotionCaptureDataset(MotionCaptureDatasetBase):
 
         self.n_steps = len(trajectory)
 
+        self._validate(trajectory)
+
         self._hand_trajectories(self.config["hand_marker_names"], trajectory)
         self._finger_trajectories(
             self.config["finger_marker_names"], self.finger_names, trajectory)
@@ -248,6 +268,9 @@ class SegmentedHandMotionCaptureDataset(MotionCaptureDatasetBase):
         trajectory = self._scale(trajectory)
 
         self.n_steps = len(trajectory)
+
+        self._validate(trajectory)
+
         self._hand_trajectories(self.config["hand_marker_names"], trajectory)
         self._finger_trajectories(
             self.config["finger_marker_names"], self.finger_names, trajectory)

@@ -36,6 +36,9 @@ def parse_args():
     add_configuration_arguments(parser)
     add_playback_control_arguments(parser)
     parser.add_argument(
+        "--interpolate-missing-markers", action="store_true",
+        help="Interpolate NaNs.")
+    parser.add_argument(
         "--show-mano", action="store_true", help="Show MANO mesh")
     parser.add_argument(
         "--mia-thumb-adducted", action="store_true",
@@ -53,7 +56,8 @@ def main():
     dataset = HandMotionCaptureDataset(
         args.demo_file, mocap_config=args.mocap_config,
         skip_frames=args.skip_frames, start_idx=args.start_idx,
-        end_idx=args.end_idx)
+        end_idx=args.end_idx,
+        interpolate_missing_markers=args.interpolate_missing_markers)
 
     pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names,
                             record_mapping_config=args.record_mapping_config,
