@@ -249,9 +249,14 @@ class SegmentedHandMotionCaptureDataset(MotionCaptureDatasetBase):
 
         record = mocap.load(metadata=filename)
         streams = [f"{mn} .*" for mn in self.marker_names]
-        self.segments = record.get_segments_as_dataframes(
-            label=segment_label, streams=streams, label_field="l1",
-            start_field="start_frame", end_field="end_frame")
+        try:
+            self.segments = record.get_segments_as_dataframes(
+                label=segment_label, streams=streams, label_field="l1",
+                start_field="start_frame", end_field="end_frame")
+        except KeyError:
+            self.segments = record.get_segments_as_dataframes(
+                label=segment_label, streams=streams, label_field="label 1",
+                start_field="start index", end_field="end index")
 
         self.n_segments = len(self.segments)
         self.selected_segment = 0
