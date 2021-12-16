@@ -276,6 +276,18 @@ def estimate_hand_pose(hand_top, hand_left, hand_right):
         pr.active_matrix_from_intrinsic_euler_xyz([0, 0.5 * np.pi, -0.5 * np.pi]))
     hand_pose[:3, 3] = hand_middle
     return hand_pose
+    # the previous frame was originally designed for cases in which the top
+    # marker was on top of the middle between left and right marker, since
+    # it is on top of the right marker now, this would have been a better way
+    # to compute the the frame:
+    #right2left = hand_left - hand_right
+    #approach = pr.norm_vector(hand_top - hand_right)
+    #orientation = pr.norm_vector(np.cross(approach, right2left))
+    #normal = np.cross(orientation, approach)
+    #hand_pose = np.eye(4)
+    #hand_pose[:3, :3] = np.column_stack((normal, orientation, approach))
+    #hand_pose[:3, 3] = hand_right
+    #return hand_pose
 
 
 class ManoFingerKinematics:
