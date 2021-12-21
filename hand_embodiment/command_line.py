@@ -56,3 +56,6 @@ def add_animation_arguments(parser):
         help="Visualize electronic components.")
     parser.add_argument(
         "--passport", action="store_true", help="Visualize open passport.")
+    parser.add_argument(
+        "--passport-closed", action="store_true",
+        help="Visualize closed passport.")

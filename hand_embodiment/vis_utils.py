@@ -327,6 +327,108 @@ def passport_pose(passport_left, passport_right):
     return pt.transform_from(R=R, p=0.5 * (passport_right + passport_left))
 
 
+class PassportClosed(pv.Artist):
+    """Representation of passport."""
+    def __init__(self, passport_top=np.array([0, 1, 0]),
+                 passport_left=np.zeros(3), passport_right=np.array([1, 0, 0]),
+                 box_top=np.array([0, 1, 0]), box_left=np.zeros(3),
+                 box_right=np.array([1, 0, 0])):
+        passport_filename = resource_filename(
+            "hand_embodiment", "model/objects/passport_closed.stl")
+        self.passport_mesh = o3d.io.read_triangle_mesh(passport_filename)
+        self.passport_mesh.paint_uniform_color(np.array([0.35, 0.14, 0.21]))
+        self.passport_mesh.compute_triangle_normals()
+
+        self.passport_top = np.array([0, 1, 0])
+        self.passport_left = np.zeros(3)
+        self.passport_right = np.array([1, 0, 0])
+
+        self.passport2markers = pt.transform_from(
+            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+            p=-np.array([0.0, 0.0, 0.008]))
+        self.target_markers2origin = np.copy(self.passport2markers)
+
+        box_filename = resource_filename(
+            "hand_embodiment", "model/objects/passport_box.stl")
+        self.box_mesh = o3d.io.read_triangle_mesh(box_filename)
+        self.box_mesh.paint_uniform_color(np.array([0.58, 0.46, 0.25]))
+        self.box_mesh.compute_triangle_normals()
+
+        self.box_top = np.array([0, 1, 0])
+        self.box_left = np.zeros(3)
+        self.box_right = np.array([1, 0, 0])
+
+        self.box2markers = pt.transform_from(
+            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 180, 0])),
+            p=-np.array([0.0, 0.0, -0.046]))
+        self.box_markers2origin = np.copy(self.box2markers)
+
+        self.set_data(passport_top, passport_left, passport_right,
+                      box_top, box_left, box_right)
+
+    def set_data(self, passport_top, passport_left, passport_right,
+                 box_top, box_left, box_right):
+        if not any(np.isnan(passport_top)):
+            self.passport_top = passport_top
+        if not any(np.isnan(passport_left)):
+            self.passport_left = passport_left
+        if not any(np.isnan(passport_right)):
+            self.passport_right = passport_right
+        if not any(np.isnan(box_top)):
+            self.box_top = box_top
+        if not any(np.isnan(box_left)):
+            self.box_left = box_left
+        if not any(np.isnan(box_right)):
+            self.box_right = box_right
+
+        self.passport_mesh.transform(pt.invert_transform(pt.concat(
+            self.passport2markers, self.target_markers2origin)))
+        self.target_markers2origin = passport_closed_pose(
+            self.passport_top, self.passport_left, self.passport_right)
+        self.passport_mesh.transform(pt.concat(
+            self.passport2markers, self.target_markers2origin))
+
+        self.box_mesh.transform(pt.invert_transform(pt.concat(
+            self.box2markers, self.box_markers2origin)))
+        self.box_markers2origin = box_pose(
+            self.box_top, self.box_left, self.box_right)
+        self.box_mesh.transform(pt.concat(
+            self.box2markers, self.box_markers2origin))
+
+    @property
+    def geometries(self):
+        """Expose geometries.
+
+        Returns
+        -------
+        geometries : list
+            List of geometries that can be added to the visualizer.
+        """
+        return [self.passport_mesh, self.box_mesh]
+
+
+def passport_closed_pose(passport_top, passport_left, passport_right):
+    """Compute pose of closed passport."""
+    left2top = passport_top - passport_left
+    left2right = passport_left - passport_right
+    pose = np.eye(4)
+    pose[:3, :3] = pr.matrix_from_two_vectors(left2right, left2top)
+    object_middle = passport_left + 0.5 * left2top
+    pose[:3, 3] = object_middle
+    return pose
+
+
+def box_pose(box_top, box_left, box_right):
+    """Compute pose of passport box."""
+    left2top = box_top - box_left
+    left2right = box_left - box_right
+    pose = np.eye(4)
+    pose[:3, :3] = pr.matrix_from_two_vectors(left2right, left2top)
+    object_middle = 0.5 * (box_left + box_right) + 0.5 * left2top
+    pose[:3, 3] = object_middle
+    return pose
+
+
 class AnimationCallback:
     def __init__(self, fig, pipeline, args, show_robot=False):
         self.fig = fig
@@ -359,6 +461,12 @@ class AnimationCallback:
 
         if self.args.passport:
             self.object_mesh = Passport()
+            self.object_mesh.add_artist(self.fig)
+            self.object_frame = pv.Frame(np.eye(4), s=0.1)
+            self.object_frame.add_artist(self.fig)
+
+        if self.args.passport_closed:
+            self.object_mesh = PassportClosed()
             self.object_mesh.add_artist(self.fig)
             self.object_frame = pv.Frame(np.eye(4), s=0.1)
             self.object_frame.add_artist(self.fig)
@@ -425,6 +533,24 @@ class AnimationCallback:
             if not any(np.isnan(np.hstack((passport_left, passport_right)))):
                 self.object_frame.set_data(
                     passport_pose(passport_left, passport_right))
+                artists.append(self.object_frame)
+
+        if self.args.passport_closed:
+            marker_names = dataset.config.get("additional_markers", ())
+            additional_markers = dataset.get_additional_markers(t)
+            passport_top = additional_markers[marker_names.index("passport_top")]
+            passport_left = additional_markers[marker_names.index("passport_left")]
+            passport_right = additional_markers[marker_names.index("passport_right")]
+            box_top = additional_markers[marker_names.index("box_top")]
+            box_left = additional_markers[marker_names.index("box_left")]
+            box_right = additional_markers[marker_names.index("box_right")]
+            self.object_mesh.set_data(
+                passport_top, passport_left, passport_right,
+                box_top, box_left, box_right)
+            artists.append(self.object_mesh)
+            if not any(np.isnan(np.hstack((passport_top, passport_left, passport_right)))):
+                self.object_frame.set_data(
+                    passport_closed_pose(passport_top, passport_left, passport_right))
                 artists.append(self.object_frame)
 
         if self.show_mano or self.show_robot:
