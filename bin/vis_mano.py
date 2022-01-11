@@ -178,8 +178,6 @@ def main():
 
         if args.show_spheres:
             spheres = PointCollection(all_positions, s=0.006, c=(0, 1, 0))
-    #start, end = 500, 510
-    #for i in range(start, end): pc.colors[i] = [(i - start) / (end - start)] * 2 + [0]
 
     fig = pv.figure()
     fig.add_geometry(pc)
