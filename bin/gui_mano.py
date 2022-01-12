@@ -151,7 +151,7 @@ class Figure:
         self.tab1.add_child(gui.Label("Highlight vertices"))
         self.mano_change = OnManoChange(self, pc, vertex_mask, hand_state, show_mesh)
         for i in range(len(vertex_mask)):
-            checkbox = gui.Checkbox(f"{(i):03d}")
+            checkbox = gui.Checkbox(f"{i:03d}")
             checkbox.checked = vertex_mask[i]
             checkbox.set_on_checked(partial(self.mano_change.checked, i=i))
             self.tab1.add_child(checkbox)
