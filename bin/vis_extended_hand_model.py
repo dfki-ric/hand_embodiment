@@ -13,7 +13,8 @@ from hand_embodiment.target_configurations import TARGET_CONFIG
 def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
             show_visuals=False, show_collision_objects=False,
             show_name=False, whitelist=None, s=1.0,
-            highlight_visuals=[], highlight_in_direction=np.zeros(3)):
+            highlight_visuals=[], highlight_in_direction=np.zeros(3),
+            return_highlighted_mesh=False):
 
     if frame not in tm.nodes:
         raise KeyError("Unknown frame '%s'" % frame)
@@ -78,8 +79,9 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
     for visual_frame, obj in visuals.items():
         A2B = tm.get_transform(visual_frame, frame)
         obj.set_data(A2B)
-        print(visual_frame)
 
+    highlight_vertices = dict()
+    highlight_vertex_indices = dict()
     for visual_frame, obj in visuals.items():
         if visual_frame in highlight_visuals:
             try:
@@ -93,6 +95,8 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
             vertices = np.array(obj.mesh.vertices)
             triangles = np.array(obj.mesh.triangles)
             triangle_normals = np.array(obj.mesh.triangle_normals)
+            highlight_vertices[visual_frame] = set()
+            highlight_vertex_indices[visual_frame] = list()
             for i in range(len(vertices)):
                 triangle_indices = np.where(triangles == i)[0]
                 if len(triangle_indices) > 0:
@@ -100,6 +104,10 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
                     point_on_plane = vertices[i]
                     if (highlight_in_direction - point_on_plane).dot(mean_norm) > 0:
                         vertex_colors[i] = (1, 0, 0)
+                        if return_highlighted_mesh:
+                            highlight_vertices[visual_frame].add(tuple(vertices[i]))
+                            highlight_vertex_indices[visual_frame].append(i)
+                            # TODO extract vertex indices
             obj.mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
 
     for collision_object_frame, obj in collision_objects.items():
@@ -119,6 +127,11 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
 
     for g in geometries:
         fig.add_geometry(g)
+
+    if return_highlighted_mesh:
+        return ({k: np.array(list(v))
+                 for k, v in highlight_vertices.items()},
+                {k: v for k, v in highlight_vertex_indices.items()})
 
 
 def _objects_to_artists(objects):
@@ -171,21 +184,31 @@ def main():
     args = parser.parse_args()
 
     if args.hand == "mia":
-        highlight_in_direction = np.array([0, 0.2, 0.15])
+        highlight_in_direction = np.array([0, 0.15, 0.05])
         highlight_visuals = [
             "visual:thumb_fle/0",
-            "visual:index_sensor/0", "visual:index_sensor/1",
-            "visual:middle_sensor/0", "visual:middle_sensor/1",
-            "visual:ring_fle/0", "visual:ring_fle/1",
-            "visual:little_fle/0", "visual:little_fle/1"]
+            #"visual:index_sensor/0",
+            "visual:index_sensor/1",
+            #"visual:middle_sensor/0",
+            "visual:middle_sensor/1",
+            #"visual:ring_fle/0",
+            "visual:ring_fle/1",
+            #"visual:little_fle/0"
+            "visual:little_fle/1",
+        ]
     elif args.hand == "shadow_hand":
         highlight_in_direction = np.array([0, -0.1, 0.3])
         highlight_visuals = [
-            "visual:rh_thbase/0", "visual:rh_thproximal/0", "visual:rh_thhub/0", "visual:rh_thmiddle/0", "visual:rh_thdistal/0",
-            "visual:rh_ffknuckle/0", "visual:rh_ffproximal/0", "visual:rh_ffmiddle/0", "visual:rh_ffdistal/0",
-            "visual:rh_mfknuckle/0", "visual:rh_mfproximal/0", "visual:rh_mfmiddle/0", "visual:rh_mfdistal/0",
-            "visual:rh_rfknuckle/0", "visual:rh_rfproximal/0", "visual:rh_rfmiddle/0", "visual:rh_rfdistal/0",
-            "visual:rh_lfknuckle/0", "visual:rh_lfproximal/0", "visual:rh_lfmiddle/0", "visual:rh_lfdistal/0"]
+            #"visual:rh_thbase/0", "visual:rh_thproximal/0",
+            "visual:rh_thhub/0", "visual:rh_thmiddle/0", "visual:rh_thdistal/0",
+            #"visual:rh_ffknuckle/0", "visual:rh_ffproximal/0",
+            "visual:rh_ffmiddle/0", "visual:rh_ffdistal/0",
+            #"visual:rh_mfknuckle/0", "visual:rh_mfproximal/0",
+            "visual:rh_mfmiddle/0", "visual:rh_mfdistal/0",
+            #"visual:rh_rfknuckle/0", "visual:rh_rfproximal/0",
+            "visual:rh_rfmiddle/0", "visual:rh_rfdistal/0",
+            #"visual:rh_lfknuckle/0", "visual:rh_lfproximal/0",
+            "visual:rh_lfmiddle/0", "visual:rh_lfdistal/0"]
     else:
         raise ValueError("Hand '%s'" % args.hand)
 
@@ -193,9 +216,6 @@ def main():
 
     hand_config = TARGET_CONFIG[args.hand]
     kin = load_kinematic_model(hand_config)
-
-    for jn in kin.tm._joints:
-        kin.tm.set_joint(jn, 0.05)
 
     for finger_name in hand_config["ee_frames"].keys():
         finger2base = kin.tm.get_transform(
@@ -208,11 +228,21 @@ def main():
                 hand_config["base_frame"])
             fig.plot_sphere(radius=0.005, A2B=finger2base, c=(1, 0, 0))
 
-    plot_tm(
+    highlighted_vertices, highlighted_vertex_indices = plot_tm(
         fig, kin.tm, hand_config["base_frame"], show_frames=args.show_frames,
         show_connections=False, show_visuals=True, show_collision_objects=False,
         show_name=False, s=0.02, highlight_visuals=highlight_visuals,
-        highlight_in_direction=highlight_in_direction)
+        highlight_in_direction=highlight_in_direction,
+        return_highlighted_mesh=True)
+
+    for k, v in highlighted_vertices.items():
+        pc = o3d.geometry.PointCloud()
+        pc.points = o3d.utility.Vector3dVector(v)
+        #fig.add_geometry(pc)
+
+    for k, v in highlighted_vertex_indices.items():
+        with open(k.replace("/", "_") + ".txt", "w") as f:
+            f.write(", ".join(map(str, v)))
 
     origin = pv.Frame(np.eye(4), s=0.1)
     origin.add_artist(fig)
@@ -220,7 +250,7 @@ def main():
     sphere = pv.Sphere(
         radius=0.005,
         A2B=pt.transform_from(R=np.eye(3), p=highlight_in_direction))
-    sphere.add_artist(fig)
+    #sphere.add_artist(fig)
 
     fig.show()
 

@@ -186,9 +186,10 @@ class OnManoChange:
         self.pc.colors = o3d.utility.Vector3dVector(colors)
 
         if self.show_mesh:
-            self.hand_state.hand_mesh.triangles = o3d.utility.Vector3iVector(
-                [triangle for triangle in self._all_triangles
-                if np.all([self.vertex_mask[vertex] for vertex in triangle])])
+            vertex_colors = np.array(self.hand_state.hand_mesh.vertex_colors)
+            vertex_colors[self.vertex_mask] = (1, 0, 0)
+            vertex_colors[np.logical_not(self.vertex_mask)] = np.array([245, 214, 175]) / 255.0
+            self.hand_state.hand_mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
 
     def draw(self):
         try:  # Open3D <= 0.13
