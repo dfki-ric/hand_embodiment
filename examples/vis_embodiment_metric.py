@@ -1,12 +1,14 @@
 import numpy as np
+import open3d as o3d
 import pytransform3d.visualizer as pv
-import pytransform3d.transformations as pt
 from mocap.mano import HandState
 from hand_embodiment.embodiment import HandEmbodiment
 from hand_embodiment.target_configurations import MIA_CONFIG, manobase2miabase
 from hand_embodiment.metrics import (
     highlight_mesh_vertices, MANO_CONTACT_SURFACE_VERTICES,
-    highlight_graph_visuals, MIA_CONTACT_SURFACE_VERTICES)
+    highlight_graph_visuals, MIA_CONTACT_SURFACE_VERTICES,
+    extract_mano_contact_surface, extract_graph_vertices,
+    distances_robot_to_mano)
 
 
 default_mano_pose = np.array([
@@ -33,39 +35,42 @@ mano_pose[5] = 1.0
 mano_pose[14] = 1.0
 mano_pose[40] = -0.5
 
-fig = pv.figure()
-
 hand_state = HandState(left=False)
 hand_state.pose[:] = mano_pose
 hand_state.recompute_mesh(manobase2miabase)
 highlight_mesh_vertices(hand_state.hand_mesh, MANO_CONTACT_SURFACE_VERTICES["thumb"])
-fig.add_geometry(hand_state.hand_mesh)
 
 emb = HandEmbodiment(hand_state, MIA_CONFIG)
-
-import time
-start = time.time()
 
 joint_angles, desired_positions = emb.solve(
     return_desired_positions=True,
     use_cached_forward_kinematics=False)
-
-print(time.time() - start)
-
-for finger_name in emb.finger_names_:
-    actual_positions = emb.finger_forward_kinematics(
-        finger_name, joint_angles[finger_name])
-    for p in desired_positions[finger_name]:
-        p = pt.translate_transform(np.eye(4), p)
-        fig.plot_sphere(0.006, p, c=(0, 1, 0))
-    for p in actual_positions:
-        fig.plot_sphere(0.006, p, c=(1, 0, 0))
 
 graph = pv.Graph(
     emb.target_kin.tm, MIA_CONFIG["base_frame"], show_frames=False,
     show_connections=False, show_visuals=True, show_collision_objects=False,
     show_name=False, s=0.02)
 highlight_graph_visuals(graph, MIA_CONTACT_SURFACE_VERTICES["thumb"])
-graph.add_artist(fig)
+
+dists = distances_robot_to_mano(
+    hand_state, graph, MIA_CONTACT_SURFACE_VERTICES,
+    ["thumb", "index", "middle", "ring", "little"])
+print(dists)
+
+mano_vertices, mano_triangles = extract_mano_contact_surface(hand_state, "thumb")
+robot_vertices = extract_graph_vertices(graph, MIA_CONTACT_SURFACE_VERTICES, "thumb")
+
+fig = pv.figure()
+
+#fig.add_geometry(hand_state.hand_mesh)
+#graph.add_artist(fig)
+
+mesh = o3d.geometry.TriangleMesh(o3d.utility.Vector3dVector(mano_vertices),
+                                 o3d.utility.Vector3iVector(mano_triangles))
+mesh.paint_uniform_color((1, 0.5, 0))
+fig.add_geometry(mesh)
+
+pc = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(robot_vertices))
+fig.add_geometry(pc)
 
 fig.show()
