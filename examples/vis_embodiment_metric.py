@@ -35,11 +35,11 @@ mano_pose[5] = 1.0
 mano_pose[14] = 1.0
 mano_pose[40] = -0.5
 
-hand = "shadow"
+hand = "mia"
 HAND_CONFIG = TARGET_CONFIG[hand]
 ROBOT_CONTACT_SURFACE_VERTICES = CONTACT_SURFACE_VERTICES[hand]
 fingers = ["thumb", "index", "middle", "ring", "little"]
-highlighted_finger = "ring"
+highlighted_finger = "thumb"
 
 hand_state = HandState(left=False)
 hand_state.pose[:] = mano_pose
@@ -60,9 +60,9 @@ graph = pv.Graph(
     show_name=False, s=0.02)
 highlight_graph_visuals(graph, ROBOT_CONTACT_SURFACE_VERTICES[highlighted_finger])
 
-#dists = distances_robot_to_mano(
-#    hand_state, graph, ROBOT_CONTACT_SURFACE_VERTICES, fingers)
-#print(dists)
+dists = distances_robot_to_mano(
+    hand_state, graph, ROBOT_CONTACT_SURFACE_VERTICES, fingers)
+print(dists)
 
 mano_vertices, mano_triangles = extract_mano_contact_surface(
     hand_state, highlighted_finger)
@@ -71,8 +71,8 @@ robot_vertices = extract_graph_vertices(
 
 fig = pv.figure()
 
-#fig.add_geometry(hand_state.hand_mesh)
-#graph.add_artist(fig)
+fig.add_geometry(hand_state.hand_mesh)
+graph.add_artist(fig)
 
 mesh = o3d.geometry.TriangleMesh(o3d.utility.Vector3dVector(mano_vertices),
                                  o3d.utility.Vector3iVector(mano_triangles))
