@@ -1,3 +1,7 @@
+"""
+Example calls:
+python bin/vis_extended_hand_model.py --hide-visuals --show-focus --show-contact-vertices shadow_hand
+"""
 import argparse
 import warnings
 import numpy as np
@@ -13,7 +17,7 @@ from hand_embodiment.target_configurations import TARGET_CONFIG
 def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
             show_visuals=False, show_collision_objects=False,
             show_name=False, whitelist=None, s=1.0,
-            highlight_visuals=[], highlight_in_direction=np.zeros(3),
+            highlight_visuals=[], highlight_in_directions=np.zeros((1, 3)),
             return_highlighted_mesh=False):
 
     if frame not in tm.nodes:
@@ -99,14 +103,14 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
             highlight_vertex_indices[visual_frame] = list()
             for i in range(len(vertices)):
                 triangle_indices = np.where(triangles == i)[0]
-                if len(triangle_indices) > 0:
-                    mean_norm = pr.norm_vector(triangle_normals[triangle_indices].mean(axis=0))
-                    point_on_plane = vertices[i]
-                    if (highlight_in_direction - point_on_plane).dot(mean_norm) > 0:
-                        vertex_colors[i] = (1, 0, 0)
-                        if return_highlighted_mesh:
-                            highlight_vertices[visual_frame].add(tuple(vertices[i]))
-                            highlight_vertex_indices[visual_frame].append(i)
+                if len(triangle_indices) == 0:
+                    continue
+                mean_norm = pr.norm_vector(triangle_normals[triangle_indices].mean(axis=0))
+                if all((highlight_in_directions - vertices[np.newaxis, i]).dot(mean_norm) > 0):
+                    vertex_colors[i] = (1, 0, 0)
+                    if return_highlighted_mesh:
+                        highlight_vertices[visual_frame].add(tuple(vertices[i]))
+                        highlight_vertex_indices[visual_frame].append(i)
             obj.mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
 
     for collision_object_frame, obj in collision_objects.items():
@@ -124,13 +128,12 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
     for obj in collision_objects.values():
         geometries += obj.geometries
 
-    for g in geometries:
-        fig.add_geometry(g)
-
     if return_highlighted_mesh:
-        return ({k: np.array(list(v))
-                 for k, v in highlight_vertices.items()},
+        return (geometries,
+                {k: np.array(list(v)) for k, v in highlight_vertices.items()},
                 {k: v for k, v in highlight_vertex_indices.items()})
+    else:
+        return geometries
 
 
 def _objects_to_artists(objects):
@@ -183,10 +186,30 @@ def main():
     parser.add_argument(
         "--hide-tips", action="store_true",
         help="Hide finger tips use for kinematics.")
+    parser.add_argument(
+        "--hide-visuals", action="store_true",
+        help="Hide visuals of URDF.")
+    parser.add_argument(
+        "--show-focus", action="store_true",
+        help="Show focus point for highlighted triangles.")
+    parser.add_argument(
+        "--show-contact-vertices", action="store_true",
+        help="Show contact vertices.")
+    parser.add_argument(
+        "--show-frame", action="store_true",
+        help="Show base frame.")
     args = parser.parse_args()
 
     if args.hand == "mia":
-        highlight_in_direction = np.array([0, 0.15, 0.05])
+        highlight_in_directions = np.array([[-0.03, 0.125, 0.07],
+                                            [-0.03, 0.15, 0.07],
+                                            [-0.03, 0.175, 0.07],
+                                            [0, 0.125, 0.07],
+                                            [0, 0.15, 0.07],
+                                            [0, 0.175, 0.07],
+                                            [0.03, 0.125, 0.07],
+                                            [0.03, 0.15, 0.07],
+                                            [0.03, 0.175, 0.07]])
         highlight_visuals = [
             "visual:thumb_fle/0",
             #"visual:index_sensor/0",
@@ -199,7 +222,15 @@ def main():
             "visual:little_fle/1",
         ]
     elif args.hand == "shadow_hand":
-        highlight_in_direction = np.array([0, -0.1, 0.3])
+        highlight_in_directions = np.array([[0, -0.08, 0.4],
+                                            [0, -0.08, 0.45],
+                                            [0, -0.08, 0.5],
+                                            [0.05, -0.08, 0.4],
+                                            [0.05, -0.08, 0.45],
+                                            [0.05, -0.08, 0.5],
+                                            [-0.05, -0.08, 0.4],
+                                            [-0.05, -0.08, 0.45],
+                                            [-0.05, -0.08, 0.5]])
         highlight_visuals = [
             #"visual:rh_thbase/0", "visual:rh_thproximal/0",
             "visual:rh_thhub/0", "visual:rh_thmiddle/0", "visual:rh_thdistal/0",
@@ -231,29 +262,34 @@ def main():
                     hand_config["base_frame"])
                 fig.plot_sphere(radius=0.005, A2B=finger2base, c=(1, 0, 0))
 
-    highlighted_vertices, highlighted_vertex_indices = plot_tm(
+    geometries, highlighted_vertices, highlighted_vertex_indices = plot_tm(
         fig, kin.tm, hand_config["base_frame"], show_frames=args.show_frames,
         show_connections=False, show_visuals=True, show_collision_objects=False,
         show_name=False, s=0.02, highlight_visuals=highlight_visuals,
-        highlight_in_direction=highlight_in_direction,
+        highlight_in_directions=highlight_in_directions,
         return_highlighted_mesh=True)
 
-    for k, v in highlighted_vertices.items():
-        pc = o3d.geometry.PointCloud()
-        pc.points = o3d.utility.Vector3dVector(v)
-        #fig.add_geometry(pc)
+    if not args.hide_visuals:
+        for g in geometries:
+            fig.add_geometry(g)
+
+    if args.show_contact_vertices:
+        for k, v in highlighted_vertices.items():
+            pc = o3d.geometry.PointCloud()
+            pc.points = o3d.utility.Vector3dVector(v)
+            fig.add_geometry(pc)
 
     for k, v in highlighted_vertex_indices.items():
         with open(k.replace("/", "_") + ".txt", "w") as f:
             f.write(", ".join(map(str, v)))
 
-    origin = pv.Frame(np.eye(4), s=0.1)
-    origin.add_artist(fig)
+    if args.show_frame:
+        origin = pv.Frame(np.eye(4), s=0.1)
+        origin.add_artist(fig)
 
-    sphere = pv.Sphere(
-        radius=0.005,
-        A2B=pt.transform_from(R=np.eye(3), p=highlight_in_direction))
-    #sphere.add_artist(fig)
+    if args.show_focus:
+        sphere = pv.PointCollection3D(highlight_in_directions, s=0.005)
+        sphere.add_artist(fig)
 
     fig.show()
 
