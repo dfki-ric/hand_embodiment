@@ -180,6 +180,9 @@ def main():
     parser.add_argument(
         "--highlight-meshes", action="store_true",
         help="Highlight mesh surfaces.")
+    parser.add_argument(
+        "--hide-tips", action="store_true",
+        help="Hide finger tips use for kinematics.")
     args = parser.parse_args()
 
     if args.hand == "mia":
@@ -216,16 +219,17 @@ def main():
     hand_config = TARGET_CONFIG[args.hand]
     kin = load_kinematic_model(hand_config)
 
-    for finger_name in hand_config["ee_frames"].keys():
-        finger2base = kin.tm.get_transform(
-            hand_config["ee_frames"][finger_name], hand_config["base_frame"])
-        fig.plot_sphere(radius=0.005, A2B=finger2base, c=(1, 0, 0))
-    if "intermediate_frames" in hand_config:
-        for finger_name in hand_config["intermediate_frames"].keys():
+    if not args.hide_tips:
+        for finger_name in hand_config["ee_frames"].keys():
             finger2base = kin.tm.get_transform(
-                hand_config["intermediate_frames"][finger_name],
-                hand_config["base_frame"])
+                hand_config["ee_frames"][finger_name], hand_config["base_frame"])
             fig.plot_sphere(radius=0.005, A2B=finger2base, c=(1, 0, 0))
+        if "intermediate_frames" in hand_config:
+            for finger_name in hand_config["intermediate_frames"].keys():
+                finger2base = kin.tm.get_transform(
+                    hand_config["intermediate_frames"][finger_name],
+                    hand_config["base_frame"])
+                fig.plot_sphere(radius=0.005, A2B=finger2base, c=(1, 0, 0))
 
     highlighted_vertices, highlighted_vertex_indices = plot_tm(
         fig, kin.tm, hand_config["base_frame"], show_frames=args.show_frames,
