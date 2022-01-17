@@ -11,6 +11,8 @@ from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.vis_utils import AnimationCallback
 from hand_embodiment.command_line import (
     add_animation_arguments, add_configuration_arguments)
+from hand_embodiment.metrics import (
+    CONTACT_SURFACE_VERTICES, distances_robot_to_mano)
 
 
 def parse_args():
@@ -73,6 +75,13 @@ def main():
     for a in drawn_artists:
         for geometry in a.geometries:
             fig.update_geometry(geometry)
+
+    ROBOT_CONTACT_SURFACE_VERTICES = CONTACT_SURFACE_VERTICES[args.hand]
+    fingers = ["thumb", "index", "middle", "ring", "little"]
+    dists = distances_robot_to_mano(
+        pipeline.embodiment_mapping_.hand_state_, animation_callback.robot,
+        ROBOT_CONTACT_SURFACE_VERTICES, fingers)
+    print(dists)
 
     fig.show()
 
