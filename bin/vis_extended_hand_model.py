@@ -107,7 +107,6 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
                         if return_highlighted_mesh:
                             highlight_vertices[visual_frame].add(tuple(vertices[i]))
                             highlight_vertex_indices[visual_frame].append(i)
-                            # TODO extract vertex indices
             obj.mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
 
     for collision_object_frame, obj in collision_objects.items():

@@ -90,8 +90,6 @@ CONTACT_SURFACE_VERTICES = {
 }
 
 
-# TODO http://www.cemyuksel.com/research/sampleelimination/
-
 def highlight_graph_visuals(graph, vertex_indices_per_visual, color=(1, 0, 0)):
     """Highlight vertices of multiple visuals in a graph.
 
@@ -139,6 +137,7 @@ def extract_graph_vertices(graph, vertex_indices_per_visual, finger_name):
             triangle for triangle in triangles
             if any([vi in vertex_indices for vi in triangle])])
         mesh.triangles = o3d.utility.Vector3iVector(triangles)
+        # http://www.cemyuksel.com/research/sampleelimination/
         pc = mesh.sample_points_poisson_disk(100, seed=0)
         vertices = np.array(pc.points)
         all_vertices.append(vertices)
