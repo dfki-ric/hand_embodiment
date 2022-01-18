@@ -6,6 +6,7 @@ python examples/eval_segment_frame_embodiment.py shadow insert 0 120 --mocap-con
 
 import argparse
 import numpy as np
+import json
 from pytransform3d import visualizer as pv
 from mocap.visualization import scatter
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
@@ -47,6 +48,9 @@ def parse_args():
     parser.add_argument(
         "--no-metric", action="store_true",
         help="Don't compute the metric, only show the configuration.")
+    parser.add_argument(
+        "--output-file", default=None,
+        help="File to which the result should be written.")
     parser.add_argument(
         "--output-image", default=None,
         help="Image to which we render the configuration.")
@@ -93,6 +97,9 @@ def main():
             ROBOT_CONTACT_SURFACE_VERTICES, fingers)
         print("DONE")
         print(dists)
+        if args.output_file is not None:
+            with open(args.output_file, "w") as f:
+                json.dump(dists, f)
 
     if args.output_image is None:
         fig.show()
