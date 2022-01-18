@@ -1,6 +1,6 @@
 """Example calls:
 python examples/eval_segment_frame_embodiment.py mia close 0 100 --mocap-config examples/config/markers/20211119_april.yaml --mano-config examples/config/mano/20211105_april.yaml --mia-thumb-adducted --show-mano --demo-file data/20211119_april/20211119_r_WK37_insole_set0.json --insole
-python examples/eval_segment_frame_embodiment.py shadow grasp 1 80 --mocap-config examples/config/markers/20211126_april_pillow.yaml --mano-config examples/config/mano/20211105_april.yaml --mia-thumb-adducted --show-mano --demo-file data/20211126_april_pillow/20211126_r_WK37_big_pillow_set0.json
+python examples/eval_segment_frame_embodiment.py shadow grasp 0 80 --mocap-config examples/config/markers/20211126_april_pillow.yaml --mano-config examples/config/mano/20211105_april.yaml --mia-thumb-adducted --show-mano --demo-file data/20211126_april_pillow/20211126_r_WK37_big_pillow_set0.json
 python examples/eval_segment_frame_embodiment.py shadow insert 0 120 --mocap-config examples/config/markers/20211217_april.yaml --mano-config examples/config/mano/20211105_april.yaml --mia-thumb-adducted --show-mano --demo-file data/20211217_april/20211217_r_WK37_passport_box_set0.json --passport-closed
 """
 
@@ -44,6 +44,12 @@ def parse_args():
     parser.add_argument(
         "--mia-thumb-adducted", action="store_true",
         help="Adduct thumb of Mia hand.")
+    parser.add_argument(
+        "--no-metric", action="store_true",
+        help="Don't compute the metric, only show the configuration.")
+    parser.add_argument(
+        "--output-image", default=None,
+        help="Image to which we render the configuration.")
     add_animation_arguments(parser)
     return parser.parse_args()
 
@@ -78,16 +84,20 @@ def main():
         for geometry in a.geometries:
             fig.update_geometry(geometry)
 
-    print("Starting computation of distances...")
-    ROBOT_CONTACT_SURFACE_VERTICES = CONTACT_SURFACE_VERTICES[args.hand]
-    fingers = ["thumb", "index", "middle", "ring", "little"]
-    dists = distances_robot_to_mano(
-        pipeline.embodiment_mapping_.hand_state_, animation_callback.robot,
-        ROBOT_CONTACT_SURFACE_VERTICES, fingers)
-    print("DONE")
-    print(dists)
+    if not args.no_metric:
+        print("Starting computation of distances...")
+        ROBOT_CONTACT_SURFACE_VERTICES = CONTACT_SURFACE_VERTICES[args.hand]
+        fingers = ["thumb", "index", "middle", "ring", "little"]
+        dists = distances_robot_to_mano(
+            pipeline.embodiment_mapping_.hand_state_, animation_callback.robot,
+            ROBOT_CONTACT_SURFACE_VERTICES, fingers)
+        print("DONE")
+        print(dists)
 
-    fig.show()
+    if args.output_image is None:
+        fig.show()
+    else:
+        fig.save_image(args.output_image)
 
 
 if __name__ == "__main__":
