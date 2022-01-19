@@ -1,5 +1,6 @@
 import numpy as np
 import open3d as o3d
+import numba
 
 
 MANO_CONTACT_SURFACE_VERTICES = {
@@ -127,27 +128,49 @@ def distances_robot_to_mano(hand_state, robot_graph, robot_contact_surfaces, fin
 
 
 def extract_graph_vertices(graph, vertex_indices_per_visual, finger_name):
-    """TODO"""
-    all_vertices = []
+    """Extract vertices from URDF meshes that are equally distributed.
+
+    Poisson disk sampling is used to extract equally distributed vertices.
+    See http://www.cemyuksel.com/research/sampleelimination/
+
+    Parameters
+    ----------
+    graph : pytransform3d.visualizer.Graph
+        URDF state including meshes.
+
+    vertex_indices_per_visual : dict
+        Indices of mesh vertices that belong to the contact surface per mesh.
+
+    finger_name : str
+        Name of the finger for which we extract the vertices.
+
+    Returns
+    -------
+    vertices : array, shape (n_vertices, 3)
+        Vertices that belong to the contact surface and equally distributed.
+    """
+    vertices = []
     for visual in vertex_indices_per_visual[finger_name]:
-        mesh = o3d.geometry.TriangleMesh(graph.visuals[visual].mesh)
-        vertex_indices = vertex_indices_per_visual[finger_name][visual]
-        triangles = np.array(mesh.triangles)
+        original_mesh = graph.visuals[visual].mesh
+        vertex_indices = set(vertex_indices_per_visual[finger_name][visual])
+
+        mesh = o3d.geometry.TriangleMesh()
+        mesh.vertices = original_mesh.vertices
+        triangles = np.array(original_mesh.triangles)
         triangles = np.array([
             triangle for triangle in triangles
             if any([vi in vertex_indices for vi in triangle])])
         mesh.triangles = o3d.utility.Vector3iVector(triangles)
-        # http://www.cemyuksel.com/research/sampleelimination/
+
         pc = mesh.sample_points_poisson_disk(100, seed=0)
-        vertices = np.array(pc.points)
-        all_vertices.append(vertices)
-    return np.concatenate(all_vertices, axis=0)
+        vertices.append(np.array(pc.points))
+    return np.concatenate(vertices, axis=0)
 
 
 def extract_mano_contact_surface(hand_state, finger_name):
     """TODO"""
     mesh = hand_state.hand_mesh
-    vertex_indices = MANO_CONTACT_SURFACE_VERTICES[finger_name]
+    vertex_indices = set(MANO_CONTACT_SURFACE_VERTICES[finger_name])
     vertices = np.array(mesh.vertices)
     triangles = np.array(mesh.triangles)
     triangles = [triangle for triangle in triangles
@@ -174,6 +197,7 @@ def vertices_to_surface_mesh(vertices, triangles):
     return np.mean(distances)
 
 
+@numba.jit
 def point_to_triangle(point, triangle_points):
     """Compute shortest distance between point and triangle.
 

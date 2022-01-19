@@ -17,7 +17,7 @@ if __name__ == "__main__":
         packages=["hand_embodiment"],
         package_data={"mocap": ["model/*"]},
         install_requires=["numpy", "scipy", "pytransform3d", "open3d",
-                          "pyyaml", "tqdm"],
+                          "pyyaml", "tqdm", "numba"],
         extras_require={
             "test": ["pytest", "pytest-cov"]}
         )
