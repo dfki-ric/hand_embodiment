@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO both hands
+
 #: <<'END'
 #END
 
@@ -10,6 +12,7 @@ export METRIC= #--no-metric  # TODO remove
 export RECORD_CONFIG="--record-mapping-config examples/config/record_mapping/20211105_april.yaml"
 export SUBJECT=r_WK37
 
+: <<'END'
 export MESH=--insole
 export MOCAP_CONFIG="--mocap-config examples/config/markers/20210819_april.yaml"
 export MANO_CONFIG="--mano-config examples/config/mano/20210610_april.yaml"
@@ -26,8 +29,8 @@ for i in "${!SEGMENTS[@]}"; do
         python examples/eval_segment_frame_embodiment.py \
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG \
             --demo-file data/${DATE}_april/${DATE}_${SUBJECT}_insole_set${SET}.json \
-            --output-image ${OUTPUT_DIR}/${DATE}_${SET}_insole_${HAND}_${SEGMENT}_${FRAME}.jpg \
-            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_insole_${HAND}_${SEGMENT}_${FRAME}.json \
+            --output-image ${OUTPUT_DIR}/${DATE}_${SET}_grasp_insole_${HAND}_${SEGMENT}_${FRAME}.jpg \
+            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_grasp_insole_${HAND}_${SEGMENT}_${FRAME}.json \
             --show-mano $MESH $METRIC
     done
 done
@@ -43,8 +46,8 @@ for i in "${!SEGMENTS[@]}"; do
         python examples/eval_segment_frame_embodiment.py \
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG \
             --demo-file data/20210819_april/${DATE}_${SUBJECT}_insole_set${SET}.json \
-            --output-image ${OUTPUT_DIR}/${DATE}_${SET}_insole_${HAND}_${SEGMENT}_${FRAME}.jpg \
-            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_insole_${HAND}_${SEGMENT}_${FRAME}.json \
+            --output-image ${OUTPUT_DIR}/${DATE}_${SET}_grasp_insole_${HAND}_${SEGMENT}_${FRAME}.jpg \
+            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_grasp_insole_${HAND}_${SEGMENT}_${FRAME}.json \
             --show-mano $MESH $METRIC
     done
 done
@@ -66,7 +69,7 @@ for i in "${!SEGMENTS[@]}"; do
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG --mia-thumb-adducted \
             --demo-file data/${DATE}_april/${DATE}_${SUBJECT}_small_pillow_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_pillow_small_${HAND}_${SEGMENT}_${FRAME}.jpg \
-            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_insole_${HAND}_${SEGMENT}_${FRAME}.json \
+            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_pillow_small_${HAND}_${SEGMENT}_${FRAME}.json \
             --show-mano $MESH $METRIC
     done
 done
@@ -83,12 +86,10 @@ for i in "${!SEGMENTS[@]}"; do
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG --mia-thumb-adducted \
             --demo-file data/20210826_april/${DATE}_${SUBJECT}_small_pillow_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_pillow_small_${HAND}_${SEGMENT}_${FRAME}.jpg \
-            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_insole_${HAND}_${SEGMENT}_${FRAME}.json \
+            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_pillow_small_${HAND}_${SEGMENT}_${FRAME}.json \
             --show-mano $MESH $METRIC
     done
 done
-
-exit 0
 
 export MESH=--electronic
 export MOCAP_CONFIG="--mocap-config examples/config/markers/20211105_april.yaml"
@@ -107,7 +108,7 @@ for i in "${!SEGMENTS[@]}"; do
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG \
             --demo-file data/${DATE}_april/${DATE}_${SUBJECT}_electronic_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_electronic_grasp_${HAND}_${SEGMENT}_${FRAME}.jpg \
-            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_insole_${HAND}_${SEGMENT}_${FRAME}.json \
+            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_electronic_grasp_${HAND}_${SEGMENT}_${FRAME}.json \
             --show-mano $MESH $METRIC
     done
 done
@@ -129,10 +130,11 @@ for i in "${!SEGMENTS[@]}"; do
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG \
             --demo-file data/${DATE}_april/${DATE}_${SUBJECT}_electronic_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_electronic_insert_${HAND}_${SEGMENT}_${FRAME}.jpg \
-            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_insole_${HAND}_${SEGMENT}_${FRAME}.json \
+            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_electronic_insert_${HAND}_${SEGMENT}_${FRAME}.json \
             --show-mano $MESH $METRIC
     done
 done
+END
 
 export MESH=--passport
 export MOCAP_CONFIG="--mocap-config examples/config/markers/20211112_april.yaml"
@@ -150,11 +152,13 @@ for i in "${!SEGMENTS[@]}"; do
         python examples/eval_segment_frame_embodiment.py \
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG --mia-thumb-adducted \
             --demo-file data/${DATE}_april/${DATE}_${SUBJECT}_passport_set${SET}.json \
-            --output-image ${OUTPUT_DIR}/${DATE}_${SET}_passport_${HAND}_${SEGMENT}_${FRAME}.jpg \
-            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_insole_${HAND}_${SEGMENT}_${FRAME}.json \
+            --output-image ${OUTPUT_DIR}/${DATE}_${SET}_flip_passport_${HAND}_${SEGMENT}_${FRAME}.jpg \
+            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_flip_passport_${HAND}_${SEGMENT}_${FRAME}.json \
             --show-mano $MESH $METRIC
     done
 done
+
+exit 0
 
 export MOCAP_CONFIG="--mocap-config examples/config/markers/20211126_april_insole.yaml"
 export MANO_CONFIG="--mano-config examples/config/mano/20211105_april.yaml"
@@ -172,7 +176,7 @@ for i in "${!SEGMENTS[@]}"; do
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG --mia-thumb-adducted \
             --demo-file data/${DATE}_april_insole/${DATE}_${SUBJECT}_insert_insole_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_insole_insert_${HAND}_${SEGMENT}_${FRAME}.jpg \
-            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_insole_${HAND}_${SEGMENT}_${FRAME}.json \
+            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_insole_insert_${HAND}_${SEGMENT}_${FRAME}.json \
             --show-mano $METRIC
     done
 done
@@ -193,7 +197,7 @@ for i in "${!SEGMENTS[@]}"; do
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG --mia-thumb-adducted \
             --demo-file data/${DATE}_april_pillow/${DATE}_${SUBJECT}_big_pillow_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_pillow_big_${HAND}_${SEGMENT}_${FRAME}.jpg \
-            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_insole_${HAND}_${SEGMENT}_${FRAME}.json \
+            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_pillow_big_${HAND}_${SEGMENT}_${FRAME}.json \
             --show-mano $METRIC
     done
 done
@@ -215,7 +219,7 @@ for i in "${!SEGMENTS[@]}"; do
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG --mia-thumb-adducted \
             --demo-file data/${DATE}_april/${DATE}_${SUBJECT}_passport_box_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_passport_insert_${HAND}_${SEGMENT}_${FRAME}.jpg \
-            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_insole_${HAND}_${SEGMENT}_${FRAME}.json \
+            --output-file ${OUTPUT_DIR}/${DATE}_${SET}_passport_insert_${HAND}_${SEGMENT}_${FRAME}.json \
             --show-mano $MESH $METRIC
     done
 done
