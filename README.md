@@ -69,9 +69,26 @@ Motion capture data fitted to the MANO hand model.
 
 Transfer of the MANO state to the Mia hand.
 
-![MANO to Mia](doc/source/_static/shadow_embodiment.png)
+<table>
+<tr>
+<td><img src="doc/source/_static/embodiment_interactive_mia_1.png" /></td>
+<td><img src="doc/source/_static/embodiment_interactive_mia_2.png" /></td>
+</tr>
+<tr>
+<td><img src="doc/source/_static/embodiment_interactive_mia_3.png" /></td>
+<td><img src="doc/source/_static/embodiment_interactive_shadow_1.png" /></td>
+</tr>
+<tr>
+<td><img src="doc/source/_static/embodiment_interactive_shadow_2.png" /></td>
+<td><img src="doc/source/_static/embodiment_interactive_shadow_3.png" /></td>
+</tr>
+<tr>
+<td><img src="doc/source/_static/embodiment_interactive_shadow_4.png" /></td>
+<td><img src="doc/source/_static/embodiment_interactive_shadow_5.png" /></td>
+</tr>
+</table>
 
-Interactive transfer of the MANO state to the Shadow hand.
+Interactive transfer of the MANO state to robotic hands.
 
 ![MANO to Mia](doc/source/_static/mano_shape.png)
 
