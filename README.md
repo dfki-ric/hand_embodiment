@@ -40,7 +40,28 @@ Some examples need motion capture data. Ask me about it.
 
 ## Examples
 
-![MoCap to MANO](doc/source/_static/mocap_to_mano.png)
+<table>
+<tr>
+<td><img src="doc/source/_static/figure_record_1.png" /></td>
+<td><img src="doc/source/_static/figure_record_2.png" /></td>
+</tr>
+<tr>
+<td><img src="doc/source/_static/figure_record_3.png" /></td>
+<td><img src="doc/source/_static/figure_record_4.png" /></td>
+</tr>
+<tr>
+<td><img src="doc/source/_static/figure_record_5.png" /></td>
+<td><img src="doc/source/_static/figure_record_6.png" /></td>
+</tr>
+<tr>
+<td><img src="doc/source/_static/figure_record_7.png" /></td>
+<td><img src="doc/source/_static/figure_record_8.png" /></td>
+</tr>
+<tr>
+<td><img src="doc/source/_static/figure_record_9.png" /></td>
+<td><img src="doc/source/_static/figure_record_10.png" /></td>
+</tr>
+</table>
 
 Motion capture data fitted to the MANO hand model.
 
