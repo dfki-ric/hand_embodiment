@@ -40,6 +40,8 @@ Some examples need motion capture data. Ask me about it.
 
 ## Examples
 
+### Motion Capture Data Fitted to MANO
+
 <table>
 <tr>
 <td><img src="doc/source/_static/figure_record_1.png" /></td>
@@ -63,11 +65,7 @@ Some examples need motion capture data. Ask me about it.
 </tr>
 </table>
 
-Motion capture data fitted to the MANO hand model.
-
-![MANO to Mia](doc/source/_static/mia_embodiment.png)
-
-Transfer of the MANO state to the Mia hand.
+### Interactive Transfer of MANO State to Robotic Hands
 
 <table>
 <tr>
@@ -88,11 +86,9 @@ Transfer of the MANO state to the Mia hand.
 </tr>
 </table>
 
-Interactive transfer of the MANO state to robotic hands.
+### Configuration of MANO Parameters
 
 ![MANO to Mia](doc/source/_static/mano_shape.png)
-
-Configuration of MANO parameters.
 
 ## Integrating a New Robotic Hand
 
