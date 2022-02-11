@@ -180,21 +180,21 @@ def kinematic_model_hook_shadow(kin):
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.013],
-            [0, 0, 1, -0.01],
+            [0, 0, 1, 0.0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
         "thumb_middle", "rh_thmiddle",
         np.array([
             [1, 0, 0, 0.015],
             [0, 1, 0, 0],
-            [0, 0, 1, 0.01],
+            [0, 0, 1, 0.015],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
         "index_tip", "rh_fftip",
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.01],
-            [0, 0, 1, -0.01],
+            [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
         "index_middle", "rh_ffproximal",
@@ -222,7 +222,7 @@ def kinematic_model_hook_shadow(kin):
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.01],
-            [0, 0, 1, -0.013],
+            [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
         "ring_middle", "rh_rfproximal",
@@ -236,7 +236,7 @@ def kinematic_model_hook_shadow(kin):
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.01],
-            [0, 0, 1, -0.025],
+            [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
         "little_middle", "rh_lfproximal",
@@ -273,9 +273,13 @@ class ShadowVirtualF0Joint:
                 self.second_real_joint_name: second_joint_value}
 
 
-manobase2shadowbase = pt.transform_from(
-    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-3.17, 1.427, 3.032])),
-    p=np.array([0.011, -0.014, 0.36]))
+#manobase2shadowbase = pt.transform_from(
+#    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-3.17, 1.427, 3.032])),
+#    p=np.array([0.011, -0.014, 0.36]))
+#manobase2shadowbase = pt.transform_from_exponential_coordinates(
+#    [0.008, 1.723, -0.133, -0.289, -0.014, 0.267])
+manobase2shadowbase = pt.transform_from_exponential_coordinates(
+    [-0.07, 1.77, -0.148, -0.309, -0.021, 0.272])
 SHADOW_HAND_CONFIG = {
     "joint_names":
         {  # wrist: rh_WRJ2, rh_WRJ1
