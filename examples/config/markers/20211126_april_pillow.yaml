@@ -14,7 +14,7 @@ finger_marker_names:
     - thumb_middle
     index:
     - index_tip
-    - index_middle
+    #- index_middle
     middle:
     - middle_tip
     #- middle_middle
@@ -25,7 +25,7 @@ finger_marker_names:
     - little_tip
     #- little_middle
 additional_markers:
-#- index_middle
+- index_middle
 - middle_middle
 - ring_middle
 - little_middle
