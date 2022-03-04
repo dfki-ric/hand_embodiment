@@ -6,6 +6,10 @@ from scipy.optimize import minimize
 
 
 class FastUrdfTransformManager(UrdfTransformManager):
+    """Fast transformation manager that can load URDF files.
+
+    This version has efficient numba-accelerated code to update joints.
+    """
     def __init__(self):
         super(FastUrdfTransformManager, self).__init__(check=False)
         self.virtual_joints = {}
@@ -59,6 +63,20 @@ class FastUrdfTransformManager(UrdfTransformManager):
         return self._path_transform(self._shortest_path(ee_index, base_index))
 
     def add_virtual_joint(self, joint_name, callback):
+        """Add virtual joint.
+
+         A virtual joint is a wrapper that controls multiple other joints.
+
+        Parameters
+        ----------
+        joint_name : str
+            Name of the new virtual joint.
+
+        callback : callable
+            A callable object that provides the function 'make_virtual_joint'
+            to initialize the transform manager. The function call operator
+            will be used to set the joint angle of the virtual joint.
+        """
         self.virtual_joints[joint_name] = callback
         self._joints[joint_name] = callback.make_virtual_joint(
             joint_name, self)
@@ -219,10 +237,49 @@ class Chain:
         return self.tm.get_ee2base(self.ee_index, self.base_index)
 
     def ee_pos_error(self, joint_angles, desired_pos):
+        """Compute position error.
+
+        Parameters
+        ----------
+        joint_angles : array-like, shape (n_joints,)
+            Actual joint angles for which we compute forward kinematics.
+
+        desired_pos : array-like, shape (3,)
+            Desired position.
+
+        Returns
+        -------
+        pos_error : float
+            Position error.
+        """
         return np.linalg.norm(desired_pos - self.forward(joint_angles)[:3, 3])
 
     def ee_pose_error(self, joint_angles, desired_pose, orientation_weight=1.0, position_weight=1.0):
-        return pose_dist(desired_pose, self.forward(joint_angles), orientation_weight, position_weight)
+        """Compute pose error.
+
+        Parameters
+        ----------
+        joint_angles : array-like, shape (n_joints,)
+            Actual joint angles for which we compute forward kinematics.
+
+        desired_pose : array-like, shape (4, 4)
+            Desired pose.
+
+        orientation_weight : float, optional (default: 1.0)
+            Should be between 0.0 and 1.0 and represent the weighting for
+            minimizing the orientation error.
+
+        position_weight : float, optional (default: 1.0)
+            Should be between 0.0 and 1.0 and represent the weighting for
+            minimizing the position error.
+
+        Returns
+        -------
+        pose_error : float
+            Weighted error between actual pose and desired pose.
+        """
+        return pose_dist(desired_pose, self.forward(joint_angles),
+                         orientation_weight, position_weight)
 
     def inverse_position(self, desired_pos, initial_joint_angles, return_error=False, bounds=None):
         """Inverse kinematics.
@@ -287,7 +344,9 @@ class Chain:
         """
         if bounds is None:
             bounds = self.joint_limits
-        res = minimize(self.ee_pose_error, initial_joint_angles, (desired_pose,), method="SLSQP", bounds=bounds)
+        res = minimize(
+            self.ee_pose_error, initial_joint_angles, (desired_pose,),
+            method="SLSQP", bounds=bounds)
 
         if self.verbose >= 2:
             print("Error: %g" % res["fun"])
@@ -296,14 +355,39 @@ class Chain:
         else:
             return res["x"]
 
-    def inverse_with_random_restarts(self, desired_pose, n_restarts=10, tolerance=1e-3, random_state=None):
+    def inverse_with_random_restarts(
+            self, desired_pose, n_restarts=10, tolerance=1e-3,
+            random_state=None):
+        """Compute inverse kinematics with multiple random restarts.
+
+        Parameters
+        ----------
+        desired_pose : array-like, shape (4, 4)
+            Desired pose.
+
+        n_restarts : int, optional (default: 10)
+            Maximum number of allowed restarts.
+
+        tolerance : float, optional (default: 1e-3)
+            Required tolerance to abort.
+
+        random_state : np.random.RandomState, optional (default: np.random)
+            Random state.
+
+        Returns
+        -------
+        joint_angles : array, shape (n_joints,)
+            Solution
+        """
         if random_state is None:
             random_state = np.random
         assert n_restarts >= 1
         Q = []
         errors = []
         for _ in range(n_restarts):
-            q, error = self.inverse(desired_pose, self._sample_joints_uniform(random_state), return_error=True)
+            q, error = self.inverse(
+                desired_pose, self._sample_joints_uniform(random_state),
+                return_error=True)
             Q.append(q)
             errors.append(error)
             if error <= tolerance:
@@ -312,7 +396,37 @@ class Chain:
             print(np.round(errors, 4))
         return Q[np.argmin(errors)]
 
-    def local_inverse_with_random_restarts(self, desired_pose, joint_angles, interval, n_restarts=10, tolerance=1e-3, random_state=None):
+    def local_inverse_with_random_restarts(
+            self, desired_pose, joint_angles, interval, n_restarts=10,
+            tolerance=1e-3, random_state=None):
+        """Compute inverse kinematics with multiple random restarts.
+
+        Parameters
+        ----------
+        desired_pose : array-like, shape (4, 4)
+            Desired pose.
+
+        joint_angles : array-like, shape (n_joints,)
+            Initial guess for joint angles.
+
+        interval : float
+            We will search for a solution within the range
+            [joint_angles - interval, joint_angles + interval].
+
+        n_restarts : int, optional (default: 10)
+            Maximum number of allowed restarts.
+
+        tolerance : float, optional (default: 1e-3)
+            Required tolerance to abort.
+
+        random_state : np.random.RandomState, optional (default: np.random)
+            Random state.
+
+        Returns
+        -------
+        joint_angles : array, shape (n_joints,)
+            Solution
+        """
         if random_state is None:
             random_state = np.random
         assert n_restarts >= 1
@@ -342,13 +456,41 @@ class Chain:
             H[t] = self.forward(Q[t])
         return H
 
-    def inverse_trajectory(self, H, initial_joint_angles=None, interval=0.1 * math.pi, random_restarts=True, random_state=None):
+    def inverse_trajectory(
+            self, H, initial_joint_angles=None, interval=0.1 * math.pi,
+            random_restarts=True, random_state=None):
+        """Compute inverse kinematics for a trajectory.
+
+        Parameters
+        ----------
+        H : array-like, shape (n_steps, 4, 4)
+            Desired end-effector poses.
+
+        initial_joint_angles : array-like, shape (n_joints,), optional (default: None)
+            Initial guess for joint angles.
+
+        interval : float
+            We will search for a solution within the range
+            [joint_angles - interval, joint_angles + interval] in each step.
+
+        random_restarts : bool, optional (default: True)
+            Allow random restarts if no solution is found.
+
+        random_state : np.random.RandomState, optional (default: np.random)
+            Random state.
+
+        Returns
+        -------
+        Q : array, shape (n_steps, n_joints)
+            Solution
+        """
         Q = np.empty((len(H), len(self.joint_names)))
 
         if initial_joint_angles is not None:
             Q[0] = self.inverse(H[0], initial_joint_angles)
         else:
-            Q[0] = self.inverse_with_random_restarts(H[0], random_state=random_state)
+            Q[0] = self.inverse_with_random_restarts(
+                H[0], random_state=random_state)
 
         for t in range(1, len(H)):
             if self.verbose >= 2:
@@ -424,11 +566,26 @@ class MultiChain:
                 for ee_index in self.ee_indices]
 
     def ee_pos_error(self, joint_angles, desired_positions):
+        """Compute position error.
+
+        Parameters
+        ----------
+        joint_angles : array-like, shape (n_joints,)
+            Actual joint angles for which we compute forward kinematics.
+
+        desired_positions : array-like, shape (n_end_effectors, 3)
+            Desired position.
+
+        Returns
+        -------
+        pos_error : float
+            Position error.
+        """
         actual_positions = self.forward(joint_angles)
         return np.linalg.norm(
             [desired_pos - actual_pos[:3, 3]
              for desired_pos, actual_pos in zip(
-                desired_positions, actual_positions)]).sum()
+                desired_positions, actual_positions)]).sum()  # TODO why norm().sum()?
 
     def inverse_position(self, desired_positions, initial_joint_angles, return_error=False, bounds=None):
         """Inverse kinematics.
