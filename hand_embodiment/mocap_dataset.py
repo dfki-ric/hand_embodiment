@@ -265,6 +265,13 @@ class SegmentedHandMotionCaptureDataset(MotionCaptureDatasetBase):
         self.select_segment(self.selected_segment)
 
     def select_segment(self, i):
+        """Select a movement segment from the dataset.
+
+        Parameters
+        ----------
+        i : int
+            Index of the segment.
+        """
         self.selected_segment = i
 
         trajectory = self.segments[self.selected_segment]
