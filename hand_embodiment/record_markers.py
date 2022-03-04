@@ -346,9 +346,27 @@ class ManoFingerKinematics:
                 :, np.unique(finger_pose_param_indices // 3)])[0])
 
     def reset(self):
+        """Set all joint angles of the finger to 0."""
         self.current_pose[:] = 0.0
 
     def reduce_pose_parameters(self, hand_state):
+        """Reduce parameters of the MANO model to this finger.
+
+        Parameters
+        ----------
+        hand_state : HandState
+            State of the hand mesh.
+
+        Returns
+        -------
+        pose_params : dict
+            Reduced set of pose parameters of MANO. Contains fields 'J',
+            'weights', 'kintree_table', 'v_template', 'posedirs'.
+
+        finger_opt_vertex_indices : list
+            Indices of vertices that will be used during numerical inverse
+            kinematics of this finger.
+        """
         finger_opt_vertex_indices = []
         for idx in self.finger_vertex_indices:
             match = np.where(self.all_finger_vertex_indices == idx)[0]
@@ -373,7 +391,21 @@ class ManoFingerKinematics:
         return pose_params, finger_opt_vertex_indices
 
     def forward(self, pose=None, return_cached_result=False):
-        """Compute position at the tip of the finger for given joint parameters."""
+        """Compute position at the tip of the finger for given joint parameters.
+
+        Parameters
+        ----------
+        pose : array, shape (n_finger_joints * 3,), optional (default: None)
+            Joint angles.
+
+        return_cached_result : bool, optional (default: False)
+            Return cached result of previous forward kinematics calculation.
+
+        Returns
+        -------
+        pos : array, shape (n_markers_per_finger, 3)
+            Vertex positions.
+        """
         if return_cached_result:
             assert self.last_forward_result is not None
             return self.last_forward_result
@@ -384,7 +416,18 @@ class ManoFingerKinematics:
         return self.last_forward_result
 
     def inverse(self, position):
-        """Estimate finger joint parameters from position."""
+        """Estimate finger joint parameters from position.
+
+        Parameters
+        ----------
+        position : array, shape (n_markers_per_finger, 3)
+            Desired position of vertices.
+
+        Returns
+        -------
+        current_pose : array, shape (n_finger_joints * 3,)
+            Joint angles.
+        """
         res = minimize(self.finger_error, self.current_pose, args=(position,),
                        method="SLSQP", bounds=self.bounds)  # SLSQP, COBYLA
         self.current_pose[:] = res["x"]
@@ -407,9 +450,20 @@ class FingerError:
         self.action_weights = action_weights
 
     def __call__(self, finger_pose, desired_finger_pos):
+        """Compute error for numerical inverse kinematics.
+
+        Parameters
+        ----------
+        finger_pose : array, shape (n_finger_joints * 3,)
+            Joint angles.
+
+        desired_finger_pos : array, shape (n_markers_per_finger, 3)
+            Desired finger positions.
+        """
         positions = self.forward_kinematics(finger_pose)
         desired_finger_pos = np.atleast_2d(desired_finger_pos)
 
+        # TODO seems fragile, what if we only have a middle marker and no tip?
         # in case there are no middle markers available:
         positions = positions[:len(desired_finger_pos)]
 
