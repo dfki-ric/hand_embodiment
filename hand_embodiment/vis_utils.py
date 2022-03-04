@@ -9,6 +9,24 @@ import pytransform3d.visualizer as pv
 
 
 def make_coordinate_system(s, short_tick_length=0.01, long_tick_length=0.05):
+    """Make coordinate system.
+
+    Parameters
+    ----------
+    s : float
+        Scale.
+
+    short_tick_length : float, optional (default: 0.01)
+        Length of short ticks.
+
+    long_tick_length : float, optional (default: 0.05)
+        Length of long ticks (every 5th).
+
+    Returns
+    -------
+    coordinate_system : o3d.geometry.LineSet
+        Coordinate system.
+    """
     coordinate_system = o3d.geometry.LineSet()
     points = []
     lines = []
@@ -50,6 +68,10 @@ class ManoHand(pv.Artist):
         self.show_vertices = show_vertices
 
     def set_data(self):
+        """Does nothing.
+
+        The mesh will be updated when geometries are requested.
+        """
         pass
 
     @property
@@ -430,6 +452,22 @@ def box_pose(box_top, box_left, box_right):
 
 
 class AnimationCallback:
+    """Animation callback.
+
+    Parameters
+    ----------
+    fig : pytransform3d.visualizer.Figure
+        Figure.
+
+    pipeline : MoCapToRobot
+        Pipeline.
+
+    args : TODO result of ArgumentParser.parse_args()
+        Command line arguments
+
+    show_robot : bool, optional (default: False)
+        Show robot.
+    """
     def __init__(self, fig, pipeline, args, show_robot=False):
         self.fig = fig
         self.args = args
