@@ -4,6 +4,63 @@ import pytransform3d.rotations as pr
 from pkg_resources import resource_filename
 
 
+# Target system configurations
+# (See README.md > "Integrating a New Robotic Hand".)
+# Each target system needs its own configuration, which is essentially a large
+# dict. Make sure to add this to the TARGET_CONFIG dict at the end of the file.
+
+# Required fields:
+# MIA_CONFIG = {
+#     "joint_names":
+#         {  # map finger names to a list of joint names that control the finger
+#             "thumb": [...],
+#             "index": [...],
+#             "middle": [...],
+#             "ring": [...],
+#             "little": [...],
+#         },
+#     "base_frame": "...",  # base frame of the hand
+#     "ee_frames":
+#         {  # map finger name to the name of the tip frame in the kinematic model
+#             "thumb": "...",
+#             "index": "...",
+#             "middle": "...",
+#             "ring": "...",
+#             "little": "..."
+#         },
+#     "intermediate_frames":
+#         {
+#             "thumb": "...",
+#             "index": "...",
+#             "middle": "...",
+#             "ring": "...",
+#             "little": "..."
+#         },
+#     # transform from MANO base to hand base, array with shape (4, 4)
+#     "handbase2robotbase": ...,
+#     "model":  # kinematic model definition
+#         {
+#             # path to URDF file, resource_filename might be useful
+#             "urdf": "...",
+#             # base path of ROS package that contains URDF
+#             "package_dir": "...",
+#             "kinematic_model_hook": ...  # a callback, if required
+#         },
+#     "virtual_joints_callbacks":
+#         {  # here we can introduce virtual joints that compute the state of real joints in a callback
+#             # example:
+#             "j_thumb_opp_binary": MiaVirtualThumbJoint("j_thumb_opp"),
+#         },
+#     "coupled_joints":
+#     [  # coupled joints always have the same angle
+#         # example:
+#         ("middle", "j_mrl_fle"),
+#         ("ring", "j_ring_fle"),
+#         ("little", "j_little_fle"),
+#     ]
+# }
+
+
 ###############################################################################
 # Mia hand
 ###############################################################################
