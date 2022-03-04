@@ -23,7 +23,8 @@ pb.setGravity(0, 0, 0)
 
 
 hand = pb.loadURDF(
-    "hand_embodiment/model/mia_hand_description/urdf/mia_hand.urdf.xacro",
+    "hand_embodiment/model/mia_hand_ros_pkgs/mia_hand_description/urdf/"
+    "mia_hand.urdf.xacro",
     [0, 0, 0], [0, 0, 0, 1], useFixedBase=1,
     flags=pb.URDF_USE_SELF_COLLISION | pb.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT)
 
