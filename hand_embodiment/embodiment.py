@@ -158,10 +158,24 @@ class HandEmbodiment(TimeableMixin):
             return self.joint_angles
 
     def _mano_forward_kinematics(self, use_cached_forward_kinematics):
-        """MANO forward kinematics."""
+        """MANO forward kinematics.
+
+        Parameters
+        ----------
+        use_cached_forward_kinematics : bool
+            Reused cached result of forward kinematics from record mapping
+            in MANO model.
+
+        Returns
+        -------
+        desired_positions : dict
+            Desired positions of expected marker positions in frame of the
+            robotic target system.
+        """
         desired_positions = {}
         for finger_name in self.finger_names_:
-            if use_cached_forward_kinematics:  # because it has been computed during embodiment mapping
+            if use_cached_forward_kinematics:
+                # because it has been computed during record mapping
                 markers_in_handbase = self.mano_finger_kinematics[finger_name].forward(
                     None, return_cached_result=True)
             else:
@@ -178,7 +192,14 @@ class HandEmbodiment(TimeableMixin):
         return desired_positions
 
     def _robotic_hand_inverse_kinematics(self, desired_positions):
-        """Robotic hand inverse kinematics."""
+        """Robotic hand inverse kinematics.
+
+        Parameters
+        ----------
+        desired_positions : dict
+            Desired positions of expected marker positions in frame of the
+            robotic target system.
+        """
         for finger_name in self.finger_names_:
             self.joint_angles[finger_name] = \
                 self.target_finger_chains[finger_name].inverse_position(
@@ -189,6 +210,7 @@ class HandEmbodiment(TimeableMixin):
             self._average_coupled_joints()
 
     def _average_coupled_joints(self):
+        """Average joint angles of coupled joints that move together."""
         angle_sum = 0.0
         n_joints = 0
         for finger_name, joint_name in self.coupled_joints:
@@ -214,6 +236,13 @@ class HandEmbodiment(TimeableMixin):
                 finger_name, self.joint_angles[finger_name])
 
     def _update_hand_base_pose(self, handbase2world):
+        """Compute pose of the base of the robotic target hand.
+
+        Parameters
+        ----------
+        handbase2world : array, shape (4, 4)
+            Transform from base of the robotic hand to world frame.
+        """
         if handbase2world is None:
             world2robotbase = np.eye(4)
         else:
@@ -225,14 +254,36 @@ class HandEmbodiment(TimeableMixin):
 
     @property
     def transform_manager_(self):
+        """Get transform manager."""
         return self.target_kin.tm
 
     def finger_forward_kinematics(self, finger_name, joint_angles):
-        """Forward kinematics for a finger of the target system."""
+        """Forward kinematics for a finger of the target system.
+
+        Parameters
+        ----------
+        finger_name : str
+            Name of the finger.
+
+        joint_angles : array-like, shape (n_joints,)
+            Angles of the finger joints.
+        """
         return self.target_finger_chains[finger_name].forward(joint_angles)
 
 
 def load_kinematic_model(hand_config):
+    """Load kinematic model of a robotic hand.
+
+    Parameters
+    ----------
+    hand_config : dict
+        Configuration of robotic target hand.
+
+    Returns
+    -------
+    kin : Kinematics
+        Forward and inverse kinematics.
+    """
     model = hand_config["model"]
     with open(model["urdf"], "r") as f:
         kin = Kinematics(urdf=f.read(), package_dir=model["package_dir"])
