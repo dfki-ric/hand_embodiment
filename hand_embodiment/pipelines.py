@@ -58,15 +58,49 @@ class MoCapToRobot:
         self.record_mapping_.reset()
 
     def set_constant_joint(self, joint_name, angle):
+        """Set constant joint angle of target hand.
+
+        Parameters
+        ----------
+        joint_name : str
+            Name of the joint in the URDF.
+
+        angle : float
+            Joint angle.
+        """
         self.transform_manager_.set_joint(joint_name, angle)
 
     def estimate_hand(self, hand_markers, finger_markers):
-        """Estimate MANO pose and joint angles."""
+        """Estimate MANO pose and joint angles.
+
+        Parameters
+        ----------
+        hand_markers : list
+            Markers on hand in order 'hand_top', 'hand_left', 'hand_right'.
+
+        finger_markers : dict (str to array-like)
+            Positions of markers on fingers.
+        """
         assert len(hand_markers) == 3, hand_markers
         self.record_mapping_.estimate(hand_markers, finger_markers)
 
     def estimate_robot(self, ee2origin=None):
-        """Estimate end-effector pose and joint angles of target system from MANO."""
+        """Estimate end-effector pose and joint angles of target system from MANO.
+
+        Parameters
+        ----------
+        ee2origin : array, shape (4, 4)
+            Transform that will be applied to end-effector pose.
+
+        Returns
+        -------
+        ee_pose : array, shape (4, 4)
+            Pose of the end effector.
+
+        joint_angles : dict
+            Maps finger names to corresponding joint angles in the order that
+            is given in the target configuration.
+        """
         joint_angles = self.embodiment_mapping_.solve(
             self.record_mapping_.mano2world_,
             use_cached_forward_kinematics=True)
@@ -77,18 +111,51 @@ class MoCapToRobot:
         return ee_pose, joint_angles
 
     def estimate(self, hand_markers, finger_markers, ee2origin=None):
-        """Estimate state of target system from MoCap markers."""
+        """Estimate state of target system from MoCap markers.
+
+        Parameters
+        ----------
+        hand_markers : list
+            Markers on hand in order 'hand_top', 'hand_left', 'hand_right'.
+
+        finger_markers : dict (str to array-like)
+            Positions of markers on fingers.
+
+        ee2origin : array, shape (4, 4), optional (default: None)
+            Transform that will be applied to end-effector pose.
+
+        Returns
+        -------
+        ee_pose : array, shape (4, 4)
+            Pose of the end effector.
+
+        joint_angles : dict
+            Maps finger names to corresponding joint angles in the order that
+            is given in the target configuration.
+        """
         self.estimate_hand(hand_markers, finger_markers)
         return self.estimate_robot(ee2origin)
 
     def make_hand_artist(self):
-        """Create artist that visualizes internal state of the hand."""
+        """Create artist that visualizes internal state of the hand.
+
+        Returns
+        -------
+        artist : ManoHand
+            Artist for pytransform3d's visualizer.
+        """
         from hand_embodiment.vis_utils import ManoHand
         return ManoHand(
             self.embodiment_mapping_, show_mesh=True, show_vertices=False)
 
     def make_robot_artist(self):
-        """Create artist that visualizes state of the target system."""
+        """Create artist that visualizes state of the target system.
+
+        Returns
+        -------
+        graph : pytransform3d.visualizer.Graph
+            Representation of the robotic hand.
+        """
         from pytransform3d import visualizer as pv
         return pv.Graph(
             self.transform_manager_, "world", show_frames=True,
