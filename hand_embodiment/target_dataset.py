@@ -10,7 +10,14 @@ POSE_COLUMNS = ["base_x", "base_y", "base_z", "base_qw", "base_qx", "base_qy", "
 
 
 class RoboticHandDataset:
-    """Dataset that contains a trajectory of a robotic hand."""
+    """Dataset that contains a trajectory of a robotic hand.
+
+    Parameters
+    ----------
+    finger_names : list
+        Names of fingers. Valid options: 'thumb', 'index', 'middle', 'ring',
+        'little'.
+    """
     def __init__(self, finger_names):
         self.finger_names = finger_names
 
@@ -20,14 +27,45 @@ class RoboticHandDataset:
         self.additional_finger_joint_angles = {}
 
     def append(self, ee_pose, finger_joint_angles):
+        """Append sample to dataset.
+
+        Parameters
+        ----------
+        ee_pose : array, shape (4, 4)
+            Pose of the end effector.
+
+        finger_joint_angles : dict
+            Maps finger names to corresponding joint angles in the order that
+            is given in the target configuration.
+        """
         self.n_samples += 1
         self.ee_poses.append(ee_pose)
         self.finger_joint_angles.append(copy.deepcopy(finger_joint_angles))
 
     def add_constant_finger_joint(self, joint_name, angle):
+        """Make finger joint constant.
+
+        Parameters
+        ----------
+        joint_name : str
+            Name of the robot's joint.
+
+        angle : float
+            Fixed angle of the joint.
+        """
         self.additional_finger_joint_angles[joint_name] = angle
 
     def export(self, filename, hand_config):
+        """Export dataset to csv file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of the output file.
+
+        hand_config : dict
+            Configuration of the target hand. Must have a field 'joint_names'.
+        """
         column_names = []
         for finger in self.finger_names:
             column_names += hand_config["joint_names"][finger]
@@ -50,6 +88,16 @@ class RoboticHandDataset:
 
     @staticmethod
     def import_from_file(filename, hand_config):
+        """Load dataset from file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of the file that should be loaded.
+
+        hand_config : dict
+            Configuration of the target hand. Must have a field 'joint_names'.
+        """
         df = pd.read_csv(filename)
         ee_poses = [pt.transform_from_pq(df.iloc[t][POSE_COLUMNS])
                     for t in range(len(df))]
@@ -76,16 +124,58 @@ class RoboticHandDataset:
 
     @property
     def n_steps(self):  # Compatibility to MotionCaptureDatasetBase
+        """Number of steps."""
         return self.n_samples
 
     def get_ee_pose(self, t):
+        """Get end-effector pose.
+
+        Parameters
+        ----------
+        t : int
+            Time step.
+
+        Returns
+        -------
+        ee_pose : array, shape (4, 4)
+            Pose of the end effector.
+        """
         return self.ee_poses[t]
 
     def get_finger_joint_angles(self, t):
+        """Get joint angles of the fingers.
+
+        Returns
+        -------
+        finger_joint_angles : dict
+            Joint angles per robotic finger.
+        """
         return self.finger_joint_angles[t]
 
 
 def convert_mocap_to_robot(dataset, pipeline, ee2origin=None, verbose=0):
+    """Convert MoCap data to robot.
+
+    Parameters
+    ----------
+    dataset : HandMotionCaptureDataset
+        Motion capture dataset.
+
+    pipeline : MoCapToRobot
+        Converter from motion capture data to robot commands.
+
+    ee2origin : array, shape (4, 4), optional (default: None)
+        Frame conversion to transform end-effector poses to another coordinate
+        system.
+
+    verbose : int, optional (default: 0)
+        Verbosity level.
+
+    Returns
+    -------
+    output_dataset : RoboticHandDataset
+        Converted motion.
+    """
     output_dataset = RoboticHandDataset(finger_names=dataset.finger_names)
     pipeline.reset()
 
