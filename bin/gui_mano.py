@@ -12,9 +12,8 @@ from open3d.visualization import gui
 import pytransform3d.rotations as pr
 import pytransform3d.transformations as pt
 import pytransform3d.visualizer as pv
-from mocap.mano import HandState
-from mocap.visualization import PointCollection
 
+from hand_embodiment.mano import HandState
 from hand_embodiment.vis_utils import make_coordinate_system
 from hand_embodiment.config import load_mano_config
 from hand_embodiment.record_markers import MANO_CONFIG, make_finger_kinematics
@@ -330,7 +329,7 @@ def main():
             all_positions.extend(positions.tolist())
 
         if args.show_spheres:
-            spheres = PointCollection(all_positions, s=0.006, c=(0, 1, 0))
+            spheres = pv.PointCollection3D(all_positions, s=0.006, c=(0, 1, 0))
 
     fig = Figure("MANO", 1920, 1080, ax_s=0.2)
     fig.add_geometry(pc)
