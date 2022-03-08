@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-from setuptools import setup
+import warnings
+from setuptools import setup, find_packages
 
 
 if __name__ == "__main__":
@@ -14,11 +15,27 @@ if __name__ == "__main__":
         long_description=long_description,
         long_description_content_type="text/markdown",
         license="None",
-        packages=["hand_embodiment"],
+        packages=find_packages(),
         package_data={"mocap": ["model/*"]},
         install_requires=["numpy", "scipy", "pytransform3d", "open3d",
                           "pyyaml", "tqdm", "numba"],
         extras_require={
             "test": ["pytest", "pytest-cov"]}
         )
+
+    try:
+        from Cython.Build import cythonize
+        import numpy
+        cython_config = dict(
+            ext_modules=cythonize("hand_embodiment/mano_fast.pyx"),
+            zip_safe=False,
+            compiler_directives={"language_level": "3"},
+            include_dirs=[numpy.get_include()],
+            extra_compile_args=["-O3", "-Wno-cpp", "-Wno-unused-function"]
+        )
+        setup_config.update(cython_config)
+    except ImportError:
+        warnings.warn("Cython or NumPy is not available. "
+                      "Install it if you want the fast MANO model.")
+
     setup(**setup_config)

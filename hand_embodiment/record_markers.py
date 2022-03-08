@@ -1,9 +1,9 @@
 import warnings
 
 import numpy as np
-from mocap.mano import HandState, hand_vertices, apply_shape_parameters
 from pytransform3d import transformations as pt, rotations as pr
 from scipy.optimize import minimize
+from .mano import HandState, hand_vertices, apply_shape_parameters
 from .timing import TimeableMixin
 
 
