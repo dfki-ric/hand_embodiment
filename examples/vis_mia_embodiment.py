@@ -1,7 +1,7 @@
 import numpy as np
 import pytransform3d.visualizer as pv
 import pytransform3d.transformations as pt
-from mocap.mano import HandState
+from hand_embodiment.mano import HandState
 from hand_embodiment.embodiment import HandEmbodiment
 from hand_embodiment.target_configurations import MIA_CONFIG, manobase2miabase
 

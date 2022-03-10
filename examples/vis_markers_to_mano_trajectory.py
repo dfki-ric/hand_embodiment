@@ -26,7 +26,6 @@ python examples/vis_markers_to_mano_trajectory.py --demo-file data/20211217_apri
 import argparse
 import numpy as np
 import pytransform3d.visualizer as pv
-from mocap.visualization import scatter
 
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
@@ -83,7 +82,7 @@ def main():
     fig = pv.figure()
     fig.plot_transform(np.eye(4), s=0.5)
     markers = dataset.get_markers(0)
-    markers = scatter(fig, markers, s=0.006, c=MARKER_COLORS[:len(markers)])
+    markers = fig.scatter(markers, s=0.006, c=MARKER_COLORS[:len(markers)])
 
     animation_callback = AnimationCallback(fig, pipeline, args)
 

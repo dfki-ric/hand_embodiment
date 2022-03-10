@@ -5,7 +5,7 @@ import open3d as o3d
 from open3d.visualization import gui
 import pytransform3d.visualizer as pv
 import pytransform3d.transformations as pt
-from mocap.mano import HandState, apply_shape_parameters
+from hand_embodiment.mano import HandState, apply_shape_parameters
 from hand_embodiment.record_markers import make_finger_kinematics
 from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
 from hand_embodiment.embodiment import HandEmbodiment

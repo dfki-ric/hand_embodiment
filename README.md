@@ -4,19 +4,6 @@
 
 Embodiment mapping for robotic hands from human hand motions
 
-## Installation
-
-Install [mocap](https://git.hb.dfki.de/dfki-interaction/mocap) and then
-install this library:
-
-```bash
-# note that you need access rights to the Mia URDF:
-# https://github.com/aprilprojecteu/mia_hand_description
-git clone git@git.hb.dfki.de:dfki-interaction/experimental/hand_embodiment.git --recursive
-cd hand_embodiment
-pip install -e .
-```
-
 ## Idea
 
 The general idea of this software package is to use the MANO hand model of
@@ -34,9 +21,33 @@ The currently implemented target systems are:
 * Mia hand from Prensilia
 * Dexterous Hand from Shadow
 
-## Data
+## Installation
 
-Some examples need motion capture data. Ask me about it.
+### Install Hand Embodiment
+
+```bash
+git clone git@git.hb.dfki.de:dfki-interaction/experimental/hand_embodiment.git
+cd hand_embodiment
+# download MANO model from https://mano.is.tue.mpg.de/
+# see subfolder hand_embodiment/model/mano for details
+cd hand_embodiment/model/mano
+pip install chumpy scipy
+python prepare_mano.py
+cd ../../../
+# install hand_embodiment
+pip install -e .
+```
+
+### Optional Dependency
+
+The library [mocap](https://git.hb.dfki.de/dfki-interaction/mocap) is only
+available for members of the DFKI RIC. It is used to load motion capture data
+in some cases.
+
+### Data
+
+Some examples need motion capture data. Ask me about it. Unfortunately,
+we cannot release the data publicly.
 
 ## Examples
 
@@ -85,6 +96,20 @@ Some examples need motion capture data. Ask me about it.
 <td><img src="doc/source/_static/embodiment_interactive_shadow_5.png" /></td>
 </tr>
 </table>
+
+### Example Script with Test Data
+
+You can run an example with test data from the main directory with
+
+```bash
+python examples/vis_markers_to_robot.py shadow --demo-file test/data/recording.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --pillow --show-mano
+```
+
+or
+
+```bash
+python examples/vis_markers_to_robot.py mia --demo-file test/data/recording.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --pillow --mia-thumb-adducted --show-mano
+```
 
 ### Configuration of MANO Parameters
 
@@ -167,3 +192,22 @@ visible. Segments with the label `close` are marked with green background
 color. On the left side, there is a list of annotated segments. In the middle
 we can see a 3D view of markers and on the right side we see the segment and
 annotation editor.
+
+## API Documentation
+
+You can build a simple documentation for this project with pdoc3
+(`pip install pdoc3):
+
+```bash
+pdoc hand_embodiment --html
+```
+
+## Funding
+
+This library has been developed initially at the
+[Robotics Innovation Center](https://robotik.dfki-bremen.de/en/startpage.html)
+of the German Research Center for Artificial Intelligence (DFKI GmbH) in
+Bremen. At this phase the work was supported through a grant from the European
+Commission (870142).
+
+<img src="doc/source/_static/DFKI_Logo.jpg" height="100px" />

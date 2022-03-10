@@ -1,7 +1,6 @@
 import json
 import numpy as np
 import pytransform3d.visualizer as pv
-from mocap.visualization import scatter
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.embodiment import HandEmbodiment
 from hand_embodiment.config import load_mano_config
@@ -86,7 +85,7 @@ robot = pv.Graph(
 
 fig = pv.figure()
 fig.plot_transform(s=0.5)
-markers = scatter(fig, np.zeros((13, 3)), s=0.006)
+markers = fig.scatter(fig, np.zeros((13, 3)), s=0.006)
 if show_mano:
     hand.add_artist(fig)
 if show_robot:

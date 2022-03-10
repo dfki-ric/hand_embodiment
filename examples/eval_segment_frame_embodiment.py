@@ -8,7 +8,6 @@ import argparse
 import numpy as np
 import json
 from pytransform3d import visualizer as pv
-from mocap.visualization import scatter
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.vis_utils import AnimationCallback
@@ -77,7 +76,7 @@ def main():
 
     fig = pv.figure()
     fig.plot_transform(np.eye(4), s=1)
-    markers = scatter(fig, dataset.get_markers(0), s=0.006)
+    markers = fig.scatter(dataset.get_markers(0), s=0.006)
 
     animation_callback = AnimationCallback(fig, pipeline, args, show_robot=True)
     fig.view_init(azim=45)

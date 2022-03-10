@@ -5,9 +5,8 @@ python bin/segment_mocap_recording.py data/20210701_april/Measurement31.tsv  --v
 """
 import argparse
 import numpy as np
-from mocap import qualisys, pandas_utils, conversion, normalization
-from mocap.cleaning import median_filter, interpolate_nan
-from mocap.metadata import save_metadata
+from hand_embodiment import mocap_dataset
+from mocap import normalization, metadata
 from segmentation_library.MCI.run import vmci
 from vmci_segmentation.preprocessing import normalize_differences
 
@@ -16,8 +15,8 @@ def main():
     args = parse_args()
     trajectory, changepoints = segment(args)
     output_filename = args.filename.replace(".tsv", ".json")
-    save_metadata(args.filename, args.markers[0], trajectory, changepoints,
-                  output_filename)
+    metadata.save_metadata(args.filename, args.markers[0], trajectory,
+                           changepoints, output_filename)
     print(f"Saved segments to '{output_filename}'.")
 
 
@@ -38,19 +37,19 @@ def parse_args():
 
 def segment(args):
     assert args.filename.endswith(".tsv"), f"Not a tsv file: {args.filename}"
-    trajectory = qualisys.read_qualisys_tsv(
+    trajectory = mocap_dataset.read_qualisys_tsv(
         filename=args.filename, verbose=int(args.verbose))
-    trajectory = pandas_utils.extract_markers(trajectory, args.markers).copy()
-    trajectory = interpolate_nan(trajectory)
-    #trajectory = median_filter(trajectory, 3)
+    trajectory = mocap_dataset.extract_markers(trajectory, args.markers).copy()
+    trajectory = mocap_dataset.interpolate_nan(trajectory)
+    #trajectory = mocap_dataset.median_filter(trajectory, 3)
     downsampled_trajectory = normalization.to_frequency(trajectory, args.frequency)
 
     downsampled_trajectory = downsampled_trajectory
 
-    time = conversion.array_from_dataframe(downsampled_trajectory, ["Time"])
-    columns = pandas_utils.match_columns(
+    time = mocap_dataset.array_from_dataframe(downsampled_trajectory, ["Time"])
+    columns = mocap_dataset.match_columns(
         downsampled_trajectory, args.markers, keep_time=False)
-    positions = conversion.array_from_dataframe(downsampled_trajectory, columns)
+    positions = mocap_dataset.array_from_dataframe(downsampled_trajectory, columns)
     velocities = np.empty((len(time), len(args.markers)))
     velocities[0] = 0.0
     for t in range(1, len(velocities)):
