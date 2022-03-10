@@ -18,7 +18,7 @@ if __name__ == "__main__":
         packages=find_packages(),
         package_data={"mocap": ["model/*"]},
         install_requires=["numpy", "scipy", "pytransform3d", "open3d",
-                          "pyyaml", "tqdm", "numba"],
+                          "pyyaml", "tqdm", "numba", "pandas"],
         extras_require={
             "test": ["pytest", "pytest-cov"]}
         )

@@ -1,10 +1,228 @@
+import re
 import warnings
 import yaml
 import numpy as np
-import mocap
-from mocap import qualisys, pandas_utils, conversion
-from mocap.cleaning import median_filter, interpolate_nan
-from mocap.pandas_utils import match_columns
+import pandas as pd
+from scipy.signal import medfilt
+
+
+def read_qualisys_tsv(filename, unit="m", verbose=0):
+    """Reads motion capturing data from tsv into pandas data frame.
+
+    Parameters
+    ----------
+    filename : str
+        Source file
+
+    unit : str, optional (default: 'm')
+        Unit to measure positions. Either meters 'm' or millimeters 'mm'.
+
+    verbose : int, optional (default: 0)
+        Verbosity level
+
+    Returns
+    -------
+    df : DataFrame
+        Raw data streams from source file
+    """
+    n_kv, n_meta = _header_sizes(filename)
+    meta = pd.read_csv(
+        filename, sep="\t", names=["Key", "Value"], header=None, nrows=7)
+    meta = dict(zip(meta["Key"], meta["Value"]))
+    if n_kv != n_meta:
+        events = pd.read_csv(
+            filename, sep="\t", header=None, skiprows=n_kv,
+            names=["Event", "Type", "Frame", "Time"],
+            nrows=n_meta - n_kv - 1)
+    else:
+        events = None
+
+    df = pd.read_csv(
+        filename, sep="\t", skiprows=n_meta, na_values=["null"])
+
+    if unit == "m":
+        # Get rid of "Time" and "Frame"
+        marker_cols = df.columns[2:]
+        df[marker_cols] /= 1000.0
+
+    markers = [c[:-2] for c in df.columns if c.endswith(" X")]
+
+    if verbose >= 1:
+        print("[read_qualisys_tsv] Meta data:")
+        print("  " + str(meta))
+        print("[read_qualisys_tsv] Events:")
+        print("  " + str(events))
+        print("[read_qualisys_tsv] Available markers:")
+        print("  " + (", ".join(markers)))
+        print("[read_qualisys_tsv] Time delta: %g"
+              % (1.0 / float(meta["FREQUENCY"])))
+
+    return df
+
+
+def _header_sizes(filename):
+    """Determine number of lines in the header."""
+    n_kv = 0    # Number of lines with metadata without events
+    n_meta = 0  # Number of lines with metadata
+    for i, l in enumerate(open(filename, "r")):
+        if n_kv == 0 and l.startswith("EVENT"):
+            n_kv = i
+        elif l.startswith("Frame"):
+            n_meta = i
+            break
+    if n_kv == 0:
+        n_kv = n_meta
+    return n_kv, n_meta
+
+
+def array_from_dataframe(trajectory, columns):
+    """Convert pandas DataFrame to numpy array.
+
+    Parameters
+    ----------
+    trajectory : DataFrame
+        Time series data
+
+    columns : list of str
+        Columns that should be extracted
+
+    Returns
+    -------
+    array, shape (len(trajectories), len(columns))
+        Extracted columns
+    """
+    return trajectory[columns].to_numpy()
+
+
+def match_columns(trajectory, streams, keep_time=True):
+    """Find columns of a dataframe that match regular expressions.
+
+    Parameters
+    ----------
+    trajectory : DataFrame
+        A collection of time series data
+
+    streams : list of str
+        Regular expressions that will be used to find matching streams in
+        the columns of 'trajectory'. If None is given, we take all streams.
+
+    keep_time : bool, optional (default: True)
+        Keep the column with the name 'Time'
+
+    Returns
+    -------
+    columns : list of str
+        Columns that match given regular expressions (+ 'Time'). Columns are
+        ordered first by given stream order and then by the dataframe's order
+        of columns.
+    """
+    if streams is None:
+        columns = list(trajectory.columns)
+        columns.remove("Time")
+    else:
+        streams_re = [re.compile(s) for s in streams]
+        columns = []
+        for sre in streams_re:
+            for c in trajectory.columns:
+                if c not in columns and sre.match(c):
+                    columns.append(c)
+
+    if len(columns) == 0:
+        raise ValueError(
+            "No streams match the given patterns: %s.\n"
+            "Available streams are: %s"
+            % (", ".join(streams), ", ".join(trajectory.columns)))
+
+    if keep_time and "Time" in trajectory:
+        columns.append("Time")
+
+    return columns
+
+
+def extract_markers(trajectory, markers, keep_time=True):
+    """Extract 3D marker streams (specific for Qualisys streams).
+
+    Parameters
+    ----------
+    trajectory : DataFrame
+        A collection of time series data
+
+    markers : list of str
+        Name of the Qualisys markers that will be used to find matching
+        streams in the columns of 'trajectory'. We assume that each
+        marker has three associated streams with ' X', ' Y', and ' Z' at
+        the end of their names respectively.
+
+    keep_time : bool, optional (default: True)
+        Keep the column with the name 'Time'
+
+    Returns
+    -------
+    trajectory : DataFrame
+        A collection of time series data with only the given markers
+    """
+    columns = [m for m in trajectory.columns if m[:-2] in markers]
+    if keep_time:
+        columns = ["Time"] + columns
+    return trajectory[columns]
+
+
+def median_filter(X, window_size):
+    """Median filter for trajectories.
+
+    A median filter should be used to remove large jumps caused by noisy
+    measurements or interpolation artifacts that often occur after
+    normalization of orientation representations with ambiguities
+    (such as quaternions).
+
+    Parameters
+    ----------
+    X : array, shape (n_steps, n_dims) or DataFrame
+        Trajectory
+
+    Returns
+    -------
+    X : array, shape (n_steps, n_dims) or DataFrame
+        Filtered trajectory
+    """
+    if isinstance(X, pd.DataFrame):
+        return X.rolling(window_size).median()
+    else:
+        return np.column_stack(
+            [medfilt(X[:, d], window_size) for d in range(X.shape[1])])
+
+
+def interpolate_nan(X):
+    """Remove NaNs with linear interpolation.
+
+    This function accepts DataFrame objects and numpy arrays. When a NumPy
+    array has to be converted, exact zeros are interpreted as NaNs, too.
+    Furthermore an exception is thrown if the trajectory only contains NaNs.
+
+    Parameters
+    ----------
+    X : array, shape (n_steps, n_dims) or DataFrame
+        Trajectory
+
+    Returns
+    -------
+    X : array, shape (n_steps, n_dims) or DataFrame
+        Trajectory without NaN
+    """
+    if isinstance(X, pd.DataFrame):
+        return X.interpolate(method="linear", limit_direction="both")
+    else:
+        nans = np.logical_or(np.isnan(X), X == 0.0)
+
+        if np.all(nans):
+            raise ValueError("Only NaN")
+
+        for d in range(X.shape[1]):
+            def x(y):
+                return y.nonzero()[0]
+            X[nans[:, d], d] = interp(x(nans[:, d]), x(~nans[:, d]),
+                                      X[~nans[:, d], d])
+        return X
 
 
 class MotionCaptureDatasetBase:
@@ -80,10 +298,10 @@ class MotionCaptureDatasetBase:
         hand_trajectories = []
         assert len(hand_marker_names) == 3, hand_marker_names
         for marker_name in hand_marker_names:
-            hand_column_names = pandas_utils.match_columns(
+            hand_column_names = match_columns(
                 trajectory, [marker_name], keep_time=False)
             assert len(hand_column_names) == 3, hand_column_names
-            hand_marker_trajectory = conversion.array_from_dataframe(
+            hand_marker_trajectory = array_from_dataframe(
                 trajectory, hand_column_names)
             hand_trajectories.append(hand_marker_trajectory)
         self.hand_trajectories = hand_trajectories
@@ -92,10 +310,10 @@ class MotionCaptureDatasetBase:
         finger_trajectories = {}
         for finger_name in finger_names:
             markers = finger_marker_names[finger_name]
-            finger_column_names = pandas_utils.match_columns(
+            finger_column_names = match_columns(
                 trajectory, markers, keep_time=False)
             assert len(finger_column_names) % 3 == 0, finger_column_names
-            arr = conversion.array_from_dataframe(
+            arr = array_from_dataframe(
                 trajectory, finger_column_names)
             finger_trajectories[finger_name] = arr.reshape(
                 -1, len(markers), 3)
@@ -105,20 +323,20 @@ class MotionCaptureDatasetBase:
         additional_trajectories = []
         for marker_name in additional_markers:
             try:
-                column_names = pandas_utils.match_columns(
+                column_names = match_columns(
                     trajectory, [marker_name], keep_time=False)
                 assert len(column_names) == 3, column_names
             except ValueError:
                 warnings.warn(
                     f"Could not find additional marker '{marker_name}'.")
                 continue
-            additional_trajectory = conversion.array_from_dataframe(
+            additional_trajectory = array_from_dataframe(
                 trajectory, column_names)
             additional_trajectories.append(additional_trajectory)
         self.additional_trajectories = additional_trajectories
 
     def _convert_zeros_to_nans(self, hand_trajectory, marker_names):
-        column_names = pandas_utils.match_columns(
+        column_names = match_columns(
             hand_trajectory, marker_names, keep_time=False)
         for column_name in column_names:
             hand_trajectory[column_name].replace(0.0, np.nan, inplace=True)
@@ -190,10 +408,9 @@ class HandMotionCaptureDataset(MotionCaptureDatasetBase):
                  interpolate_missing_markers=False, **kwargs):
         super(HandMotionCaptureDataset, self).__init__(mocap_config, **kwargs)
 
-        trajectory = qualisys.read_qualisys_tsv(filename=filename)
+        trajectory = read_qualisys_tsv(filename=filename)
         trajectory = self._scale(trajectory)
-        trajectory = pandas_utils.extract_markers(
-            trajectory, self.marker_names).copy()
+        trajectory = extract_markers(trajectory, self.marker_names).copy()
         trajectory = self._convert_zeros_to_nans(trajectory, self.marker_names)
         trajectory = trajectory.iloc[slice(start_idx, end_idx)]
         trajectory = trajectory.iloc[::skip_frames]
@@ -247,6 +464,7 @@ class SegmentedHandMotionCaptureDataset(MotionCaptureDatasetBase):
         super(SegmentedHandMotionCaptureDataset, self).__init__(mocap_config, **kwargs)
         self.interpolate_missing_markers = interpolate_missing_markers
 
+        import mocap
         record = mocap.load(metadata=filename)
         streams = [f"{mn} .*" for mn in self.marker_names]
         try:
