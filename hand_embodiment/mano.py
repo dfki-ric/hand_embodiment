@@ -138,10 +138,9 @@ def load_model(left=True):
     model_parameters : dict
         Parameters that we need to compute mesh of hand.
     """
-    if left:
-        filename = resource_filename("mocap", "model/mano_left.json")
-    else:
-        filename = resource_filename("mocap", "model/mano_right.json")
+    side = "left" if left else "right"
+    filename = resource_filename(
+        "hand_embodiment", f"model/mano/mano_{side}.json")
 
     with open(filename, "r") as f:
         model_kwargs = json.load(f)
