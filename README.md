@@ -97,6 +97,20 @@ we cannot release the data publicly.
 </tr>
 </table>
 
+### Example Script with Test Data
+
+You can run an example with test data from the main directory with
+
+```bash
+python examples/vis_markers_to_robot.py shadow --demo-file test/data/recording.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --pillow --show-mano
+```
+
+or
+
+```bash
+python examples/vis_markers_to_robot.py mia --demo-file test/data/recording.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --pillow --mia-thumb-adducted --show-mano
+```
+
 ### Configuration of MANO Parameters
 
 ![MANO to Mia](doc/source/_static/mano_shape.png)
