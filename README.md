@@ -193,6 +193,15 @@ color. On the left side, there is a list of annotated segments. In the middle
 we can see a 3D view of markers and on the right side we see the segment and
 annotation editor.
 
+## API Documentation
+
+You can build a simple documentation for this project with pdoc3
+(`pip install pdoc3):
+
+```bash
+pdoc hand_embodiment --html
+```
+
 ## Funding
 
 This library has been developed initially at the
