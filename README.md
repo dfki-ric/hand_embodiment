@@ -28,7 +28,13 @@ The currently implemented target systems are:
 ```bash
 git clone git@git.hb.dfki.de:dfki-interaction/experimental/hand_embodiment.git
 cd hand_embodiment
-# prepare MANO model, see subfolder hand_embodiment/model/mano for details
+# download MANO model from https://mano.is.tue.mpg.de/
+# see subfolder hand_embodiment/model/mano for details
+cd hand_embodiment/model/mano
+pip install chumpy scipy
+python prepare_mano.py
+cd ../../../
+# install hand_embodiment
 pip install -e .
 ```
 
