@@ -35,7 +35,8 @@ pip install -e .
 ### Optional Dependency
 
 The library [mocap](https://git.hb.dfki.de/dfki-interaction/mocap) is only
-available for members of the DFKI RIC. It is used to load motion capture data.
+available for members of the DFKI RIC. It is used to load motion capture data
+in some cases.
 
 ### Data
 
