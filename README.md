@@ -21,6 +21,14 @@ The currently implemented target systems are:
 * Mia hand from Prensilia
 * Dexterous Hand from Shadow
 
+## Paper
+
+This is the implementation of the paper
+
+Alexander Fabisch, Melvin Laux, Dennis Marschner, Johannes Brust:
+**A Modular Approach to the Embodiment of Hand Motions from Human Demonstrations**,
+https://arxiv.org/abs/2203.02778
+
 ## Installation
 
 ### Install Hand Embodiment
