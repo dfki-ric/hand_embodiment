@@ -4,6 +4,10 @@
 
 Embodiment mapping for robotic hands from human hand motions
 
+## Contents
+
+* [Idea](#Idea)
+
 ## Idea
 
 The general idea of this software package is to use the MANO hand model to
