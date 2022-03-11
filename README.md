@@ -6,7 +6,7 @@ Embodiment mapping for robotic hands from human hand motions
 
 ## Contents
 
-* [Idea](#Idea)
+* [Idea](#idea)
 
 ## Idea
 
