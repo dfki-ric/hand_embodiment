@@ -16,7 +16,7 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         license="None",
         packages=find_packages(),
-        package_data={"mocap": ["model/*"]},
+        package_data={"hand_embodiment": ["model/*"]},
         install_requires=["numpy", "scipy", "pytransform3d", "open3d",
                           "pyyaml", "tqdm", "numba", "pandas"],
         extras_require={
