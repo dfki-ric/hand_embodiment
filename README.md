@@ -33,6 +33,10 @@ https://arxiv.org/abs/2203.02778
 
 ### Install Hand Embodiment
 
+This software is implemented in Python. If you do not have a working Python
+environment so far, we recommend to install it with
+[Anaconda](https://www.anaconda.com/).
+
 ```bash
 git clone git@git.hb.dfki.de:dfki-interaction/experimental/hand_embodiment.git
 cd hand_embodiment
