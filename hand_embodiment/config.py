@@ -1,3 +1,4 @@
+"""Interface to MANO and record mapping configuration."""
 import numpy as np
 import yaml
 import pytransform3d.transformations as pt

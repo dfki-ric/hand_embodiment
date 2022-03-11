@@ -1,3 +1,4 @@
+"""Motion capture dataset and preprocessing tools."""
 import re
 import warnings
 import yaml

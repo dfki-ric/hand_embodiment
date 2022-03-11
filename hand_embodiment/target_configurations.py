@@ -1,3 +1,4 @@
+"""Configurations of robotic hands for embodiment mapping."""
 import numpy as np
 import pytransform3d.transformations as pt
 import pytransform3d.rotations as pr

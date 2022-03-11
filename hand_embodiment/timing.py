@@ -1,3 +1,4 @@
+"""Measure time for benchmarking."""
 import time
 import numpy as np
 

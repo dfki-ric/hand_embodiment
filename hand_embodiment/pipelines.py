@@ -1,3 +1,4 @@
+"""Pipelines are high-level interfaces that map human data to robotic hands."""
 from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.config import load_mano_config, load_record_mapping_config
 from hand_embodiment.record_markers import MarkerBasedRecordMapping

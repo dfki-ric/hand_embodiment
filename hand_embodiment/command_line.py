@@ -1,3 +1,6 @@
+"""Common options for command line scripts."""
+
+
 def add_playback_control_arguments(parser):
     """Add arguments for playback control to command line parser.
 

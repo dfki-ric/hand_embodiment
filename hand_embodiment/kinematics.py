@@ -1,3 +1,7 @@
+"""Robot kinematics.
+
+Forward and inverse kinematics for robotic hands.
+"""
 import numpy as np
 import math
 import numba

@@ -1,3 +1,4 @@
+"""Metrics for evaluation of the embodiment mapping."""
 import numpy as np
 import open3d as o3d
 import numba

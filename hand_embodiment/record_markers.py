@@ -1,3 +1,7 @@
+"""Record mapping for a marker-based motion capture system.
+
+Estimates MANO states from marker positions.
+"""
 import warnings
 
 import numpy as np

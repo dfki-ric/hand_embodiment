@@ -1,3 +1,7 @@
+"""Embodiment mapping.
+
+Maps MANO states to robotic hands.
+"""
 import warnings
 import numpy as np
 

@@ -1,3 +1,4 @@
+"""Dataset that contains a sequence of robotic hand states."""
 import time
 import tqdm
 import copy

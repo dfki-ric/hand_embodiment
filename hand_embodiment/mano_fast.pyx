@@ -1,3 +1,4 @@
+"""Fast implementation of MANO kinematics."""
 import numpy as np
 cimport numpy as np
 cimport cython

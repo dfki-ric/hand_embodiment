@@ -1,3 +1,4 @@
+"""Generate visualization of kinematic tree from URDF."""
 import numpy as np
 try:
     import pydot
