@@ -67,8 +67,8 @@ we cannot release the data publicly.
 
 <table>
 <tr>
-<td><img src="doc/source/_static/figure_record_1.png" /></td>
-<td><img src="doc/source/_static/figure_record_2.png" /></td>
+<td><img src="doc/source/_static/figure_record_1.png" width=50% /></td>
+<td><img src="doc/source/_static/figure_record_2.png" width=50% /></td>
 </tr>
 <tr>
 <td><img src="doc/source/_static/figure_record_3.png" /></td>
