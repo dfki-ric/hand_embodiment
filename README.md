@@ -65,7 +65,7 @@ we cannot release the data publicly.
 
 ### Motion Capture Data Fitted to MANO
 
-See examples/vis_markers_to_mano_trajectory.py
+See [examples/vis_markers_to_mano_trajectory.py](examples/vis_markers_to_mano_trajectory.py)
 
 <table>
 <tr>
@@ -92,7 +92,7 @@ See examples/vis_markers_to_mano_trajectory.py
 
 ### Interactive Transfer of MANO State to Robotic Hands
 
-See bin/gui_robot_embodiment.py
+See [bin/gui_robot_embodiment.py](bin/gui_robot_embodiment.py)
 
 <table>
 <tr>
@@ -129,7 +129,7 @@ python examples/vis_markers_to_robot.py mia --demo-file test/data/recording.tsv 
 
 ### Configuration of MANO Parameters
 
-See bin/gui_mano_shape.py
+See [bin/gui_mano_shape.py](bin/gui_mano_shape.py)
 
 ![MANO to Mia](doc/source/_static/mano_shape.png)
 
