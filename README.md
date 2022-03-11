@@ -67,24 +67,24 @@ we cannot release the data publicly.
 
 <table>
 <tr>
-<td><img src="doc/source/_static/figure_record_1.png" width=50% /></td>
-<td><img src="doc/source/_static/figure_record_2.png" width=50% /></td>
+<td><img src="doc/source/_static/figure_record_1.png" height="200px" /></td>
+<td><img src="doc/source/_static/figure_record_2.png" height="200px" /></td>
 </tr>
 <tr>
-<td><img src="doc/source/_static/figure_record_3.png" width=50% /></td>
-<td><img src="doc/source/_static/figure_record_4.png" width=50% /></td>
+<td><img src="doc/source/_static/figure_record_3.png" height="200px" /></td>
+<td><img src="doc/source/_static/figure_record_4.png" height="200px" /></td>
 </tr>
 <tr>
-<td><img src="doc/source/_static/figure_record_5.png" width=50% /></td>
-<td><img src="doc/source/_static/figure_record_6.png" width=50% /></td>
+<td><img src="doc/source/_static/figure_record_5.png" height="200px" /></td>
+<td><img src="doc/source/_static/figure_record_6.png" height="200px" /></td>
 </tr>
 <tr>
-<td><img src="doc/source/_static/figure_record_7.png" width=50% /></td>
-<td><img src="doc/source/_static/figure_record_8.png" width=50% /></td>
+<td><img src="doc/source/_static/figure_record_7.png" height="200px" /></td>
+<td><img src="doc/source/_static/figure_record_8.png" height="200px" /></td>
 </tr>
 <tr>
-<td><img src="doc/source/_static/figure_record_9.png" width=50% /></td>
-<td><img src="doc/source/_static/figure_record_10.png" width=50% /></td>
+<td><img src="doc/source/_static/figure_record_9.png" height="200px" /></td>
+<td><img src="doc/source/_static/figure_record_10.png" height="200px" /></td>
 </tr>
 </table>
 
@@ -92,20 +92,20 @@ we cannot release the data publicly.
 
 <table>
 <tr>
-<td><img src="doc/source/_static/embodiment_interactive_mia_1.png" width=50% /></td>
-<td><img src="doc/source/_static/embodiment_interactive_mia_2.png" width=50% /></td>
+<td><img src="doc/source/_static/embodiment_interactive_mia_1.png" height="200px" /></td>
+<td><img src="doc/source/_static/embodiment_interactive_mia_2.png" height="200px" /></td>
 </tr>
 <tr>
-<td><img src="doc/source/_static/embodiment_interactive_mia_3.png" width=50% /></td>
-<td><img src="doc/source/_static/embodiment_interactive_shadow_1.png" width=50% /></td>
+<td><img src="doc/source/_static/embodiment_interactive_mia_3.png" height="200px" /></td>
+<td><img src="doc/source/_static/embodiment_interactive_shadow_1.png" height="200px" /></td>
 </tr>
 <tr>
-<td><img src="doc/source/_static/embodiment_interactive_shadow_2.png" width=50% /></td>
-<td><img src="doc/source/_static/embodiment_interactive_shadow_3.png" width=50% /></td>
+<td><img src="doc/source/_static/embodiment_interactive_shadow_2.png" height="200px" /></td>
+<td><img src="doc/source/_static/embodiment_interactive_shadow_3.png" height="200px" /></td>
 </tr>
 <tr>
-<td><img src="doc/source/_static/embodiment_interactive_shadow_4.png" width=50% /></td>
-<td><img src="doc/source/_static/embodiment_interactive_shadow_5.png" width=50% /></td>
+<td><img src="doc/source/_static/embodiment_interactive_shadow_4.png" height="200px" /></td>
+<td><img src="doc/source/_static/embodiment_interactive_shadow_5.png" height="200px" /></td>
 </tr>
 </table>
 
