@@ -196,7 +196,7 @@ annotation editor.
 ## API Documentation
 
 You can build a simple documentation for this project with pdoc3
-(`pip install pdoc3):
+(`pip install pdoc3`):
 
 ```bash
 pdoc hand_embodiment --html
