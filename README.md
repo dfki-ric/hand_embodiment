@@ -162,8 +162,8 @@ The following scripts can be used to investigate a hand configuration:
 
 ## Configuration for a New Subject
 
-Each (human) subject has a different hand and we have to account for that in
-the configuration of the record mapping, that is, we have to adapt the shape
+Each (human) subject has a different hand and we have to take this into account
+in the configuration of the record mapping, that is, we have to adapt the shape
 of the MANO model. For this purpose there is the script `bin/gui_mano_shape.py`
 with which you can load a Qualisys tsv file, visualize the hand markers,
 and visualize and modify the shape and pose of the MANO mesh with respect to
