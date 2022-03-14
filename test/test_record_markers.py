@@ -12,9 +12,9 @@ def test_smoke_record():
         finger_markers={"index": [np.array([0, 0, 1])]})
     pose = np.zeros(48)
     pose[:12] = np.array(
-        [0.000000e+00, 0.000000e+00, 0.000000e+00, 4.458424e-02,
-         -1.256637e+00, 4.028908e-01, 5.826873e-06, -1.230357e-01,
-         -1.560019e-01, 2.920878e-04, -3.664338e-02, 5.782096e-01])
+        [0.000000e+00, 0.000000e+00, 0.000000e+00, 4.461087e-02,
+         -1.256637e+00, 4.029302e-01, 4.745406e-05, -1.230391e-01,
+         -1.560938e-01, 2.713341e-04, -3.663346e-02, 5.782625e-01])
     assert_array_almost_equal(rm.hand_state_.pose, pose)
     mano2hand_markers = rm.mano2hand_markers_
     assert_array_almost_equal(
