@@ -413,11 +413,11 @@ class HandMotionCaptureDataset(MotionCaptureDatasetBase):
         trajectory = self._scale(trajectory)
         trajectory = extract_markers(trajectory, self.marker_names).copy()
         trajectory = self._convert_zeros_to_nans(trajectory, self.marker_names)
-        trajectory = trajectory.iloc[slice(start_idx, end_idx)]
-        trajectory = trajectory.iloc[::skip_frames]
         if interpolate_missing_markers:
             trajectory = interpolate_nan(trajectory)
             trajectory = median_filter(trajectory, 3)
+        trajectory = trajectory.iloc[slice(start_idx, end_idx)]
+        trajectory = trajectory.iloc[::skip_frames]
 
         self.n_steps = len(trajectory)
 
