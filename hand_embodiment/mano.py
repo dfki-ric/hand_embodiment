@@ -1,6 +1,6 @@
 """Mesh representation of the MANO hand model.
 
-See `here <https://mano.is.tue.mpg.de/>`_ for details on the model.
+See https://mano.is.tue.mpg.de/ for details on the model.
 Their code has been refactored and documented here.
 """
 import json
