@@ -145,8 +145,9 @@ def insole_pose(insole_back, insole_front):
 class PillowSmall(pv.Artist):
     """Representation of small pillow mesh."""
     def __init__(
-            self, pillow_left=np.array([0, 1, 0]),
-            pillow_right=np.array([0, 0, 0]), pillow_top=np.array([1, 0, 0])):
+            self, pillow_left=np.array([-0.15, -0.15, 0]),
+            pillow_right=np.array([0.15, -0.15, 0]),
+            pillow_top=np.array([0.15, 0.15, 0])):
         filename = resource_filename(
             "hand_embodiment", "model/objects/pillow_small.stl")
         self.mesh = o3d.io.read_triangle_mesh(filename)
