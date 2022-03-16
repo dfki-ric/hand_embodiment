@@ -130,7 +130,7 @@ class Insole(pv.Artist):
 
         Returns
         -------
-        mesh : o3d.geometry.TriangularMesh
+        mesh : open3d.geometry.TriangleMesh
             Object mesh.
         """
         mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
@@ -144,10 +144,10 @@ class Insole(pv.Artist):
 
         Parameters
         ----------
-        insole_back : array, shape (3,), optional
+        insole_back : array, shape (3,)
             Position of insole back marker.
 
-        insole_front : array, shape (3,), optional
+        insole_front : array, shape (3,)
             Position of insole front marker.
 
         Returns
@@ -186,10 +186,10 @@ def insole_pose(insole_back, insole_front):
 
     Parameters
     ----------
-    insole_back : array, shape (3,), optional
+    insole_back : array, shape (3,)
         Position of insole back marker.
 
-    insole_front : array, shape (3,), optional
+    insole_front : array, shape (3,)
         Position of insole front marker.
 
     Returns
@@ -206,23 +206,90 @@ def insole_pose(insole_back, insole_front):
 
 
 class PillowSmall(pv.Artist):
-    """Representation of small pillow mesh."""
+    """Representation of small pillow mesh.
+
+    Marker positions:
+
+    .. code-block:: text
+
+                        PT
+                        |
+                        |
+                        |
+                        |
+        PL-------------PR
+
+    Parameters
+    ----------
+    pillow_left : array, shape (3,)
+        Position of left marker (PL).
+
+    pillow_right : array, shape (3,)
+        Position of right marker (PR).
+
+    pillow_top : array, shape (3,)
+        Position of top marker (PT).
+    """
+    pillow_left_default = np.array([-0.11, 0.13, 0])
+    pillow_right_default = np.array([-0.11, -0.13, 0])
+    pillow_top_default = np.array([0.11, -0.13, 0])
+    default_marker_positions = {
+        "pillow_left": pillow_left_default,
+        "pillow_right": pillow_right_default,
+        "pillow_top": pillow_top_default
+    }
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 90])),
+        p=np.array([0.0, -0.02, 0.091]))  # TODO higher z?
+
     def __init__(
-            self, pillow_left=np.array([-0.15, -0.15, 0]),
-            pillow_right=np.array([0.15, -0.15, 0]),
-            pillow_top=np.array([0.15, 0.15, 0])):
-        filename = resource_filename(
+            self, pillow_left=np.copy(pillow_left_default),
+            pillow_right=np.copy(pillow_right_default),
+            pillow_top=np.copy(pillow_top_default)):
+        self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/pillow_small.stl")
-        self.mesh = o3d.io.read_triangle_mesh(filename)
-        self.mesh.compute_triangle_normals()
-        self.pillow_left = pillow_left
-        self.pillow_right = pillow_right
-        self.pillow_top = pillow_top
-        self.pillow_mesh2pillow_markers = pt.transform_from(
-            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 90])),
-            p=np.array([0.0, -0.02, 0.091]))
-        self.pillow_markers2origin = np.copy(self.pillow_mesh2pillow_markers)
+        self.mesh = self.load_mesh()
+
+        self.pillow_left = np.copy(self.pillow_left_default)
+        self.pillow_right = np.copy(self.pillow_right_default)
+        self.pillow_top = np.copy(self.pillow_top_default)
+
+        self.pillow_markers2origin = np.copy(self.markers2mesh)
         self.set_data(pillow_left, pillow_right, pillow_top)
+
+    def load_mesh(self):
+        """Load mesh without specific pose.
+
+        Returns
+        -------
+        mesh : open3d.geometry.TriangleMesh
+            Object mesh.
+        """
+        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
+        mesh.compute_triangle_normals()
+        return mesh
+
+    @staticmethod
+    def pose_from_markers(pillow_left, pillow_right, pillow_top):
+        """Compute pose of pillow.
+
+        Parameters
+        ----------
+        pillow_left : array, shape (3,)
+            Position of left marker (PL).
+
+        pillow_right : array, shape (3,)
+            Position of right marker (PR).
+
+        pillow_top : array, shape (3,)
+            Position of top marker (PT).
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the pillow.
+        """
+        return pillow_pose(pillow_left, pillow_right, pillow_top)
 
     def set_data(self, pillow_left, pillow_right, pillow_top):
         if not any(np.isnan(pillow_left)):
@@ -232,11 +299,11 @@ class PillowSmall(pv.Artist):
         if not any(np.isnan(pillow_top)):
             self.pillow_top = pillow_top
 
-        self.mesh.transform(pt.invert_transform(pt.concat(self.pillow_mesh2pillow_markers, self.pillow_markers2origin)))
+        self.mesh.transform(pt.invert_transform(pt.concat(self.markers2mesh, self.pillow_markers2origin)))
 
         self.pillow_markers2origin = pillow_pose(self.pillow_left, self.pillow_right, self.pillow_top)
 
-        self.mesh.transform(pt.concat(self.pillow_mesh2pillow_markers, self.pillow_markers2origin))
+        self.mesh.transform(pt.concat(self.markers2mesh, self.pillow_markers2origin))
 
     @property
     def geometries(self):
@@ -251,7 +318,24 @@ class PillowSmall(pv.Artist):
 
 
 def pillow_pose(pillow_left, pillow_right, pillow_top):
-    """Compute pose of pillow."""
+    """Compute pose of pillow.
+
+    Parameters
+    ----------
+    pillow_left : array, shape (3,)
+        Position of left marker (PL).
+
+    pillow_right : array, shape (3,)
+        Position of right marker (PR).
+
+    pillow_top : array, shape (3,)
+        Position of top marker (PT).
+
+    Returns
+    -------
+    pose : array, shape (4, 4)
+        Pose of the pillow.
+    """
     right2top = pillow_top - pillow_right
     right2left = pillow_left - pillow_right
     pose = np.eye(4)

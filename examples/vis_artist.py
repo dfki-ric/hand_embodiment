@@ -2,12 +2,19 @@
 import argparse
 import numpy as np
 from hand_embodiment.command_line import add_object_visualization_arguments
-from hand_embodiment.vis_utils import Insole
+from hand_embodiment.vis_utils import Insole, PillowSmall
 import pytransform3d.visualizer as pv
 import pytransform3d.transformations as pt
 
 
 MARKER_RADIUS = 0.006
+MARKER_COLORS = (
+    (1, 0, 0),
+    (0, 1, 0),
+    (0, 0, 1),
+    (1, 1, 0),
+    (0, 1, 1)
+)
 
 
 def main():
@@ -19,7 +26,7 @@ def main():
         object_classes.append(Insole)
 
     if args.pillow:
-        raise NotImplementedError()
+        object_classes.append(PillowSmall)
 
     if args.electronic:
         raise NotImplementedError()
@@ -42,7 +49,7 @@ def main():
         markers_inv = [
             pt.transform(ObjectClass.markers2mesh, pt.vector_to_point(p))[:3]
             for p in ObjectClass.default_marker_positions.values()]
-        fig.scatter(markers_inv, s=MARKER_RADIUS)
+        fig.scatter(markers_inv, s=MARKER_RADIUS, c=MARKER_COLORS)
 
         # Pose in marker frame
         pose = ObjectClass.pose_from_markers(
