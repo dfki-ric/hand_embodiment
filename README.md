@@ -65,7 +65,7 @@ we cannot release the data publicly.
 
 ### Motion Capture Data Fitted to MANO
 
-See [examples/vis_markers_to_mano_trajectory.py](examples/vis_markers_to_mano_trajectory.py)
+See [bin/vis_markers_to_mano_trajectory.py](bin/vis_markers_to_mano_trajectory.py)
 
 <table>
 <tr>
@@ -118,13 +118,13 @@ See [bin/gui_robot_embodiment.py](bin/gui_robot_embodiment.py)
 You can run an example with test data from the main directory with
 
 ```bash
-python examples/vis_markers_to_robot.py shadow --demo-file test/data/recording.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --pillow --show-mano
+python bin/vis_markers_to_robot.py shadow --demo-file test/data/recording.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --pillow --show-mano
 ```
 
 or
 
 ```bash
-python examples/vis_markers_to_robot.py mia --demo-file test/data/recording.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --pillow --mia-thumb-adducted --show-mano
+python bin/vis_markers_to_robot.py mia --demo-file test/data/recording.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --pillow --mia-thumb-adducted --show-mano
 ```
 
 ### Configuration of MANO Parameters
