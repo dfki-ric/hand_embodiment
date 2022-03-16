@@ -8,6 +8,7 @@ import argparse
 import time
 import numpy as np
 from pytransform3d import visualizer as pv
+from hand_embodiment.command_line import add_hand_argument
 from hand_embodiment.target_dataset import RoboticHandDataset
 from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.embodiment import load_kinematic_model
@@ -15,9 +16,7 @@ from hand_embodiment.embodiment import load_kinematic_model
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "hand", type=str,
-        help="Name of the hand. Possible options: mia, shadow_hand")
+    add_hand_argument(parser)
     parser.add_argument(
         "dataset", type=str, help="Dataset that should be used.")
     parser.add_argument(

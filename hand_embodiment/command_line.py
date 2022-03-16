@@ -1,4 +1,18 @@
 """Common options for command line scripts."""
+from .target_configurations import TARGET_CONFIG
+
+
+def add_hand_argument(parser):
+    """Add argument for target hand selection to command line parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Command line parser
+    """
+    parser.add_argument(
+        "hand", choices=TARGET_CONFIG.keys(),
+        help=f"Name of the robotic hand (target system).")
 
 
 def add_playback_control_arguments(parser):
