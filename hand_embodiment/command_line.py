@@ -64,6 +64,17 @@ def add_animation_arguments(parser):
     parser.add_argument(
         "--delay", type=float, default=0,
         help="Delay in seconds before starting the animation.")
+    add_object_visualization_arguments(parser)
+
+
+def add_object_visualization_arguments(parser):
+    """Add arguments to show objects to command line parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Command line parser
+    """
     parser.add_argument(
         "--insole", action="store_true", help="Visualize insole mesh.")
     parser.add_argument(

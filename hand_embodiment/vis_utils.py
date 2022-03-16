@@ -93,20 +93,69 @@ class ManoHand(pv.Artist):
 
 
 class Insole(pv.Artist):
-    """Representation of insole mesh."""
-    def __init__(self, insole_back=np.zeros(3), insole_front=np.array([1, 0, 0])):
-        filename = resource_filename(
+    """Representation of insole mesh.
+
+    Parameters
+    ----------
+    insole_back : array, shape (3,), optional
+        Position of insole back marker.
+
+    insole_front : array, shape (3,), optional
+        Position of insole front marker.
+    """
+    insole_back_default = np.zeros(3)
+    insole_front_default = np.array([0.19, 0, 0])
+    default_marker_positions = {
+        "insole_back": insole_back_default,
+        "insole_front": insole_front_default
+    }
+
+    def __init__(
+            self, insole_back=np.copy(insole_back_default),
+            insole_front=np.copy(insole_front_default)):
+        self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/insole.stl")
-        self.mesh = o3d.io.read_triangle_mesh(filename)
-        self.mesh.paint_uniform_color(np.array([0.37, 0.28, 0.26]))
-        self.mesh.compute_triangle_normals()
-        self.insole_back = np.zeros(3)
-        self.insole_front = np.array([1, 0, 0])
+        self.mesh = self.load_mesh()
+
+        self.insole_back = np.copy(self.insole_back_default)
+        self.insole_front = np.copy(self.insole_front_default)
         self.insole_mesh2insole_markers = pt.transform_from(
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([180, 0, -4.5])),
             p=np.array([0.04, 0.07, -0.007]))
         self.insole_markers2origin = np.copy(self.insole_mesh2insole_markers)
         self.set_data(insole_back, insole_front)
+
+    def load_mesh(self):
+        """Load mesh without specific pose.
+
+        Returns
+        -------
+        mesh : o3d.geometry.TriangularMesh
+            Object mesh.
+        """
+        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
+        mesh.paint_uniform_color(np.array([0.37, 0.28, 0.26]))
+        mesh.compute_triangle_normals()
+        return mesh
+
+    @staticmethod
+    def pose_from_markers(insole_back, insole_front):
+        """Compute pose of insole.
+
+        Parameters
+        ----------
+        insole_back : array, shape (3,), optional
+            Position of insole back marker.
+
+        insole_front : array, shape (3,), optional
+            Position of insole front marker.
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the insole.
+        """
+        return insole_pose(insole_back, insole_front)
 
     def set_data(self, insole_back, insole_front):
         if not any(np.isnan(insole_back)):
@@ -133,7 +182,21 @@ class Insole(pv.Artist):
 
 
 def insole_pose(insole_back, insole_front):
-    """Compute pose of insole."""
+    """Compute pose of insole.
+
+    Parameters
+    ----------
+    insole_back : array, shape (3,), optional
+        Position of insole back marker.
+
+    insole_front : array, shape (3,), optional
+        Position of insole front marker.
+
+    Returns
+    -------
+    pose : array, shape (4, 4)
+        Pose of the insole.
+    """
     x_axis = pr.norm_vector(insole_front - insole_back)
     z_axis = np.copy(pr.unitz)
     y_axis = pr.norm_vector(pr.perpendicular_to_vectors(z_axis, x_axis))
