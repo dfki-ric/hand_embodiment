@@ -240,7 +240,7 @@ class PillowSmall(pv.Artist):
     }
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 90])),
-        p=np.array([0.0, -0.02, 0.091]))  # TODO higher z?
+        p=np.array([0.0, -0.02, 0.095]))
 
     def __init__(
             self, pillow_left=np.copy(pillow_left_default),
