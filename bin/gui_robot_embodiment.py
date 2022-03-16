@@ -10,6 +10,7 @@ from hand_embodiment.record_markers import make_finger_kinematics
 from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
 from hand_embodiment.embodiment import HandEmbodiment
 from hand_embodiment.config import load_mano_config
+from hand_embodiment.command_line import add_hand_argument
 
 
 class Figure:
@@ -280,9 +281,7 @@ class OnManoPoseSlider(OnMano):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "hand", type=str,
-        help="Name of the hand. Possible options: mia, shadow_hand")
+    add_hand_argument(parser)
     parser.add_argument(
         "--hide-mano", action="store_true", help="Don't show MANO mesh")
     parser.add_argument(

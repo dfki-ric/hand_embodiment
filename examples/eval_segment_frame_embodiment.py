@@ -12,16 +12,14 @@ from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.vis_utils import AnimationCallback
 from hand_embodiment.command_line import (
-    add_animation_arguments, add_configuration_arguments)
+    add_hand_argument, add_animation_arguments, add_configuration_arguments)
 from hand_embodiment.metrics import (
     CONTACT_SURFACE_VERTICES, distances_robot_to_mano)
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "hand", type=str,
-        help="Name of the hand. Possible options: mia, shadow_hand")
+    add_hand_argument(parser)
     parser.add_argument(
         "segment_label", type=str,
         help="Label of the segment that should be used.")

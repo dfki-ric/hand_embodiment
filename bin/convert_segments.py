@@ -34,14 +34,13 @@ from hand_embodiment.target_dataset import convert_mocap_to_robot
 from hand_embodiment.vis_utils import (
     insole_pose, pillow_pose, electronic_object_pose, electronic_target_pose)
 from hand_embodiment.timing import timing_report
-from hand_embodiment.command_line import add_configuration_arguments
+from hand_embodiment.command_line import (
+    add_hand_argument, add_configuration_arguments)
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "hand", type=str,
-        help="Name of the hand. Possible options: mia, shadow_hand")
+    add_hand_argument(parser)
     parser.add_argument(
         "segment_label", type=str,
         help="Label of the segment that should be used.")
