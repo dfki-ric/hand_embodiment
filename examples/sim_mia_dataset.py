@@ -8,7 +8,7 @@ from hand_embodiment.target_configurations import TARGET_CONFIG
 
 
 dt = 0.01
-filename = "dataset_31_segment_0.csv"
+filename = "test/data/mia_segment.csv"
 
 hand_config = TARGET_CONFIG["mia"]
 
