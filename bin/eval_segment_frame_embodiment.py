@@ -1,9 +1,10 @@
-"""Example calls:
-python examples/eval_segment_frame_embodiment.py mia close 0 100 --mocap-config examples/config/markers/20211119_april.yaml --mano-config examples/config/mano/20211105_april.yaml --mia-thumb-adducted --show-mano --demo-file data/20211119_april/20211119_r_WK37_insole_set0.json --insole
-python examples/eval_segment_frame_embodiment.py shadow grasp 0 80 --mocap-config examples/config/markers/20211126_april_pillow.yaml --mano-config examples/config/mano/20211105_april.yaml --mia-thumb-adducted --show-mano --demo-file data/20211126_april_pillow/20211126_r_WK37_big_pillow_set0.json
-python examples/eval_segment_frame_embodiment.py shadow insert 0 120 --mocap-config examples/config/markers/20211217_april.yaml --mano-config examples/config/mano/20211105_april.yaml --mia-thumb-adducted --show-mano --demo-file data/20211217_april/20211217_r_WK37_passport_box_set0.json --passport-closed
-"""
+"""Evaluate embodiment mapping for specific frames of a segment.
 
+Example calls:
+python bin/eval_segment_frame_embodiment.py mia close 0 100 --mocap-config examples/config/markers/20211119_april.yaml --mano-config examples/config/mano/20211105_april.yaml --mia-thumb-adducted --show-mano --demo-file data/20211119_april/20211119_r_WK37_insole_set0.json --insole
+python bin/eval_segment_frame_embodiment.py shadow grasp 0 80 --mocap-config examples/config/markers/20211126_april_pillow.yaml --mano-config examples/config/mano/20211105_april.yaml --mia-thumb-adducted --show-mano --demo-file data/20211126_april_pillow/20211126_r_WK37_big_pillow_set0.json
+python bin/eval_segment_frame_embodiment.py shadow insert 0 120 --mocap-config examples/config/markers/20211217_april.yaml --mano-config examples/config/mano/20211105_april.yaml --mia-thumb-adducted --show-mano --demo-file data/20211217_april/20211217_r_WK37_passport_box_set0.json --passport-closed
+"""
 import argparse
 import numpy as np
 import json

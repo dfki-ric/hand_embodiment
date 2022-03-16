@@ -1,3 +1,4 @@
+"""Summarize results of evaluation of embodiment mapping."""
 import argparse
 import glob
 import json

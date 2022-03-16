@@ -26,7 +26,7 @@ for i in "${!SEGMENTS[@]}"; do
         export SET=${i}
         export SEGMENT=${j}
         export FRAME=-1
-        python examples/eval_segment_frame_embodiment.py \
+        python bin/eval_segment_frame_embodiment.py \
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG \
             --demo-file data/${DATE}_april/${DATE}_${SUBJECT}_insole_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_grasp_insole_${HAND}_${SEGMENT}_${FRAME}.jpg \
@@ -42,7 +42,7 @@ for i in "${!SEGMENTS[@]}"; do
         export SET=${i}
         export SEGMENT=${j}
         export FRAME=-1
-        python examples/eval_segment_frame_embodiment.py \
+        python bin/eval_segment_frame_embodiment.py \
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG \
             --demo-file data/20210819_april/${DATE}_${SUBJECT}_insole_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_grasp_insole_${HAND}_${SEGMENT}_${FRAME}.jpg \
@@ -64,7 +64,7 @@ for i in "${!SEGMENTS[@]}"; do
         export SET=${i}
         export SEGMENT=${j}
         export FRAME=-1
-        python examples/eval_segment_frame_embodiment.py \
+        python bin/eval_segment_frame_embodiment.py \
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG --mia-thumb-adducted \
             --demo-file data/${DATE}_april/${DATE}_${SUBJECT}_small_pillow_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_pillow_small_${HAND}_${SEGMENT}_${FRAME}.jpg \
@@ -80,7 +80,7 @@ for i in "${!SEGMENTS[@]}"; do
         export SET=${i}
         export SEGMENT=${j}
         export FRAME=-1
-        python examples/eval_segment_frame_embodiment.py \
+        python bin/eval_segment_frame_embodiment.py \
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG --mia-thumb-adducted \
             --demo-file data/20210826_april/${DATE}_${SUBJECT}_small_pillow_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_pillow_small_${HAND}_${SEGMENT}_${FRAME}.jpg \
@@ -102,7 +102,7 @@ for i in "${!SEGMENTS[@]}"; do
         export SET=${i}
         export SEGMENT=${j}
         export FRAME=-1
-        python examples/eval_segment_frame_embodiment.py \
+        python bin/eval_segment_frame_embodiment.py \
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG \
             --demo-file data/${DATE}_april/${DATE}_${SUBJECT}_electronic_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_electronic_grasp_${HAND}_${SEGMENT}_${FRAME}.jpg \
@@ -125,7 +125,7 @@ for i in "${!SEGMENTS[@]}"; do
         export SET=${i}
         export SEGMENT=${j}
         export FRAME=0
-        python examples/eval_segment_frame_embodiment.py \
+        python bin/eval_segment_frame_embodiment.py \
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG \
             --demo-file data/${DATE}_april/${DATE}_${SUBJECT}_electronic_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_electronic_insert_${HAND}_${SEGMENT}_${FRAME}.jpg \
@@ -149,7 +149,7 @@ for i in "${!SEGMENTS[@]}"; do
         export SET=${i}
         export SEGMENT=${j}
         export FRAME=0
-        python examples/eval_segment_frame_embodiment.py \
+        python bin/eval_segment_frame_embodiment.py \
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG --mia-thumb-adducted \
             --demo-file data/${DATE}_april/${DATE}_${SUBJECT}_passport_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_flip_passport_${HAND}_${SEGMENT}_${FRAME}.jpg \
@@ -170,7 +170,7 @@ for i in "${!SEGMENTS[@]}"; do
         export SET=${i}
         export SEGMENT=${j}
         export FRAME=0
-        python examples/eval_segment_frame_embodiment.py \
+        python bin/eval_segment_frame_embodiment.py \
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG --mia-thumb-adducted \
             --demo-file data/${DATE}_april_insole/${DATE}_${SUBJECT}_insert_insole_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_insole_insert_${HAND}_${SEGMENT}_${FRAME}.jpg \
@@ -191,7 +191,7 @@ for i in "${!SEGMENTS[@]}"; do
         export SET=${i}
         export SEGMENT=${j}
         export FRAME=-1
-        python examples/eval_segment_frame_embodiment.py \
+        python bin/eval_segment_frame_embodiment.py \
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG --mia-thumb-adducted \
             --demo-file data/${DATE}_april_pillow/${DATE}_${SUBJECT}_big_pillow_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_pillow_big_${HAND}_${SEGMENT}_${FRAME}.jpg \
@@ -213,7 +213,7 @@ for i in "${!SEGMENTS[@]}"; do
         export SET=${i}
         export SEGMENT=${j}
         export FRAME=0
-        python examples/eval_segment_frame_embodiment.py \
+        python bin/eval_segment_frame_embodiment.py \
             $HAND $LABEL $SEGMENT $FRAME $MOCAP_CONFIG $MANO_CONFIG $RECORD_CONFIG --mia-thumb-adducted \
             --demo-file data/${DATE}_april/${DATE}_${SUBJECT}_passport_box_set${SET}.json \
             --output-image ${OUTPUT_DIR}/${DATE}_${SET}_passport_insert_${HAND}_${SEGMENT}_${FRAME}.jpg \
