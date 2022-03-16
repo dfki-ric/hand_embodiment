@@ -1,7 +1,8 @@
-"""
+"""Visualize hand trajectory after embodiment mapping of a segment.
+
 Example call:
 
-python examples/vis_dataset.py mia ../april_prototype_rl/data/dataset_31/dataset_31_segment_0.csv
+python examples/vis_dataset.py mia ../april_prototype_rl/data/dataset_grasp_insole/20210819_r_WK37_insole_set1_2.csv
 """
 import argparse
 import time
