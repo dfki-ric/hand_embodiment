@@ -1,3 +1,4 @@
+"""Simulate embodied trajectory with Mia hand in PyBullet."""
 import time
 import numpy as np
 import pybullet as pb
