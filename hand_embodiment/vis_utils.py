@@ -109,6 +109,9 @@ class Insole(pv.Artist):
         "insole_back": insole_back_default,
         "insole_front": insole_front_default
     }
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([180, 0, -4.5])),
+        p=np.array([0.04, 0.07, -0.007]))
 
     def __init__(
             self, insole_back=np.copy(insole_back_default),
@@ -119,10 +122,7 @@ class Insole(pv.Artist):
 
         self.insole_back = np.copy(self.insole_back_default)
         self.insole_front = np.copy(self.insole_front_default)
-        self.insole_mesh2insole_markers = pt.transform_from(
-            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([180, 0, -4.5])),
-            p=np.array([0.04, 0.07, -0.007]))
-        self.insole_markers2origin = np.copy(self.insole_mesh2insole_markers)
+        self.insole_markers2origin = np.copy(self.markers2mesh)
         self.set_data(insole_back, insole_front)
 
     def load_mesh(self):
@@ -163,11 +163,11 @@ class Insole(pv.Artist):
         if not any(np.isnan(insole_front)):
             self.insole_front = insole_front
 
-        self.mesh.transform(pt.invert_transform(pt.concat(self.insole_mesh2insole_markers, self.insole_markers2origin)))
+        self.mesh.transform(pt.invert_transform(pt.concat(self.markers2mesh, self.insole_markers2origin)))
 
         self.insole_markers2origin = insole_pose(self.insole_back, self.insole_front)
 
-        self.mesh.transform(pt.concat(self.insole_mesh2insole_markers, self.insole_markers2origin))
+        self.mesh.transform(pt.concat(self.markers2mesh, self.insole_markers2origin))
 
     @property
     def geometries(self):
