@@ -1,3 +1,4 @@
+"""Live visualization of data streamed from MoCap system."""
 import json
 import numpy as np
 import pytransform3d.visualizer as pv

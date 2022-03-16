@@ -1,4 +1,5 @@
-"""
+"""Convert MoCap segments to a robotic hand: record and embodiment mapping.
+
 Example call:
 
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement16.json --output dataset_16_segment_%d.csv

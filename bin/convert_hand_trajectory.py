@@ -1,4 +1,5 @@
-"""
+"""Convert a MoCap trajectory to a robotic hand: record and embodiment mapping.
+
 Example call:
 
 python bin/convert_hand_trajectory.py mia --mia-thumb-adducted --demo-file data/QualisysAprilTest/april_test_009.tsv --output trajectory_009.csv

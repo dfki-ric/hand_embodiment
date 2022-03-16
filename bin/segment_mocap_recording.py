@@ -1,4 +1,5 @@
-"""
+"""Automatic segmentation of motion capture recording.
+
 Example call:
 
 python bin/segment_mocap_recording.py data/20210701_april/Measurement31.tsv  --verbose

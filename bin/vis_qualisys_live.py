@@ -1,3 +1,4 @@
+"""Write data streamed from Qualisys MoCap system to file."""
 # Install dependency:
 # python -m pip install qtm
 

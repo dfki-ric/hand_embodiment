@@ -1,3 +1,4 @@
+"""Interactive embodiment mapping."""
 import argparse
 from functools import partial
 import numpy as np

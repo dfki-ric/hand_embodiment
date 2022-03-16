@@ -1,3 +1,4 @@
+"""Create kinematic diagram from a URDF."""
 import argparse
 from hand_embodiment.tools.graphviz_urdf import write_png
 from hand_embodiment.embodiment import load_kinematic_model

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# TODO both hands
+# perform quantitative evaluation of embodiment mapping
 
 #: <<'END'
 #END
