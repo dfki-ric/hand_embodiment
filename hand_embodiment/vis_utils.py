@@ -122,7 +122,7 @@ class Insole(pv.Artist):
 
         self.insole_back = np.copy(self.insole_back_default)
         self.insole_front = np.copy(self.insole_front_default)
-        self.insole_markers2origin = np.copy(self.markers2mesh)
+        self.markers2origin = np.copy(self.markers2mesh)
         self.set_data(insole_back, insole_front)
 
     def load_mesh(self):
@@ -157,17 +157,34 @@ class Insole(pv.Artist):
         """
         return insole_pose(insole_back, insole_front)
 
+    def transform_from_mesh_to_origin(self, point_in_mesh):
+        """Transform point from mesh frame to origin based on current pose.
+
+        Parameters
+        ----------
+        point_in_mesh : array, shape (3,)
+            Point in mesh coordinate system.
+
+        Returns
+        -------
+        point_in_origin : array, shape (3,)
+            Point in origin frame.
+        """
+        mesh2markers = pt.invert_transform(self.markers2mesh)
+        mesh2origin = pt.concat(mesh2markers, self.markers2origin)
+        return pt.transform(mesh2origin, pt.vector_to_point(point_in_mesh))[:3]
+
     def set_data(self, insole_back, insole_front):
         if not any(np.isnan(insole_back)):
             self.insole_back = insole_back
         if not any(np.isnan(insole_front)):
             self.insole_front = insole_front
 
-        self.mesh.transform(pt.invert_transform(pt.concat(self.markers2mesh, self.insole_markers2origin)))
+        self.mesh.transform(pt.invert_transform(pt.concat(self.markers2mesh, self.markers2origin)))
 
-        self.insole_markers2origin = insole_pose(self.insole_back, self.insole_front)
+        self.markers2origin = insole_pose(self.insole_back, self.insole_front)
 
-        self.mesh.transform(pt.concat(self.markers2mesh, self.insole_markers2origin))
+        self.mesh.transform(pt.concat(self.markers2mesh, self.markers2origin))
 
     @property
     def geometries(self):

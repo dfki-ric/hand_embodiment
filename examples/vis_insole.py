@@ -16,7 +16,7 @@ def main():
     markers = fig.scatter([insole_back, insole_front], s=0.006)
     insole = Insole(insole_back, insole_front)
     insole.add_artist(fig)
-    mesh2origin = pt.concat(pt.invert_transform(insole.markers2mesh), insole.insole_markers2origin)
+    mesh2origin = pt.concat(pt.invert_transform(insole.markers2mesh), insole.markers2origin)
     fig.plot_transform(mesh2origin, s=0.15)
     fig.plot_transform(insole.markers2mesh, s=0.1)
     fig.plot_transform(np.eye(4), s=0.1)
