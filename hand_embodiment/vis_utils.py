@@ -297,6 +297,9 @@ class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
 
 class Electronic(pv.Artist):
     """Representation of electronic object and target component."""
+    marker_names = ["target_top", "target_bottom",
+                    "object_left", "object_right", "object_top"]
+
     def __init__(
             self, target_top=np.zeros(3), target_bottom=np.array([1, 0, 0]),
             object_left=np.zeros(3), object_right=np.array([0, 1, 0]),
@@ -473,6 +476,9 @@ class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
 
 class PassportClosed(pv.Artist):
     """Representation of passport."""
+    marker_names = ["passport_top", "passport_left", "passport_right",
+                    "box_top", "box_left", "box_right"]
+
     def __init__(self, passport_top=np.array([0, 1, 0]),
                  passport_left=np.zeros(3), passport_right=np.array([1, 0, 0]),
                  box_top=np.array([0, 1, 0]), box_left=np.zeros(3),
@@ -646,14 +652,10 @@ class AnimationCallback:
         if self.args.electronic:
             marker_names = dataset.config.get("additional_markers", ())
             additional_markers = dataset.get_additional_markers(t)
-            target_top = additional_markers[marker_names.index("target_top")]
-            target_bottom = additional_markers[marker_names.index("target_bottom")]
-            object_left = additional_markers[marker_names.index("object_left")]
-            object_right = additional_markers[marker_names.index("object_right")]
-            object_top = additional_markers[marker_names.index("object_top")]
-            self.object_mesh.set_data(
-                target_top, target_bottom, object_left, object_right,
-                object_top)
+            object_markers = {
+                marker_name: additional_markers[marker_names.index(marker_name)]
+                for marker_name in self.object_mesh.marker_names}
+            self.object_mesh.set_data(**object_markers)
             artists.append(self.object_mesh)
 
         if self.args.passport:
@@ -668,15 +670,10 @@ class AnimationCallback:
         if self.args.passport_closed:
             marker_names = dataset.config.get("additional_markers", ())
             additional_markers = dataset.get_additional_markers(t)
-            passport_top = additional_markers[marker_names.index("passport_top")]
-            passport_left = additional_markers[marker_names.index("passport_left")]
-            passport_right = additional_markers[marker_names.index("passport_right")]
-            box_top = additional_markers[marker_names.index("box_top")]
-            box_left = additional_markers[marker_names.index("box_left")]
-            box_right = additional_markers[marker_names.index("box_right")]
-            self.object_mesh.set_data(
-                passport_top, passport_left, passport_right,
-                box_top, box_left, box_right)
+            object_markers = {
+                marker_name: additional_markers[marker_names.index(marker_name)]
+                for marker_name in self.object_mesh.marker_names}
+            self.object_mesh.set_data(**object_markers)
             artists.append(self.object_mesh)
 
         if self.show_mano or self.show_robot:
