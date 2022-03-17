@@ -95,13 +95,19 @@ class ManoHand(pv.Artist):
 class Insole(pv.Artist):
     """Representation of insole mesh.
 
+    Marker positions:
+
+    .. code-block:: text
+
+        IB-------------IF
+
     Parameters
     ----------
     insole_back : array, shape (3,), optional
-        Position of insole back marker.
+        Position of insole back marker (IB).
 
     insole_front : array, shape (3,), optional
-        Position of insole front marker.
+        Position of insole front marker (IF).
     """
     insole_back_default = np.zeros(3)
     insole_front_default = np.array([0.19, 0, 0])
