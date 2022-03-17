@@ -204,27 +204,16 @@ class Insole(pv.Artist, InsoleMarkers, MeshToOriginMixin):
 class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
     """Representation of small pillow mesh.
 
-    Marker positions:
-
-    .. code-block:: text
-
-                        PT
-                        |
-                        |
-                        |
-                        |
-        PL-------------PR
-
     Parameters
     ----------
     pillow_left : array, shape (3,)
-        Position of left marker (PL).
+        Position of left marker.
 
     pillow_right : array, shape (3,)
-        Position of right marker (PR).
+        Position of right marker.
 
     pillow_top : array, shape (3,)
-        Position of top marker (PT).
+        Position of top marker.
 
     show_frame : bool, optional (default: True)
         Show frame.
