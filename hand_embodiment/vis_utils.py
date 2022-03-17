@@ -92,7 +92,27 @@ class ManoHand(pv.Artist):
         return geoms
 
 
-class Insole(pv.Artist):
+class MeshToOriginMixin:
+    """Provides transformation from mesh coordinates to origin frame."""
+    def transform_from_mesh_to_origin(self, point_in_mesh):
+        """Transform point from mesh frame to origin based on current pose.
+
+        Parameters
+        ----------
+        point_in_mesh : array, shape (3,)
+            Point in mesh coordinate system.
+
+        Returns
+        -------
+        point_in_origin : array, shape (3,)
+            Point in origin frame.
+        """
+        mesh2markers = pt.invert_transform(self.markers2mesh)
+        mesh2origin = pt.concat(mesh2markers, self.markers2origin)
+        return pt.transform(mesh2origin, pt.vector_to_point(point_in_mesh))[:3]
+
+
+class Insole(pv.Artist, MeshToOriginMixin):
     """Representation of insole mesh.
 
     Marker positions:
@@ -163,23 +183,6 @@ class Insole(pv.Artist):
         """
         return insole_pose(insole_back, insole_front)
 
-    def transform_from_mesh_to_origin(self, point_in_mesh):
-        """Transform point from mesh frame to origin based on current pose.
-
-        Parameters
-        ----------
-        point_in_mesh : array, shape (3,)
-            Point in mesh coordinate system.
-
-        Returns
-        -------
-        point_in_origin : array, shape (3,)
-            Point in origin frame.
-        """
-        mesh2markers = pt.invert_transform(self.markers2mesh)
-        mesh2origin = pt.concat(mesh2markers, self.markers2origin)
-        return pt.transform(mesh2origin, pt.vector_to_point(point_in_mesh))[:3]
-
     def set_data(self, insole_back, insole_front):
         if not any(np.isnan(insole_back)):
             self.insole_back = insole_back
@@ -228,7 +231,7 @@ def insole_pose(insole_back, insole_front):
     return pt.transform_from(R=R, p=insole_back)
 
 
-class PillowSmall(pv.Artist):
+class PillowSmall(pv.Artist, MeshToOriginMixin):
     """Representation of small pillow mesh.
 
     Marker positions:
@@ -277,7 +280,7 @@ class PillowSmall(pv.Artist):
         self.pillow_right = np.copy(self.pillow_right_default)
         self.pillow_top = np.copy(self.pillow_top_default)
 
-        self.pillow_markers2origin = np.copy(self.markers2mesh)
+        self.markers2origin = np.copy(self.markers2mesh)
         self.set_data(pillow_left, pillow_right, pillow_top)
 
     def load_mesh(self):
@@ -322,11 +325,11 @@ class PillowSmall(pv.Artist):
         if not any(np.isnan(pillow_top)):
             self.pillow_top = pillow_top
 
-        self.mesh.transform(pt.invert_transform(pt.concat(self.markers2mesh, self.pillow_markers2origin)))
+        self.mesh.transform(pt.invert_transform(pt.concat(self.markers2mesh, self.markers2origin)))
 
-        self.pillow_markers2origin = pillow_pose(self.pillow_left, self.pillow_right, self.pillow_top)
+        self.markers2origin = pillow_pose(self.pillow_left, self.pillow_right, self.pillow_top)
 
-        self.mesh.transform(pt.concat(self.markers2mesh, self.pillow_markers2origin))
+        self.mesh.transform(pt.concat(self.markers2mesh, self.markers2origin))
 
     @property
     def geometries(self):
@@ -466,25 +469,81 @@ def electronic_object_pose(object_left, object_right, object_top):
     return pose
 
 
-class Passport(pv.Artist):
-    """Representation of passport."""
-    def __init__(self, passport_left=np.zeros(3),
-                 passport_right=np.array([1, 0, 0])):
-        target_filename = resource_filename(
+class Passport(pv.Artist, MeshToOriginMixin):
+    """Representation of open passport.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        PL  -------------  PR
+            |           |
+            |           |
+            |           |
+            -------------
+
+    Parameters
+    ----------
+    passport_left : array, shape (3,)
+        Left passport marker (PL).
+
+    passport_right : array, shape (3,)
+        Right passport marker (PR).
+    """
+    passport_left_default = np.array([-0.103, 0.0, 0.0])
+    passport_right_default = np.array([0.103, 0.0, 0.0])
+    default_marker_positions = {
+        "passport_left": passport_left_default,
+        "passport_right": passport_right_default
+    }
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+        p=-np.array([0.0, 0.0, 0.0]))
+
+    def __init__(self, passport_left=np.copy(passport_left_default),
+                 passport_right=np.copy(passport_right_default)):
+        self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_open.stl")
-        self.mesh = o3d.io.read_triangle_mesh(target_filename)
-        self.mesh.paint_uniform_color(np.array([0.38, 0.48, 0.42]))
-        self.mesh.compute_triangle_normals()
+        self.mesh = self.load_mesh()
 
-        self.passport_left = np.zeros(3)
-        self.passport_right = np.array([1, 0, 0])
+        self.passport_left = np.copy(self.passport_left_default)
+        self.passport_right = np.copy(self.passport_right_default)
 
-        self.passport2markers = pt.transform_from(
-            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
-            p=-np.array([0.0, 0.0, 0.0]))
-        self.target_markers2origin = np.copy(self.passport2markers)
+        self.markers2origin = np.copy(self.markers2mesh)
 
         self.set_data(passport_left, passport_right)
+
+    def load_mesh(self):
+        """Load mesh without specific pose.
+
+        Returns
+        -------
+        mesh : open3d.geometry.TriangleMesh
+            Object mesh.
+        """
+        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
+        mesh.paint_uniform_color(np.array([0.38, 0.48, 0.42]))
+        mesh.compute_triangle_normals()
+        return mesh
+
+    @staticmethod
+    def pose_from_markers(passport_left, passport_right):
+        """Compute pose of passport.
+
+        Parameters
+        ----------
+        passport_left : array, shape (3,)
+            Left passport marker (PL).
+
+        passport_right : array, shape (3,)
+            Right passport marker (PR).
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the passport.
+        """
+        return passport_pose(passport_left, passport_right)
 
     def set_data(self, passport_left, passport_right):
         if not any(np.isnan(passport_left)):
@@ -493,11 +552,11 @@ class Passport(pv.Artist):
             self.passport_right = passport_right
 
         self.mesh.transform(pt.invert_transform(pt.concat(
-            self.passport2markers, self.target_markers2origin)))
-        self.target_markers2origin = passport_pose(
+            self.markers2mesh, self.markers2origin)))
+        self.markers2origin = passport_pose(
             self.passport_left, self.passport_right)
         self.mesh.transform(pt.concat(
-            self.passport2markers, self.target_markers2origin))
+            self.markers2mesh, self.markers2origin))
 
     @property
     def geometries(self):
@@ -512,7 +571,21 @@ class Passport(pv.Artist):
 
 
 def passport_pose(passport_left, passport_right):
-    """Compute pose of passport."""
+    """Compute pose of passport.
+
+    Parameters
+    ----------
+    passport_left : array, shape (3,)
+        Left passport marker (PL).
+
+    passport_right : array, shape (3,)
+        Right passport marker (PR).
+
+    Returns
+    -------
+    pose : array, shape (4, 4)
+        Pose of the passport.
+    """
     x_axis = pr.norm_vector(passport_right - passport_left)
     z_axis = np.copy(pr.unitz)
     y_axis = pr.norm_vector(pr.perpendicular_to_vectors(z_axis, x_axis))

@@ -2,7 +2,7 @@
 import argparse
 import numpy as np
 from hand_embodiment.command_line import add_object_visualization_arguments
-from hand_embodiment.vis_utils import Insole, PillowSmall
+from hand_embodiment.vis_utils import Insole, PillowSmall, Passport
 import pytransform3d.visualizer as pv
 import pytransform3d.transformations as pt
 
@@ -32,7 +32,7 @@ def main():
         raise NotImplementedError()
 
     if args.passport:
-        raise NotImplementedError()
+        object_classes.append(Passport)
 
     if args.passport_closed:
         raise NotImplementedError()
