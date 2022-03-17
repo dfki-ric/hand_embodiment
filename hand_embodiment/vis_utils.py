@@ -311,7 +311,7 @@ class Electronic(pv.Artist):
     def __init__(
             self, target_top=np.zeros(3), target_bottom=np.array([1, 0, 0]),
             object_left=np.zeros(3), object_right=np.array([0, 1, 0]),
-            object_top=np.array([1, 0, 0])):
+            object_top=np.array([1, 0, 0]), show_frame=True):
         target_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_target.stl")
         self.target_mesh = o3d.io.read_triangle_mesh(target_filename)
@@ -340,6 +340,12 @@ class Electronic(pv.Artist):
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
             p=np.array([0.0, 0.0, -0.01]))
         self.object_markers2origin = np.copy(self.electronic_object2object_markers)
+
+        if show_frame:
+            self.frames = [pv.Frame(np.eye(4), s=0.1),
+                           pv.Frame(np.eye(4), s=0.1)]
+        else:
+            self.frames = []
 
         self.set_data(
             target_top, target_bottom, object_left, object_right, object_top)
@@ -371,6 +377,10 @@ class Electronic(pv.Artist):
         self.object_mesh.transform(pt.concat(
             self.electronic_object2object_markers, self.object_markers2origin))
 
+        if self.frames:
+            self.frames[0].set_data(self.target_markers2origin)
+            self.frames[1].set_data(self.object_markers2origin)
+
     @property
     def geometries(self):
         """Expose geometries.
@@ -380,7 +390,10 @@ class Electronic(pv.Artist):
         geometries : list
             List of geometries that can be added to the visualizer.
         """
-        return [self.target_mesh, self.object_mesh]
+        g = [self.target_mesh, self.object_mesh]
+        for f in self.frames:
+            g += f.geometries
+        return g
 
 
 class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
@@ -474,7 +487,7 @@ class PassportClosed(pv.Artist):
     def __init__(self, passport_top=np.array([0, 1, 0]),
                  passport_left=np.zeros(3), passport_right=np.array([1, 0, 0]),
                  box_top=np.array([0, 1, 0]), box_left=np.zeros(3),
-                 box_right=np.array([1, 0, 0])):
+                 box_right=np.array([1, 0, 0]), show_frame=True):
         passport_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_closed.stl")
         self.passport_mesh = o3d.io.read_triangle_mesh(passport_filename)
@@ -504,6 +517,12 @@ class PassportClosed(pv.Artist):
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 180, 0])),
             p=-np.array([0.0, 0.0, -0.046]))
         self.box_markers2origin = np.copy(self.box2markers)
+
+        if show_frame:
+            self.frames = [pv.Frame(np.eye(4), s=0.1),
+                           pv.Frame(np.eye(4), s=0.1)]
+        else:
+            self.frames = []
 
         self.set_data(passport_top, passport_left, passport_right,
                       box_top, box_left, box_right)
@@ -537,6 +556,10 @@ class PassportClosed(pv.Artist):
         self.box_mesh.transform(pt.concat(
             self.box2markers, self.box_markers2origin))
 
+        if self.frames:
+            self.frames[0].set_data(self.target_markers2origin)
+            self.frames[1].set_data(self.box_markers2origin)
+
     @property
     def geometries(self):
         """Expose geometries.
@@ -546,7 +569,10 @@ class PassportClosed(pv.Artist):
         geometries : list
             List of geometries that can be added to the visualizer.
         """
-        return [self.passport_mesh, self.box_mesh]
+        g = [self.passport_mesh, self.box_mesh]
+        for f in self.frames:
+            g += f.geometries
+        return g
 
 
 class AnimationCallback:
@@ -588,8 +614,6 @@ class AnimationCallback:
         if self.args.electronic:
             self.object_mesh = Electronic()
             self.object_mesh.add_artist(self.fig)
-            self.object_frame = pv.Frame(np.eye(4), s=0.1)
-            self.object_frame.add_artist(self.fig)
 
         if self.args.passport:
             self.object_mesh = Passport()
@@ -598,8 +622,6 @@ class AnimationCallback:
         if self.args.passport_closed:
             self.object_mesh = PassportClosed()
             self.object_mesh.add_artist(self.fig)
-            self.object_frame = pv.Frame(np.eye(4), s=0.1)
-            self.object_frame.add_artist(self.fig)
 
         if show_robot:
             self.robot = pipeline.make_robot_artist()
@@ -644,10 +666,6 @@ class AnimationCallback:
                 target_top, target_bottom, object_left, object_right,
                 object_top)
             artists.append(self.object_mesh)
-            if not any(np.isnan(np.hstack((target_bottom, target_top)))):
-                self.object_frame.set_data(
-                    electronic_target_pose(target_top, target_bottom))
-                artists.append(self.object_frame)
 
         if self.args.passport:
             marker_names = dataset.config.get("additional_markers", ())
@@ -671,10 +689,6 @@ class AnimationCallback:
                 passport_top, passport_left, passport_right,
                 box_top, box_left, box_right)
             artists.append(self.object_mesh)
-            if not any(np.isnan(np.hstack((passport_top, passport_left, passport_right)))):
-                self.object_frame.set_data(
-                    passport_closed_pose(passport_top, passport_left, passport_right))
-                artists.append(self.object_frame)
 
         if self.show_mano or self.show_robot:
             pipeline.estimate_hand(
