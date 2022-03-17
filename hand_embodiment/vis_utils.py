@@ -8,6 +8,10 @@ import pytransform3d.rotations as pr
 import pytransform3d.transformations as pt
 import pytransform3d.visualizer as pv
 
+from .mocap_objects import (
+    insole_pose, pillow_pose, electronic_target_pose, electronic_object_pose,
+    passport_pose, passport_closed_pose, box_pose)
+
 
 def make_coordinate_system(s, short_tick_length=0.01, long_tick_length=0.05):
     """Make coordinate system.
@@ -212,30 +216,6 @@ class Insole(pv.Artist, MeshToOriginMixin):
         return [self.mesh]
 
 
-def insole_pose(insole_back, insole_front):
-    """Compute pose of insole.
-
-    Parameters
-    ----------
-    insole_back : array, shape (3,)
-        Position of insole back marker.
-
-    insole_front : array, shape (3,)
-        Position of insole front marker.
-
-    Returns
-    -------
-    pose : array, shape (4, 4)
-        Pose of the insole.
-    """
-    x_axis = pr.norm_vector(insole_front - insole_back)
-    z_axis = np.copy(pr.unitz)
-    y_axis = pr.norm_vector(pr.perpendicular_to_vectors(z_axis, x_axis))
-    z_axis = pr.norm_vector(pr.perpendicular_to_vectors(x_axis, y_axis))
-    R = np.column_stack((x_axis, y_axis, z_axis))
-    return pt.transform_from(R=R, p=insole_back)
-
-
 class PillowSmall(pv.Artist, MeshToOriginMixin):
     """Representation of small pillow mesh.
 
@@ -353,34 +333,6 @@ class PillowSmall(pv.Artist, MeshToOriginMixin):
         return [self.mesh]
 
 
-def pillow_pose(pillow_left, pillow_right, pillow_top):
-    """Compute pose of pillow.
-
-    Parameters
-    ----------
-    pillow_left : array, shape (3,)
-        Position of left marker (PL).
-
-    pillow_right : array, shape (3,)
-        Position of right marker (PR).
-
-    pillow_top : array, shape (3,)
-        Position of top marker (PT).
-
-    Returns
-    -------
-    pose : array, shape (4, 4)
-        Pose of the pillow.
-    """
-    right2top = pillow_top - pillow_right
-    right2left = pillow_left - pillow_right
-    pose = np.eye(4)
-    pose[:3, :3] = pr.matrix_from_two_vectors(right2top, right2left)
-    pillow_middle = 0.5 * (pillow_left + pillow_right) + 0.5 * right2top
-    pose[:3, 3] = pillow_middle
-    return pose
-
-
 class Electronic(pv.Artist):
     """Representation of electronic object and target component."""
     def __init__(
@@ -456,27 +408,6 @@ class Electronic(pv.Artist):
             List of geometries that can be added to the visualizer.
         """
         return [self.target_mesh, self.object_mesh]
-
-
-def electronic_target_pose(target_top, target_bottom):
-    """Compute pose of electronic target."""
-    x_axis = pr.norm_vector(target_top - target_bottom)
-    z_axis = np.copy(pr.unitz)
-    y_axis = pr.norm_vector(pr.perpendicular_to_vectors(z_axis, x_axis))
-    z_axis = pr.norm_vector(pr.perpendicular_to_vectors(x_axis, y_axis))
-    R = np.column_stack((x_axis, y_axis, z_axis))
-    return pt.transform_from(R=R, p=target_bottom)
-
-
-def electronic_object_pose(object_left, object_right, object_top):
-    """Compute pose of electronic object."""
-    left2top = object_top - object_left
-    left2right = object_left - object_right
-    pose = np.eye(4)
-    pose[:3, :3] = pr.matrix_from_two_vectors(left2right, left2top)
-    object_middle = 0.5 * (object_left + object_right) + 0.5 * left2top
-    pose[:3, 3] = object_middle
-    return pose
 
 
 class Passport(pv.Artist, MeshToOriginMixin):
@@ -585,30 +516,6 @@ class Passport(pv.Artist, MeshToOriginMixin):
         return [self.mesh]
 
 
-def passport_pose(passport_left, passport_right):
-    """Compute pose of passport.
-
-    Parameters
-    ----------
-    passport_left : array, shape (3,)
-        Left passport marker (PL).
-
-    passport_right : array, shape (3,)
-        Right passport marker (PR).
-
-    Returns
-    -------
-    pose : array, shape (4, 4)
-        Pose of the passport.
-    """
-    x_axis = pr.norm_vector(passport_right - passport_left)
-    z_axis = np.copy(pr.unitz)
-    y_axis = pr.norm_vector(pr.perpendicular_to_vectors(z_axis, x_axis))
-    z_axis = pr.norm_vector(pr.perpendicular_to_vectors(x_axis, y_axis))
-    R = np.column_stack((x_axis, y_axis, z_axis))
-    return pt.transform_from(R=R, p=0.5 * (passport_right + passport_left))
-
-
 class PassportClosed(pv.Artist):
     """Representation of passport."""
     def __init__(self, passport_top=np.array([0, 1, 0]),
@@ -687,28 +594,6 @@ class PassportClosed(pv.Artist):
             List of geometries that can be added to the visualizer.
         """
         return [self.passport_mesh, self.box_mesh]
-
-
-def passport_closed_pose(passport_top, passport_left, passport_right):
-    """Compute pose of closed passport."""
-    left2top = passport_top - passport_left
-    left2right = passport_left - passport_right
-    pose = np.eye(4)
-    pose[:3, :3] = pr.matrix_from_two_vectors(left2right, left2top)
-    object_middle = passport_left + 0.5 * left2top
-    pose[:3, 3] = object_middle
-    return pose
-
-
-def box_pose(box_top, box_left, box_right):
-    """Compute pose of passport box."""
-    left2top = box_top - box_left
-    left2right = box_left - box_right
-    pose = np.eye(4)
-    pose[:3, :3] = pr.matrix_from_two_vectors(left2right, left2top)
-    object_middle = 0.5 * (box_left + box_right) + 0.5 * left2top
-    pose[:3, 3] = object_middle
-    return pose
 
 
 class AnimationCallback:
