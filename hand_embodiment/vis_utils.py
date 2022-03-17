@@ -631,43 +631,8 @@ class AnimationCallback:
 
         artists = [markers]
 
-        if self.args.insole:
-            marker_names = dataset.config.get("additional_markers", ())
-            additional_markers = dataset.get_additional_markers(t)
-            object_markers = {
-                marker_name: additional_markers[marker_names.index(marker_name)]
-                for marker_name in self.object_mesh.marker_names}
-            self.object_mesh.set_data(**object_markers)
-            artists.append(self.object_mesh)
-
-        if self.args.pillow:
-            marker_names = dataset.config.get("additional_markers", ())
-            additional_markers = dataset.get_additional_markers(t)
-            object_markers = {
-                marker_name: additional_markers[marker_names.index(marker_name)]
-                for marker_name in self.object_mesh.marker_names}
-            self.object_mesh.set_data(**object_markers)
-            artists.append(self.object_mesh)
-
-        if self.args.electronic:
-            marker_names = dataset.config.get("additional_markers", ())
-            additional_markers = dataset.get_additional_markers(t)
-            object_markers = {
-                marker_name: additional_markers[marker_names.index(marker_name)]
-                for marker_name in self.object_mesh.marker_names}
-            self.object_mesh.set_data(**object_markers)
-            artists.append(self.object_mesh)
-
-        if self.args.passport:
-            marker_names = dataset.config.get("additional_markers", ())
-            additional_markers = dataset.get_additional_markers(t)
-            object_markers = {
-                marker_name: additional_markers[marker_names.index(marker_name)]
-                for marker_name in self.object_mesh.marker_names}
-            self.object_mesh.set_data(**object_markers)
-            artists.append(self.object_mesh)
-
-        if self.args.passport_closed:
+        if (self.args.insole or self.args.pillow or self.args.electronic
+                or self.args.passport or self.args.passport_closed):
             marker_names = dataset.config.get("additional_markers", ())
             additional_markers = dataset.get_additional_markers(t)
             object_markers = {
