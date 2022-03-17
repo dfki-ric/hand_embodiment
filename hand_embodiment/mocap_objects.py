@@ -2,6 +2,90 @@ import numpy as np
 from pytransform3d import rotations as pr, transformations as pt
 
 
+class InsoleMarkers:
+    """Information about insole markers.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        IB-------------IF
+    """
+    insole_back_default = np.zeros(3)
+    insole_front_default = np.array([0.19, 0, 0])
+    default_marker_positions = {
+        "insole_back": insole_back_default,
+        "insole_front": insole_front_default
+    }
+    marker_names = tuple(default_marker_positions.keys())
+
+    @staticmethod
+    def pose_from_markers(insole_back, insole_front):
+        """Compute pose of insole.
+
+        Parameters
+        ----------
+        insole_back : array, shape (3,)
+            Position of insole back marker (IB).
+
+        insole_front : array, shape (3,)
+            Position of insole front marker (IF).
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the insole.
+        """
+        return insole_pose(insole_back, insole_front)
+
+
+class PillowMarkers:
+    """Information about small pillow markers.
+
+    Marker positions:
+
+    .. code-block:: text
+
+                        PT
+                        |
+                        |
+                        |
+                        |
+        PL-------------PR
+    """
+    pillow_left_default = np.array([-0.11, 0.13, 0])
+    pillow_right_default = np.array([-0.11, -0.13, 0])
+    pillow_top_default = np.array([0.11, -0.13, 0])
+    default_marker_positions = {
+        "pillow_left": pillow_left_default,
+        "pillow_right": pillow_right_default,
+        "pillow_top": pillow_top_default
+    }
+    marker_names = tuple(default_marker_positions.keys())
+
+    @staticmethod
+    def pose_from_markers(pillow_left, pillow_right, pillow_top):
+        """Compute pose of pillow.
+
+        Parameters
+        ----------
+        pillow_left : array, shape (3,)
+            Position of left marker (PL).
+
+        pillow_right : array, shape (3,)
+            Position of right marker (PR).
+
+        pillow_top : array, shape (3,)
+            Position of top marker (PT).
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the pillow.
+        """
+        return pillow_pose(pillow_left, pillow_right, pillow_top)
+
+
 class ElectronicTargetMarkers:
     default_marker_positions = {
         "target_top": np.array([0, 0, 0]),
@@ -27,29 +111,45 @@ class ElectronicObjectMarkers:
         return electronic_object_pose(object_left, object_right, object_top)
 
 
-class PillowMarkers:
+class PassportMarkers:
+    """Information about passport markers.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        PL  -------------  PR
+            |           |
+            |           |
+            |           |
+            -------------
+    """
+    passport_left_default = np.array([-0.103, 0.0, 0.0])
+    passport_right_default = np.array([0.103, 0.0, 0.0])
     default_marker_positions = {
-        "pillow_left": np.array([-0.11, 0.13, 0]),
-        "pillow_right": np.array([-0.11, -0.13, 0]),
-        "pillow_top": np.array([0.11, -0.13, 0])
+        "passport_left": passport_left_default,
+        "passport_right": passport_right_default
     }
     marker_names = tuple(default_marker_positions.keys())
 
     @staticmethod
-    def pose_from_markers(pillow_left, pillow_right, pillow_top):
-        return pillow_pose(pillow_left, pillow_right, pillow_top)
+    def pose_from_markers(passport_left, passport_right):
+        """Compute pose of passport.
 
+        Parameters
+        ----------
+        passport_left : array, shape (3,)
+            Left passport marker (PL).
 
-class InsoleMarkers:
-    default_marker_positions = {
-        "insole_back": np.zeros(3),
-        "insole_front": np.array([0.19, 0, 0])
-    }
-    marker_names = tuple(default_marker_positions.keys())
+        passport_right : array, shape (3,)
+            Right passport marker (PR).
 
-    @staticmethod
-    def pose_from_markers(insole_back, insole_front):
-        return insole_pose(insole_back, insole_front)
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the passport.
+        """
+        return passport_pose(passport_left, passport_right)
 
 
 def insole_pose(insole_back, insole_front):
