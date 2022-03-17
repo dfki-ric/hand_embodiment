@@ -128,6 +128,11 @@ class Insole(pv.Artist, MeshToOriginMixin):
 
     insole_front : array, shape (3,), optional
         Position of insole front marker (IF).
+
+    Attributes
+    ----------
+    markers2origin : array, shape (4, 4)
+        Pose of marker frame.
     """
     insole_back_default = np.zeros(3)
     insole_front_default = np.array([0.19, 0, 0])
@@ -255,6 +260,11 @@ class PillowSmall(pv.Artist, MeshToOriginMixin):
 
     pillow_top : array, shape (3,)
         Position of top marker (PT).
+
+    Attributes
+    ----------
+    markers2origin : array, shape (4, 4)
+        Pose of marker frame.
     """
     pillow_left_default = np.array([-0.11, 0.13, 0])
     pillow_right_default = np.array([-0.11, -0.13, 0])
@@ -489,6 +499,11 @@ class Passport(pv.Artist, MeshToOriginMixin):
 
     passport_right : array, shape (3,)
         Right passport marker (PR).
+
+    Attributes
+    ----------
+    markers2origin : array, shape (4, 4)
+        Pose of marker frame.
     """
     passport_left_default = np.array([-0.103, 0.0, 0.0])
     passport_right_default = np.array([0.103, 0.0, 0.0])

@@ -1,6 +1,21 @@
 import numpy as np
-from hand_embodiment.vis_utils import Insole, PillowSmall
+from hand_embodiment.vis_utils import Insole, PillowSmall, Passport
 from numpy.testing import assert_array_almost_equal
+
+
+def test_default_insole_pose():
+    artist = Insole()
+    assert_array_almost_equal(artist.markers2origin, np.eye(4))
+
+
+def test_default_pillow_pose():
+    artist = PillowSmall()
+    assert_array_almost_equal(artist.markers2origin, np.eye(4))
+
+
+def test_default_passport_pose():
+    artist = Passport()
+    assert_array_almost_equal(artist.markers2origin, np.eye(4))
 
 
 def test_transform_from_insole_mesh_to_origin():
