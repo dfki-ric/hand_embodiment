@@ -295,7 +295,7 @@ class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
         return g
 
 
-class Electronic(pv.Artist):
+class Electronic(pv.Artist):  # TODO split into two artists
     """Representation of electronic object and target component."""
     marker_names = ["target_top", "target_bottom",
                     "object_left", "object_right", "object_top"]
@@ -474,7 +474,7 @@ class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
         return g
 
 
-class PassportClosed(pv.Artist):
+class PassportClosed(pv.Artist):  # TODO split into two artists
     """Representation of passport."""
     marker_names = ["passport_top", "passport_left", "passport_right",
                     "box_top", "box_left", "box_right"]
