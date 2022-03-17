@@ -598,25 +598,19 @@ class AnimationCallback:
             self.hand = pipeline.make_hand_artist()
             self.hand.add_artist(self.fig)
 
+        self.object_meshes = []
         if self.args.insole:
-            self.object_mesh = Insole()
-            self.object_mesh.add_artist(self.fig)
-
+            self.object_meshes.append(Insole())
         if self.args.pillow:
-            self.object_mesh = PillowSmall()
-            self.object_mesh.add_artist(self.fig)
-
+            self.object_meshes.append(PillowSmall())
         if self.args.electronic:
-            self.object_mesh = Electronic()
-            self.object_mesh.add_artist(self.fig)
-
+            self.object_meshes.append(Electronic())
         if self.args.passport:
-            self.object_mesh = Passport()
-            self.object_mesh.add_artist(self.fig)
-
+            self.object_meshes.append(Passport())
         if self.args.passport_closed:
-            self.object_mesh = PassportClosed()
-            self.object_mesh.add_artist(self.fig)
+            self.object_meshes.append(PassportClosed())
+        for object_mesh in self.object_meshes:
+            object_mesh.add_artist(self.fig)
 
         if show_robot:
             self.robot = pipeline.make_robot_artist()
@@ -631,15 +625,14 @@ class AnimationCallback:
 
         artists = [markers]
 
-        if (self.args.insole or self.args.pillow or self.args.electronic
-                or self.args.passport or self.args.passport_closed):
+        for object_mesh in self.object_meshes:
             marker_names = dataset.config.get("additional_markers", ())
             additional_markers = dataset.get_additional_markers(t)
             object_markers = {
                 marker_name: additional_markers[marker_names.index(marker_name)]
-                for marker_name in self.object_mesh.marker_names}
-            self.object_mesh.set_data(**object_markers)
-            artists.append(self.object_mesh)
+                for marker_name in object_mesh.marker_names}
+            object_mesh.set_data(**object_markers)
+            artists.append(object_mesh)
 
         if self.show_mano or self.show_robot:
             pipeline.estimate_hand(
