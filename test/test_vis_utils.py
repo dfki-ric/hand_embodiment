@@ -18,6 +18,21 @@ def test_default_passport_pose():
     assert_array_almost_equal(artist.markers2origin, np.eye(4))
 
 
+def test_load_meshes():
+    for Object in [Insole, PillowSmall, Passport]:
+        mesh = Object().load_mesh()
+        assert mesh.vertices
+        assert mesh.triangles
+        assert mesh.triangle_normals
+
+
+def test_pose_from_markers():
+    for Object in [Insole, PillowSmall, Passport]:
+        obj = Object()
+        obj.pose_from_markers(**Object.default_marker_positions)
+        assert_array_almost_equal(obj.markers2origin, np.eye(4))
+
+
 def test_transform_from_insole_mesh_to_origin():
     artist = Insole(insole_back=np.array([0, 0, 0.1]),
                     insole_front=np.array([0.19, 0, 0.1]))
