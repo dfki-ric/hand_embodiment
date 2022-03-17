@@ -576,24 +576,25 @@ class AnimationCallback:
         if self.args.insole:
             marker_names = dataset.config.get("additional_markers", ())
             additional_markers = dataset.get_additional_markers(t)
-            insole_back = additional_markers[marker_names.index("insole_back")]
-            insole_front = additional_markers[marker_names.index("insole_front")]
-            self.object_mesh.set_data(insole_back, insole_front)
+            object_markers = {
+                marker_name: additional_markers[marker_names.index(marker_name)]
+                for marker_name in self.object_mesh.marker_names}
+            self.object_mesh.set_data(**object_markers)
             artists.append(self.object_mesh)
             self.object_frame.set_data(self.object_mesh.pose_from_markers(
-                insole_back, insole_front))
+                **object_markers))
             artists.append(self.object_frame)
 
         if self.args.pillow:
             marker_names = dataset.config.get("additional_markers", ())
             additional_markers = dataset.get_additional_markers(t)
-            pillow_left = additional_markers[marker_names.index("pillow_left")]
-            pillow_right = additional_markers[marker_names.index("pillow_right")]
-            pillow_top = additional_markers[marker_names.index("pillow_top")]
-            self.object_mesh.set_data(pillow_left, pillow_right, pillow_top)
+            object_markers = {
+                marker_name: additional_markers[marker_names.index(marker_name)]
+                for marker_name in self.object_mesh.marker_names}
+            self.object_mesh.set_data(**object_markers)
             artists.append(self.object_mesh)
             self.object_frame.set_data(self.object_mesh.pose_from_markers(
-                pillow_left, pillow_right, pillow_top))
+                **object_markers))
             artists.append(self.object_frame)
 
         if self.args.electronic:
@@ -616,14 +617,14 @@ class AnimationCallback:
         if self.args.passport:
             marker_names = dataset.config.get("additional_markers", ())
             additional_markers = dataset.get_additional_markers(t)
-            passport_left = additional_markers[marker_names.index("passport_left")]
-            passport_right = additional_markers[marker_names.index("passport_right")]
-            self.object_mesh.set_data(passport_left, passport_right)
+            object_markers = {
+                marker_name: additional_markers[marker_names.index(marker_name)]
+                for marker_name in self.object_mesh.marker_names}
+            self.object_mesh.set_data(**object_markers)
             artists.append(self.object_mesh)
-            if not any(np.isnan(np.hstack((passport_left, passport_right)))):
+            if not any(np.isnan(np.hstack(object_markers.values()))):
                 self.object_frame.set_data(
-                    self.object_mesh.pose_from_markers(
-                        passport_left, passport_right))
+                    self.object_mesh.pose_from_markers(**object_markers))
                 artists.append(self.object_frame)
 
         if self.args.passport_closed:
