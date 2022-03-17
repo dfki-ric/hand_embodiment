@@ -220,6 +220,20 @@ You can build a simple documentation for this project with pdoc3
 pdoc hand_embodiment --html
 ```
 
+## Tests
+
+There are unit tests for this library. You need to install
+
+    pip install -e .[test]
+
+to run them. Then you can run the tests from the main folder with
+
+    pytest test/
+
+You can generate a coverage report with
+
+    pytest --cov-report html --cov=hand_embodiment test/
+
 ## Funding
 
 This library has been developed initially at the
