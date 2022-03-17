@@ -127,6 +127,9 @@ class Insole(pv.Artist, InsoleMarkers, MeshToOriginMixin):
     insole_front : array, shape (3,), optional
         Position of insole front marker.
 
+    show_frame : bool, optional (default: True)
+        Show frame.
+
     Attributes
     ----------
     markers2origin : array, shape (4, 4)
@@ -138,7 +141,8 @@ class Insole(pv.Artist, InsoleMarkers, MeshToOriginMixin):
 
     def __init__(
             self, insole_back=np.copy(InsoleMarkers.insole_back_default),
-            insole_front=np.copy(InsoleMarkers.insole_front_default)):
+            insole_front=np.copy(InsoleMarkers.insole_front_default),
+            show_frame=True):
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/insole.stl")
         self.mesh = self.load_mesh()
@@ -146,6 +150,12 @@ class Insole(pv.Artist, InsoleMarkers, MeshToOriginMixin):
         self.insole_back = np.copy(self.insole_back_default)
         self.insole_front = np.copy(self.insole_front_default)
         self.markers2origin = np.copy(self.markers2mesh)
+
+        if show_frame:
+            self.frame = pv.Frame(np.eye(4), s=0.1)
+        else:
+            self.frame = None
+
         self.set_data(insole_back, insole_front)
 
     def load_mesh(self):
@@ -173,6 +183,9 @@ class Insole(pv.Artist, InsoleMarkers, MeshToOriginMixin):
 
         self.mesh.transform(pt.concat(self.markers2mesh, self.markers2origin))
 
+        if self.frame is not None:
+            self.frame.set_data(self.markers2origin)
+
     @property
     def geometries(self):
         """Expose geometries.
@@ -182,7 +195,10 @@ class Insole(pv.Artist, InsoleMarkers, MeshToOriginMixin):
         geometries : list
             List of geometries that can be added to the visualizer.
         """
-        return [self.mesh]
+        g = [self.mesh]
+        if self.frame is not None:
+            g += self.frame.geometries
+        return g
 
 
 class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
@@ -210,6 +226,9 @@ class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
     pillow_top : array, shape (3,)
         Position of top marker (PT).
 
+    show_frame : bool, optional (default: True)
+        Show frame.
+
     Attributes
     ----------
     markers2origin : array, shape (4, 4)
@@ -222,7 +241,8 @@ class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
     def __init__(
             self, pillow_left=np.copy(PillowMarkers.pillow_left_default),
             pillow_right=np.copy(PillowMarkers.pillow_right_default),
-            pillow_top=np.copy(PillowMarkers.pillow_top_default)):
+            pillow_top=np.copy(PillowMarkers.pillow_top_default),
+            show_frame=True):
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/pillow_small.stl")
         self.mesh = self.load_mesh()
@@ -232,6 +252,12 @@ class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
         self.pillow_top = np.copy(self.pillow_top_default)
 
         self.markers2origin = np.copy(self.markers2mesh)
+
+        if show_frame:
+            self.frame = pv.Frame(np.eye(4), s=0.1)
+        else:
+            self.frame = None
+
         self.set_data(pillow_left, pillow_right, pillow_top)
 
     def load_mesh(self):
@@ -262,6 +288,9 @@ class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
 
         self.mesh.transform(pt.concat(self.markers2mesh, self.markers2origin))
 
+        if self.frame is not None:
+            self.frame.set_data(self.markers2origin)
+
     @property
     def geometries(self):
         """Expose geometries.
@@ -271,7 +300,10 @@ class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
         geometries : list
             List of geometries that can be added to the visualizer.
         """
-        return [self.mesh]
+        g = [self.mesh]
+        if self.frame is not None:
+            g += self.frame.geometries
+        return g
 
 
 class Electronic(pv.Artist):
@@ -362,6 +394,9 @@ class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
     passport_right : array, shape (3,)
         Right passport marker (PR).
 
+    show_frame : bool, optional (default: True)
+        Show frame.
+
     Attributes
     ----------
     markers2origin : array, shape (4, 4)
@@ -372,7 +407,8 @@ class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
         p=-np.array([0.0, 0.0, 0.0]))
 
     def __init__(self, passport_left=np.copy(PassportMarkers.passport_left_default),
-                 passport_right=np.copy(PassportMarkers.passport_right_default)):
+                 passport_right=np.copy(PassportMarkers.passport_right_default),
+                 show_frame=True):
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_open.stl")
         self.mesh = self.load_mesh()
@@ -381,6 +417,11 @@ class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
         self.passport_right = np.copy(self.passport_right_default)
 
         self.markers2origin = np.copy(self.markers2mesh)
+
+        if show_frame:
+            self.frame = pv.Frame(np.eye(4), s=0.1)
+        else:
+            self.frame = None
 
         self.set_data(passport_left, passport_right)
 
@@ -410,6 +451,9 @@ class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
         self.mesh.transform(pt.concat(
             self.markers2mesh, self.markers2origin))
 
+        if self.frame is not None:
+            self.frame.set_data(self.markers2origin)
+
     @property
     def geometries(self):
         """Expose geometries.
@@ -419,7 +463,10 @@ class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
         geometries : list
             List of geometries that can be added to the visualizer.
         """
-        return [self.mesh]
+        g = [self.mesh]
+        if self.frame is not None:
+            g += self.frame.geometries
+        return g
 
 
 class PassportClosed(pv.Artist):
@@ -533,14 +580,10 @@ class AnimationCallback:
         if self.args.insole:
             self.object_mesh = Insole()
             self.object_mesh.add_artist(self.fig)
-            self.object_frame = pv.Frame(np.eye(4), s=0.1)
-            self.object_frame.add_artist(self.fig)
 
         if self.args.pillow:
             self.object_mesh = PillowSmall()
             self.object_mesh.add_artist(self.fig)
-            self.object_frame = pv.Frame(np.eye(4), s=0.1)
-            self.object_frame.add_artist(self.fig)
 
         if self.args.electronic:
             self.object_mesh = Electronic()
@@ -551,8 +594,6 @@ class AnimationCallback:
         if self.args.passport:
             self.object_mesh = Passport()
             self.object_mesh.add_artist(self.fig)
-            self.object_frame = pv.Frame(np.eye(4), s=0.1)
-            self.object_frame.add_artist(self.fig)
 
         if self.args.passport_closed:
             self.object_mesh = PassportClosed()
@@ -581,9 +622,6 @@ class AnimationCallback:
                 for marker_name in self.object_mesh.marker_names}
             self.object_mesh.set_data(**object_markers)
             artists.append(self.object_mesh)
-            self.object_frame.set_data(self.object_mesh.pose_from_markers(
-                **object_markers))
-            artists.append(self.object_frame)
 
         if self.args.pillow:
             marker_names = dataset.config.get("additional_markers", ())
@@ -593,9 +631,6 @@ class AnimationCallback:
                 for marker_name in self.object_mesh.marker_names}
             self.object_mesh.set_data(**object_markers)
             artists.append(self.object_mesh)
-            self.object_frame.set_data(self.object_mesh.pose_from_markers(
-                **object_markers))
-            artists.append(self.object_frame)
 
         if self.args.electronic:
             marker_names = dataset.config.get("additional_markers", ())
@@ -622,10 +657,6 @@ class AnimationCallback:
                 for marker_name in self.object_mesh.marker_names}
             self.object_mesh.set_data(**object_markers)
             artists.append(self.object_mesh)
-            if not any(np.isnan(np.hstack(object_markers.values()))):
-                self.object_frame.set_data(
-                    self.object_mesh.pose_from_markers(**object_markers))
-                artists.append(self.object_frame)
 
         if self.args.passport_closed:
             marker_names = dataset.config.get("additional_markers", ())
