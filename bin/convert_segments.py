@@ -32,11 +32,12 @@ import pytransform3d.transformations as pt
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.target_dataset import convert_mocap_to_robot
-from hand_embodiment.vis_utils import (
-    insole_pose, pillow_pose, electronic_object_pose, electronic_target_pose)
 from hand_embodiment.timing import timing_report
 from hand_embodiment.command_line import (
     add_hand_argument, add_configuration_arguments)
+from hand_embodiment.mocap_objects import (
+    ElectronicTargetMarkers, ElectronicObjectMarkers, PillowMarkers,
+    InsoleMarkers)
 
 
 def parse_args():
@@ -106,68 +107,13 @@ def main():
             dataset.select_segment(i)
 
             if args.insole_hack:
-                ####################################################################
-                ####################################################################
-                # python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement16.json --output dataset_16_segment_%d.csv --insole-hack
-                ee2origin = np.empty((dataset.n_steps, 4, 4))
-                insole_back = np.zeros(3)
-                insole_front = np.array([1, 0, 0])
-                for t in range(dataset.n_steps):
-                    additional_markers = dataset.get_additional_markers(t)
-                    marker_names = dataset.config.get("additional_markers", ())
-                    if not any(np.isnan(additional_markers[marker_names.index("insole_front")])):
-                        insole_front = additional_markers[marker_names.index("insole_front")]
-                    if not any(np.isnan(additional_markers[marker_names.index("insole_back")])):
-                        insole_back = additional_markers[marker_names.index("insole_back")]
-                    origin_pose = insole_pose(insole_back, insole_front)
-                    ee2origin[t] = pt.invert_transform(origin_pose)
-                ####################################################################
-                ####################################################################
+                ee2origin = extract_object_transforms(dataset, InsoleMarkers)
             elif args.pillow_hack:
-                ee2origin = np.empty((dataset.n_steps, 4, 4))
-                pillow_left = np.zeros(3)
-                pillow_right = np.array([1, 0, 0])
-                pillow_top = np.array([1, 1, 0])
-                for t in range(dataset.n_steps):
-                    additional_markers = dataset.get_additional_markers(t)
-                    marker_names = dataset.config.get("additional_markers", ())
-                    if not any(np.isnan(additional_markers[marker_names.index("pillow_left")])):
-                        pillow_left = additional_markers[marker_names.index("pillow_left")]
-                    if not any(np.isnan(additional_markers[marker_names.index("pillow_right")])):
-                        pillow_right = additional_markers[marker_names.index("pillow_right")]
-                    if not any(np.isnan(additional_markers[marker_names.index("pillow_top")])):
-                        pillow_top = additional_markers[marker_names.index("pillow_top")]
-                    origin_pose = pillow_pose(pillow_left, pillow_right, pillow_top)
-                    ee2origin[t] = pt.invert_transform(origin_pose)
+                ee2origin = extract_object_transforms(dataset, PillowMarkers)
             elif args.electronic_object_hack:
-                ee2origin = np.empty((dataset.n_steps, 4, 4))
-                object_left = np.zeros(3)
-                object_right = np.array([1, 0, 0])
-                object_top = np.array([1, 1, 0])
-                for t in range(dataset.n_steps):
-                    additional_markers = dataset.get_additional_markers(t)
-                    marker_names = dataset.config.get("additional_markers", ())
-                    if not any(np.isnan(additional_markers[marker_names.index("object_left")])):
-                        object_left = additional_markers[marker_names.index("object_left")]
-                    if not any(np.isnan(additional_markers[marker_names.index("object_right")])):
-                        object_right = additional_markers[marker_names.index("object_right")]
-                    if not any(np.isnan(additional_markers[marker_names.index("object_top")])):
-                        object_top = additional_markers[marker_names.index("object_top")]
-                    origin_pose = electronic_object_pose(object_left, object_right, object_top)
-                    ee2origin[t] = pt.invert_transform(origin_pose)
+                ee2origin = extract_object_transforms(dataset, ElectronicObjectMarkers)
             elif args.electronic_target_hack:
-                ee2origin = np.empty((dataset.n_steps, 4, 4))
-                target_top = np.zeros(3)
-                target_bottom = np.array([1, 0, 0])
-                for t in range(dataset.n_steps):
-                    additional_markers = dataset.get_additional_markers(t)
-                    marker_names = dataset.config.get("additional_markers", ())
-                    if not any(np.isnan(additional_markers[marker_names.index("target_top")])):
-                        target_top = additional_markers[marker_names.index("target_top")]
-                    if not any(np.isnan(additional_markers[marker_names.index("target_bottom")])):
-                        target_bottom = additional_markers[marker_names.index("target_bottom")]
-                    origin_pose = electronic_target_pose(target_top, target_bottom)
-                    ee2origin[t] = pt.invert_transform(origin_pose)
+                ee2origin = extract_object_transforms(dataset, ElectronicTargetMarkers)
             else:
                 ee2origin = None
 
@@ -188,6 +134,21 @@ def main():
     if args.measure_time:
         timing_report(pipeline.record_mapping_, title="record mapping")
         timing_report(pipeline.embodiment_mapping_, title="embodiment mapping")
+
+
+def extract_object_transforms(dataset, object_info):
+    ee2origin = np.empty((dataset.n_steps, 4, 4))
+    marker_positions = {
+        k: np.copy(v) for k, v in object_info.default_marker_positions.items()}
+    for t in range(dataset.n_steps):
+        additional_markers = dataset.get_additional_markers(t)
+        marker_names = dataset.config.get("additional_markers", ())
+        for marker_name in object_info.marker_names:
+            if not any(np.isnan(additional_markers[marker_names.index(marker_name)])):
+                marker_positions[marker_name] = additional_markers[marker_names.index(marker_name)]
+        origin_pose = object_info.pose_from_markers(**marker_positions)
+        ee2origin[t] = pt.invert_transform(origin_pose)
+    return ee2origin
 
 
 if __name__ == "__main__":
