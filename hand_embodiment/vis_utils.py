@@ -514,23 +514,22 @@ class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
 
 class PassportClosed(pv.Artist, PassportClosedMarkers, MeshToOriginMixin):
     """Representation of passport."""
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+        p=-np.array([0.0, 0.0, 0.008]))
 
-    def __init__(self, passport_top=np.array([0, 1, 0]),
-                 passport_left=np.zeros(3), passport_right=np.array([1, 0, 0]),
+    def __init__(self, passport_top=np.copy(PassportClosedMarkers.passport_top_default),
+                 passport_left=np.copy(PassportClosedMarkers.passport_left_default),
+                 passport_right=np.copy(PassportClosedMarkers.passport_right_default),
                  show_frame=True):
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_closed.stl")
-        self.mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
-        self.mesh.paint_uniform_color(np.array([0.35, 0.14, 0.21]))
-        self.mesh.compute_triangle_normals()
+        self.mesh = self.load_mesh()
 
-        self.passport_top = np.array([0, 1, 0])
-        self.passport_left = np.zeros(3)
-        self.passport_right = np.array([1, 0, 0])
+        self.passport_top = np.copy(PassportClosedMarkers.passport_top_default)
+        self.passport_left = np.copy(PassportClosedMarkers.passport_left_default)
+        self.passport_right = np.copy(PassportClosedMarkers.passport_right_default)
 
-        self.markers2mesh = pt.transform_from(
-            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
-            p=-np.array([0.0, 0.0, 0.008]))
         self.markers2origin = np.copy(self.markers2mesh)
 
         if show_frame:
@@ -539,6 +538,12 @@ class PassportClosed(pv.Artist, PassportClosedMarkers, MeshToOriginMixin):
             self.frame = None
 
         self.set_data(passport_top, passport_left, passport_right)
+
+    def load_mesh(self):
+        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
+        mesh.paint_uniform_color(np.array([0.35, 0.14, 0.21]))
+        mesh.compute_triangle_normals()
+        return mesh
 
     def set_data(self, passport_top, passport_left, passport_right):
         if not any(np.isnan(passport_top)):
@@ -575,22 +580,22 @@ class PassportClosed(pv.Artist, PassportClosedMarkers, MeshToOriginMixin):
 
 class PassportBox(pv.Artist, PassportBoxMarkers, MeshToOriginMixin):
     """Representation of passport box."""
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 180, 0])),
+        p=-np.array([0.0, 0.0, -0.046]))
 
-    def __init__(self, box_top=np.array([0, 1, 0]), box_left=np.zeros(3),
-                 box_right=np.array([1, 0, 0]), show_frame=True):
+    def __init__(self, box_top=np.copy(PassportBoxMarkers.box_top_default),
+                 box_left=np.copy(PassportBoxMarkers.box_left_default),
+                 box_right=np.copy(PassportBoxMarkers.box_right_default),
+                 show_frame=True):
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_box.stl")
-        self.mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
-        self.mesh.paint_uniform_color(np.array([0.58, 0.46, 0.25]))
-        self.mesh.compute_triangle_normals()
+        self.mesh = self.load_mesh()
 
-        self.box_top = np.array([0, 1, 0])
-        self.box_left = np.zeros(3)
-        self.box_right = np.array([1, 0, 0])
+        self.box_top = np.copy(PassportBoxMarkers.box_top_default)
+        self.box_left = np.copy(PassportBoxMarkers.box_left_default)
+        self.box_right = np.copy(PassportBoxMarkers.box_right_default)
 
-        self.markers2mesh = pt.transform_from(
-            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 180, 0])),
-            p=-np.array([0.0, 0.0, -0.046]))
         self.markers2origin = np.copy(self.markers2mesh)
 
         if show_frame:
@@ -599,6 +604,12 @@ class PassportBox(pv.Artist, PassportBoxMarkers, MeshToOriginMixin):
             self.frames = None
 
         self.set_data(box_top, box_left, box_right)
+
+    def load_mesh(self):
+        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
+        mesh.paint_uniform_color(np.array([0.58, 0.46, 0.25]))
+        mesh.compute_triangle_normals()
+        return mesh
 
     def set_data(self, box_top, box_left, box_right):
         if not any(np.isnan(box_top)):
