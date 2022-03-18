@@ -295,15 +295,13 @@ class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
         return g
 
 
-class Electronic(pv.Artist):  # TODO split into two artists
+class ElectronicTarget(pv.Artist):
     """Representation of electronic object and target component."""
-    marker_names = ["target_top", "target_bottom",
-                    "object_left", "object_right", "object_top"]
+    marker_names = ["target_top", "target_bottom"]
 
     def __init__(
             self, target_top=np.zeros(3), target_bottom=np.array([1, 0, 0]),
-            object_left=np.zeros(3), object_right=np.array([0, 1, 0]),
-            object_top=np.array([1, 0, 0]), show_frame=True):
+            show_frame=True):
         target_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_target.stl")
         self.target_mesh = o3d.io.read_triangle_mesh(target_filename)
@@ -318,9 +316,54 @@ class Electronic(pv.Artist):  # TODO split into two artists
             p=-np.array([0.0625 + 0.014, -0.057 + 0.006, 0.0]) / 2.0)
         self.target_markers2origin = np.copy(self.electronic_target2target_markers)
 
-        target_filename = resource_filename(
+        if show_frame:
+            self.frame = pv.Frame(np.eye(4), s=0.1)
+        else:
+            self.frame = None
+
+        self.set_data(target_top, target_bottom)
+
+    def set_data(self, target_top, target_bottom):
+        if not any(np.isnan(target_top)):
+            self.target_top = target_top
+        if not any(np.isnan(target_bottom)):
+            self.target_bottom = target_bottom
+
+        self.target_mesh.transform(pt.invert_transform(pt.concat(
+            self.electronic_target2target_markers, self.target_markers2origin)))
+        self.target_markers2origin = electronic_target_pose(
+            self.target_top, self.target_bottom)
+        self.target_mesh.transform(pt.concat(
+            self.electronic_target2target_markers, self.target_markers2origin))
+
+        if self.frame is not None:
+            self.frame.set_data(self.target_markers2origin)
+
+    @property
+    def geometries(self):
+        """Expose geometries.
+
+        Returns
+        -------
+        geometries : list
+            List of geometries that can be added to the visualizer.
+        """
+        g = [self.target_mesh]
+        if self.frame is not None:
+            g += self.frame.geometries
+        return g
+
+
+class ElectronicObject(pv.Artist):
+    """Representation of electronic object and target component."""
+    marker_names = ["object_left", "object_right", "object_top"]
+
+    def __init__(
+            self, object_left=np.zeros(3), object_right=np.array([0, 1, 0]),
+            object_top=np.array([1, 0, 0]), show_frame=True):
+        mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_object.stl")
-        self.object_mesh = o3d.io.read_triangle_mesh(target_filename)
+        self.object_mesh = o3d.io.read_triangle_mesh(mesh_filename)
         self.object_mesh.paint_uniform_color(np.array([0.68, 0.45, 0.23]))
         self.object_mesh.compute_triangle_normals()
 
@@ -334,33 +377,19 @@ class Electronic(pv.Artist):  # TODO split into two artists
         self.object_markers2origin = np.copy(self.electronic_object2object_markers)
 
         if show_frame:
-            self.frames = [pv.Frame(np.eye(4), s=0.1),
-                           pv.Frame(np.eye(4), s=0.1)]
+            self.frame = pv.Frame(np.eye(4), s=0.1)
         else:
-            self.frames = []
+            self.frame = None
 
-        self.set_data(
-            target_top, target_bottom, object_left, object_right, object_top)
+        self.set_data(object_left, object_right, object_top)
 
-    def set_data(self, target_top, target_bottom, object_left, object_right,
-                 object_top):
-        if not any(np.isnan(target_top)):
-            self.target_top = target_top
-        if not any(np.isnan(target_bottom)):
-            self.target_bottom = target_bottom
+    def set_data(self, object_left, object_right, object_top):
         if not any(np.isnan(object_left)):
             self.object_left = object_left
         if not any(np.isnan(object_right)):
             self.object_right = object_right
         if not any(np.isnan(object_top)):
             self.object_top = object_top
-
-        self.target_mesh.transform(pt.invert_transform(pt.concat(
-            self.electronic_target2target_markers, self.target_markers2origin)))
-        self.target_markers2origin = electronic_target_pose(
-            self.target_top, self.target_bottom)
-        self.target_mesh.transform(pt.concat(
-            self.electronic_target2target_markers, self.target_markers2origin))
 
         self.object_mesh.transform(pt.invert_transform(pt.concat(
             self.electronic_object2object_markers, self.object_markers2origin)))
@@ -369,9 +398,8 @@ class Electronic(pv.Artist):  # TODO split into two artists
         self.object_mesh.transform(pt.concat(
             self.electronic_object2object_markers, self.object_markers2origin))
 
-        if self.frames:
-            self.frames[0].set_data(self.target_markers2origin)
-            self.frames[1].set_data(self.object_markers2origin)
+        if self.frame:
+            self.frame.set_data(self.object_markers2origin)
 
     @property
     def geometries(self):
@@ -382,9 +410,9 @@ class Electronic(pv.Artist):  # TODO split into two artists
         geometries : list
             List of geometries that can be added to the visualizer.
         """
-        g = [self.target_mesh, self.object_mesh]
-        for f in self.frames:
-            g += f.geometries
+        g = [self.object_mesh]
+        if self.frame is not None:
+            g += self.frame.geometries
         return g
 
 
@@ -631,7 +659,8 @@ class AnimationCallback:
         if self.args.pillow:
             self.object_meshes.append(PillowSmall())
         if self.args.electronic:
-            self.object_meshes.append(Electronic())
+            self.object_meshes.append(ElectronicTarget())
+            self.object_meshes.append(ElectronicObject())
         if self.args.passport:
             self.object_meshes.append(Passport())
         if self.args.passport_closed:
