@@ -1,3 +1,4 @@
+"""Information about objects used in motion capture recordings."""
 import numpy as np
 from pytransform3d import rotations as pr, transformations as pt
 
