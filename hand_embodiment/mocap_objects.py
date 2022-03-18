@@ -158,9 +158,21 @@ class PassportMarkers:
 
 
 class PassportClosedMarkers:
-    passport_top_default = np.array([0, 1, 0])
-    passport_left_default = np.zeros(3)
-    passport_right_default = np.array([1, 0, 0])
+    """Information about closed passport markers.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        ---------PT
+        |         |
+        |         |
+        |         |
+        PL-------PR
+    """
+    passport_top_default = np.array([-0.043, 0.06, 0])
+    passport_left_default = np.array([0.043, -0.06, 0])
+    passport_right_default = np.array([-0.043, -0.06, 0])
     default_marker_positions = {
         "passport_top": passport_top_default,
         "passport_left": passport_left_default,
@@ -170,6 +182,24 @@ class PassportClosedMarkers:
 
     @staticmethod
     def pose_from_markers(passport_top, passport_left, passport_right):
+        """Compute pose of passport.
+
+        Parameters
+        ----------
+        passport_top : array, shape (3,)
+            Top passport marker (PT).
+
+        passport_left : array, shape (3,)
+            Left passport marker (PL).
+
+        passport_right : array, shape (3,)
+            Right passport marker (PR).
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the passport.
+        """
         return passport_closed_pose(passport_top, passport_left, passport_right)
 
 
