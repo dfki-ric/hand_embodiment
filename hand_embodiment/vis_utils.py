@@ -97,26 +97,6 @@ class ManoHand(pv.Artist):
         return geoms
 
 
-class MeshToOriginMixin:
-    """Provides transformation from mesh coordinates to origin frame."""
-    def transform_from_mesh_to_origin(self, point_in_mesh):
-        """Transform point from mesh frame to origin based on current pose.
-
-        Parameters
-        ----------
-        point_in_mesh : array, shape (3,)
-            Point in mesh coordinate system.
-
-        Returns
-        -------
-        point_in_origin : array, shape (3,)
-            Point in origin frame.
-        """
-        mesh2markers = pt.invert_transform(self.markers2mesh)
-        mesh2origin = pt.concat(mesh2markers, self.markers2origin)
-        return pt.transform(mesh2origin, pt.vector_to_point(point_in_mesh))[:3]
-
-
 class MoCapObjectMesh(pv.Artist):
     def __init__(self, show_frame=True):
         if show_frame:
@@ -138,6 +118,23 @@ class MoCapObjectMesh(pv.Artist):
         mesh.compute_triangle_normals()
         return mesh
 
+    def transform_from_mesh_to_origin(self, point_in_mesh):
+        """Transform point from mesh frame to origin based on current pose.
+
+        Parameters
+        ----------
+        point_in_mesh : array, shape (3,)
+            Point in mesh coordinate system.
+
+        Returns
+        -------
+        point_in_origin : array, shape (3,)
+            Point in origin frame.
+        """
+        mesh2markers = pt.invert_transform(self.markers2mesh)
+        mesh2origin = pt.concat(mesh2markers, self.markers2origin)
+        return pt.transform(mesh2origin, pt.vector_to_point(point_in_mesh))[:3]
+
     @property
     def geometries(self):
         """Expose geometries.
@@ -153,7 +150,7 @@ class MoCapObjectMesh(pv.Artist):
         return g
 
 
-class Insole(MoCapObjectMesh, InsoleMarkers, MeshToOriginMixin):
+class Insole(MoCapObjectMesh, InsoleMarkers):
     """Representation of insole mesh.
 
     Parameters
@@ -208,7 +205,7 @@ class Insole(MoCapObjectMesh, InsoleMarkers, MeshToOriginMixin):
             self.frame.set_data(self.markers2origin)
 
 
-class PillowSmall(MoCapObjectMesh, PillowMarkers, MeshToOriginMixin):
+class PillowSmall(MoCapObjectMesh, PillowMarkers):
     """Representation of small pillow mesh.
 
     Parameters
@@ -273,7 +270,7 @@ class PillowSmall(MoCapObjectMesh, PillowMarkers, MeshToOriginMixin):
             self.frame.set_data(self.markers2origin)
 
 
-class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers, MeshToOriginMixin):
+class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers):
     """Representation of electronic object and target component."""
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
@@ -313,7 +310,7 @@ class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers, MeshToOriginMix
             self.frame.set_data(self.markers2origin)
 
 
-class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers, MeshToOriginMixin):
+class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers):
     """Representation of electronic object and target component."""
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
@@ -357,7 +354,7 @@ class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers, MeshToOriginMix
             self.frame.set_data(self.markers2origin)
 
 
-class Passport(MoCapObjectMesh, PassportMarkers, MeshToOriginMixin):
+class Passport(MoCapObjectMesh, PassportMarkers):
     """Representation of open passport.
 
     Parameters
@@ -413,7 +410,7 @@ class Passport(MoCapObjectMesh, PassportMarkers, MeshToOriginMixin):
             self.frame.set_data(self.markers2origin)
 
 
-class PassportClosed(MoCapObjectMesh, PassportClosedMarkers, MeshToOriginMixin):
+class PassportClosed(MoCapObjectMesh, PassportClosedMarkers):
     """Representation of passport."""
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
@@ -456,7 +453,7 @@ class PassportClosed(MoCapObjectMesh, PassportClosedMarkers, MeshToOriginMixin):
             self.frame.set_data(self.markers2origin)
 
 
-class PassportBox(MoCapObjectMesh, PassportBoxMarkers, MeshToOriginMixin):
+class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
     """Representation of passport box."""
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 180, 0])),
