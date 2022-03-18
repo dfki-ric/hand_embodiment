@@ -10,7 +10,8 @@ import pytransform3d.visualizer as pv
 
 from .mocap_objects import (
     InsoleMarkers, PillowMarkers, ElectronicTargetMarkers,
-    ElectronicObjectMarkers, PassportMarkers, passport_closed_pose, box_pose)
+    ElectronicObjectMarkers, PassportMarkers, PassportClosedMarkers,
+    PassportBoxMarkers)
 
 
 def make_coordinate_system(s, short_tick_length=0.01, long_tick_length=0.05):
@@ -511,9 +512,8 @@ class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
         return g
 
 
-class PassportClosed(pv.Artist):
+class PassportClosed(pv.Artist, PassportClosedMarkers, MeshToOriginMixin):
     """Representation of passport."""
-    marker_names = ["passport_top", "passport_left", "passport_right"]
 
     def __init__(self, passport_top=np.array([0, 1, 0]),
                  passport_left=np.zeros(3), passport_right=np.array([1, 0, 0]),
@@ -550,7 +550,7 @@ class PassportClosed(pv.Artist):
 
         self.mesh.transform(pt.invert_transform(pt.concat(
             self.markers2mesh, self.markers2origin)))
-        self.markers2origin = passport_closed_pose(
+        self.markers2origin = self.pose_from_markers(
             self.passport_top, self.passport_left, self.passport_right)
         self.mesh.transform(pt.concat(
             self.markers2mesh, self.markers2origin))
@@ -573,9 +573,8 @@ class PassportClosed(pv.Artist):
         return g
 
 
-class PassportBox(pv.Artist):
+class PassportBox(pv.Artist, PassportBoxMarkers, MeshToOriginMixin):
     """Representation of passport box."""
-    marker_names = ["box_top", "box_left", "box_right"]
 
     def __init__(self, box_top=np.array([0, 1, 0]), box_left=np.zeros(3),
                  box_right=np.array([1, 0, 0]), show_frame=True):
@@ -611,7 +610,7 @@ class PassportBox(pv.Artist):
 
         self.mesh.transform(pt.invert_transform(pt.concat(
             self.markers2mesh, self.markers2origin)))
-        self.markers2origin = box_pose(
+        self.markers2origin = self.pose_from_markers(
             self.box_top, self.box_left, self.box_right)
         self.mesh.transform(pt.concat(
             self.markers2mesh, self.markers2origin))

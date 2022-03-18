@@ -157,6 +157,38 @@ class PassportMarkers:
         return passport_pose(passport_left, passport_right)
 
 
+class PassportClosedMarkers:
+    passport_top_default = np.array([0, 1, 0])
+    passport_left_default = np.zeros(3)
+    passport_right_default = np.array([1, 0, 0])
+    default_marker_positions = {
+        "passport_top": passport_top_default,
+        "passport_left": passport_left_default,
+        "passport_right": passport_right_default
+    }
+    marker_names = tuple(default_marker_positions.keys())
+
+    @staticmethod
+    def pose_from_markers(passport_top, passport_left, passport_right):
+        return passport_closed_pose(passport_top, passport_left, passport_right)
+
+
+class PassportBoxMarkers:
+    box_top_default = np.array([0, 1, 0])
+    box_left_default = np.zeros(3)
+    box_right_default = np.array([1, 0, 0])
+    default_marker_positions = {
+        "box_top": box_top_default,
+        "box_left": box_left_default,
+        "box_right": box_right_default
+    }
+    marker_names = tuple(default_marker_positions.keys())
+
+    @staticmethod
+    def pose_from_markers(box_top, box_left, box_right):
+        return box_pose(box_top, box_left, box_right)
+
+
 def insole_pose(insole_back, insole_front):
     """Compute pose of insole.
 
