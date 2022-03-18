@@ -2,7 +2,9 @@
 import argparse
 import numpy as np
 from hand_embodiment.command_line import add_object_visualization_arguments
-from hand_embodiment.vis_utils import Insole, PillowSmall, Passport
+from hand_embodiment.vis_utils import (
+    Insole, PillowSmall, Passport, ElectronicObject, ElectronicTarget,
+    PassportClosed, PassportBox)
 import pytransform3d.visualizer as pv
 import pytransform3d.transformations as pt
 
@@ -29,13 +31,15 @@ def main():
         object_classes.append(PillowSmall)
 
     if args.electronic:
-        raise NotImplementedError()
+        object_classes.append(ElectronicObject)
+        object_classes.append(ElectronicTarget)
 
     if args.passport:
         object_classes.append(Passport)
 
     if args.passport_closed:
-        raise NotImplementedError()
+        object_classes.append(PassportClosed)
+        object_classes.append(PassportBox)
 
     fig = pv.figure()
     fig.plot_transform(np.eye(4), s=0.1)
