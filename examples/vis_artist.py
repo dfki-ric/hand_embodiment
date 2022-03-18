@@ -57,7 +57,7 @@ def main():
         fig.plot_transform(pose, s=0.1)
 
         # Mesh in marker frame
-        artist = ObjectClass(**ObjectClass.default_marker_positions)
+        artist = ObjectClass()
         artist.add_artist(fig)
 
         # Mesh in mesh frame

@@ -177,10 +177,7 @@ class Insole(MoCapObjectMesh, InsoleMarkers):
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([180, 0, -4.5])),
         p=np.array([0.04, 0.07, -0.007]))
 
-    def __init__(
-            self, insole_back=np.copy(InsoleMarkers.insole_back_default),
-            insole_front=np.copy(InsoleMarkers.insole_front_default),
-            show_frame=True):
+    def __init__(self, show_frame=True):
         super(Insole, self).__init__(
             mesh_filename=resource_filename("hand_embodiment", "model/objects/insole.stl"),
             mesh_color=np.array([0.37, 0.28, 0.26]),
@@ -190,7 +187,7 @@ class Insole(MoCapObjectMesh, InsoleMarkers):
         self.insole_front = np.copy(self.insole_front_default)
         self.markers2origin = np.copy(self.markers2mesh)
 
-        self.set_data(insole_back, insole_front)
+        self.set_data(self.insole_back, self.insole_front)
 
     def set_data(self, insole_back, insole_front):
         if not any(np.isnan(insole_back)):
@@ -213,15 +210,6 @@ class PillowSmall(MoCapObjectMesh, PillowMarkers):
 
     Parameters
     ----------
-    pillow_left : array, shape (3,)
-        Position of left marker.
-
-    pillow_right : array, shape (3,)
-        Position of right marker.
-
-    pillow_top : array, shape (3,)
-        Position of top marker.
-
     show_frame : bool, optional (default: True)
         Show frame.
 
@@ -234,11 +222,7 @@ class PillowSmall(MoCapObjectMesh, PillowMarkers):
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 90])),
         p=np.array([0.0, -0.02, 0.095]))
 
-    def __init__(
-            self, pillow_left=np.copy(PillowMarkers.pillow_left_default),
-            pillow_right=np.copy(PillowMarkers.pillow_right_default),
-            pillow_top=np.copy(PillowMarkers.pillow_top_default),
-            show_frame=True):
+    def __init__(self, show_frame=True):
         super(PillowSmall, self).__init__(
             mesh_filename=resource_filename("hand_embodiment", "model/objects/pillow_small.stl"),
             mesh_color=None,
@@ -250,7 +234,7 @@ class PillowSmall(MoCapObjectMesh, PillowMarkers):
 
         self.markers2origin = np.copy(self.markers2mesh)
 
-        self.set_data(pillow_left, pillow_right, pillow_top)
+        self.set_data(self.pillow_left, self.pillow_right, self.pillow_top)
 
     def set_data(self, pillow_left, pillow_right, pillow_top):
         if not any(np.isnan(pillow_left)):
@@ -278,10 +262,7 @@ class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers):
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
         p=-np.array([0.0625 + 0.014, -0.057 + 0.006, 0.0]) / 2.0)
 
-    def __init__(
-            self, target_top=np.copy(ElectronicTargetMarkers.target_top_default),
-            target_bottom=np.copy(ElectronicTargetMarkers.target_bottom_default),
-            show_frame=True):
+    def __init__(self, show_frame=True):
         super(ElectronicTarget, self).__init__(
             mesh_filename=resource_filename("hand_embodiment", "model/objects/electronic_target.stl"),
             mesh_color=np.array([0.21, 0.20, 0.46]),
@@ -292,7 +273,7 @@ class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers):
 
         self.markers2origin = np.copy(self.markers2mesh)
 
-        self.set_data(target_top, target_bottom)
+        self.set_data(self.target_top, self.target_bottom)
 
     def set_data(self, target_top, target_bottom):
         if not any(np.isnan(target_top)):
@@ -317,11 +298,7 @@ class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers):
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
         p=np.array([0.0, 0.0, -0.01]))
 
-    def __init__(
-            self, object_left=np.copy(ElectronicObjectMarkers.object_left_default),
-            object_right=np.copy(ElectronicObjectMarkers.object_right_default),
-            object_top=np.copy(ElectronicObjectMarkers.object_top_default),
-            show_frame=True):
+    def __init__(self, show_frame=True):
         super(ElectronicObject, self).__init__(
             mesh_filename=resource_filename("hand_embodiment", "model/objects/electronic_object.stl"),
             mesh_color=np.array([0.68, 0.45, 0.23]),
@@ -333,7 +310,7 @@ class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers):
 
         self.markers2origin = np.copy(self.markers2mesh)
 
-        self.set_data(object_left, object_right, object_top)
+        self.set_data(self.object_left, self.object_right, self.object_top)
 
     def set_data(self, object_left, object_right, object_top):
         if not any(np.isnan(object_left)):
@@ -359,12 +336,6 @@ class Passport(MoCapObjectMesh, PassportMarkers):
 
     Parameters
     ----------
-    passport_left : array, shape (3,)
-        Left passport marker (PL).
-
-    passport_right : array, shape (3,)
-        Right passport marker (PR).
-
     show_frame : bool, optional (default: True)
         Show frame.
 
@@ -377,9 +348,7 @@ class Passport(MoCapObjectMesh, PassportMarkers):
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
         p=-np.array([0.0, 0.0, 0.0]))
 
-    def __init__(self, passport_left=np.copy(PassportMarkers.passport_left_default),
-                 passport_right=np.copy(PassportMarkers.passport_right_default),
-                 show_frame=True):
+    def __init__(self, show_frame=True):
         super(Passport, self).__init__(
             mesh_filename=resource_filename("hand_embodiment", "model/objects/passport_open.stl"),
             mesh_color=np.array([0.38, 0.48, 0.42]),
@@ -390,7 +359,7 @@ class Passport(MoCapObjectMesh, PassportMarkers):
 
         self.markers2origin = np.copy(self.markers2mesh)
 
-        self.set_data(passport_left, passport_right)
+        self.set_data(self.passport_left, self.passport_right)
 
     def set_data(self, passport_left, passport_right):
         if not any(np.isnan(passport_left)):
@@ -415,10 +384,7 @@ class PassportClosed(MoCapObjectMesh, PassportClosedMarkers):
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
         p=-np.array([0.0, 0.0, 0.008]))
 
-    def __init__(self, passport_top=np.copy(PassportClosedMarkers.passport_top_default),
-                 passport_left=np.copy(PassportClosedMarkers.passport_left_default),
-                 passport_right=np.copy(PassportClosedMarkers.passport_right_default),
-                 show_frame=True):
+    def __init__(self, show_frame=True):
         super(PassportClosed, self).__init__(
             mesh_filename=resource_filename("hand_embodiment", "model/objects/passport_closed.stl"),
             mesh_color=np.array([0.35, 0.14, 0.21]),
@@ -430,7 +396,7 @@ class PassportClosed(MoCapObjectMesh, PassportClosedMarkers):
 
         self.markers2origin = np.copy(self.markers2mesh)
 
-        self.set_data(passport_top, passport_left, passport_right)
+        self.set_data(self.passport_top, self.passport_left, self.passport_right)
 
     def set_data(self, passport_top, passport_left, passport_right):
         if not any(np.isnan(passport_top)):
@@ -457,10 +423,7 @@ class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 180, 0])),
         p=-np.array([0.0, 0.0, -0.046]))
 
-    def __init__(self, box_top=np.copy(PassportBoxMarkers.box_top_default),
-                 box_left=np.copy(PassportBoxMarkers.box_left_default),
-                 box_right=np.copy(PassportBoxMarkers.box_right_default),
-                 show_frame=True):
+    def __init__(self, show_frame=True):
         super(PassportBox, self).__init__(
             mesh_filename=resource_filename("hand_embodiment", "model/objects/passport_box.stl"),
             mesh_color=np.array([0.58, 0.46, 0.25]),
@@ -472,7 +435,7 @@ class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
 
         self.markers2origin = np.copy(self.markers2mesh)
 
-        self.set_data(box_top, box_left, box_right)
+        self.set_data(self.box_top, self.box_left, self.box_right)
 
     def set_data(self, box_top, box_left, box_right):
         if not any(np.isnan(box_top)):
