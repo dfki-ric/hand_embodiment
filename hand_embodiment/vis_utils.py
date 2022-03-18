@@ -124,6 +124,20 @@ class MoCapObjectMesh(pv.Artist):
         else:
             self.frame = None
 
+    def load_mesh(self):
+        """Load mesh without specific pose.
+
+        Returns
+        -------
+        mesh : open3d.geometry.TriangleMesh
+            Object mesh.
+        """
+        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
+        if self.mesh_color is not None:
+            mesh.paint_uniform_color(self.mesh_color)
+        mesh.compute_triangle_normals()
+        return mesh
+
     @property
     def geometries(self):
         """Expose geometries.
@@ -169,6 +183,7 @@ class Insole(MoCapObjectMesh, InsoleMarkers, MeshToOriginMixin):
         super(Insole, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/insole.stl")
+        self.mesh_color = np.array([0.37, 0.28, 0.26])
         self.mesh = self.load_mesh()
 
         self.insole_back = np.copy(self.insole_back_default)
@@ -176,19 +191,6 @@ class Insole(MoCapObjectMesh, InsoleMarkers, MeshToOriginMixin):
         self.markers2origin = np.copy(self.markers2mesh)
 
         self.set_data(insole_back, insole_front)
-
-    def load_mesh(self):
-        """Load mesh without specific pose.
-
-        Returns
-        -------
-        mesh : open3d.geometry.TriangleMesh
-            Object mesh.
-        """
-        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
-        mesh.paint_uniform_color(np.array([0.37, 0.28, 0.26]))
-        mesh.compute_triangle_normals()
-        return mesh
 
     def set_data(self, insole_back, insole_front):
         if not any(np.isnan(insole_back)):
@@ -240,6 +242,7 @@ class PillowSmall(MoCapObjectMesh, PillowMarkers, MeshToOriginMixin):
         super(PillowSmall, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/pillow_small.stl")
+        self.mesh_color = None
         self.mesh = self.load_mesh()
 
         self.pillow_left = np.copy(self.pillow_left_default)
@@ -249,18 +252,6 @@ class PillowSmall(MoCapObjectMesh, PillowMarkers, MeshToOriginMixin):
         self.markers2origin = np.copy(self.markers2mesh)
 
         self.set_data(pillow_left, pillow_right, pillow_top)
-
-    def load_mesh(self):
-        """Load mesh without specific pose.
-
-        Returns
-        -------
-        mesh : open3d.geometry.TriangleMesh
-            Object mesh.
-        """
-        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
-        mesh.compute_triangle_normals()
-        return mesh
 
     def set_data(self, pillow_left, pillow_right, pillow_top):
         if not any(np.isnan(pillow_left)):
@@ -295,6 +286,7 @@ class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers, MeshToOriginMix
         super(ElectronicTarget, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_target.stl")
+        self.mesh_color = np.array([0.21, 0.20, 0.46])
         self.mesh = self.load_mesh()
 
         self.target_top = np.copy(self.target_top_default)
@@ -303,12 +295,6 @@ class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers, MeshToOriginMix
         self.markers2origin = np.copy(self.markers2mesh)
 
         self.set_data(target_top, target_bottom)
-
-    def load_mesh(self):
-        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
-        mesh.paint_uniform_color(np.array([0.21, 0.20, 0.46]))
-        mesh.compute_triangle_normals()
-        return mesh
 
     def set_data(self, target_top, target_bottom):
         if not any(np.isnan(target_top)):
@@ -341,6 +327,7 @@ class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers, MeshToOriginMix
         super(ElectronicObject, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_object.stl")
+        self.mesh_color = np.array([0.68, 0.45, 0.23])
         self.mesh = self.load_mesh()
 
         self.object_left = np.copy(ElectronicObjectMarkers.object_left_default)
@@ -350,12 +337,6 @@ class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers, MeshToOriginMix
         self.markers2origin = np.copy(self.markers2mesh)
 
         self.set_data(object_left, object_right, object_top)
-
-    def load_mesh(self):
-        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
-        mesh.paint_uniform_color(np.array([0.68, 0.45, 0.23]))
-        mesh.compute_triangle_normals()
-        return mesh
 
     def set_data(self, object_left, object_right, object_top):
         if not any(np.isnan(object_left)):
@@ -405,6 +386,7 @@ class Passport(MoCapObjectMesh, PassportMarkers, MeshToOriginMixin):
         super(Passport, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_open.stl")
+        self.mesh_color = np.array([0.38, 0.48, 0.42])
         self.mesh = self.load_mesh()
 
         self.passport_left = np.copy(self.passport_left_default)
@@ -413,19 +395,6 @@ class Passport(MoCapObjectMesh, PassportMarkers, MeshToOriginMixin):
         self.markers2origin = np.copy(self.markers2mesh)
 
         self.set_data(passport_left, passport_right)
-
-    def load_mesh(self):
-        """Load mesh without specific pose.
-
-        Returns
-        -------
-        mesh : open3d.geometry.TriangleMesh
-            Object mesh.
-        """
-        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
-        mesh.paint_uniform_color(np.array([0.38, 0.48, 0.42]))
-        mesh.compute_triangle_normals()
-        return mesh
 
     def set_data(self, passport_left, passport_right):
         if not any(np.isnan(passport_left)):
@@ -457,6 +426,7 @@ class PassportClosed(MoCapObjectMesh, PassportClosedMarkers, MeshToOriginMixin):
         super(PassportClosed, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_closed.stl")
+        self.mesh_color = np.array([0.35, 0.14, 0.21])
         self.mesh = self.load_mesh()
 
         self.passport_top = np.copy(PassportClosedMarkers.passport_top_default)
@@ -466,12 +436,6 @@ class PassportClosed(MoCapObjectMesh, PassportClosedMarkers, MeshToOriginMixin):
         self.markers2origin = np.copy(self.markers2mesh)
 
         self.set_data(passport_top, passport_left, passport_right)
-
-    def load_mesh(self):
-        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
-        mesh.paint_uniform_color(np.array([0.35, 0.14, 0.21]))
-        mesh.compute_triangle_normals()
-        return mesh
 
     def set_data(self, passport_top, passport_left, passport_right):
         if not any(np.isnan(passport_top)):
@@ -505,6 +469,7 @@ class PassportBox(MoCapObjectMesh, PassportBoxMarkers, MeshToOriginMixin):
         super(PassportBox, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_box.stl")
+        self.mesh_color = np.array([0.58, 0.46, 0.25])
         self.mesh = self.load_mesh()
 
         self.box_top = np.copy(PassportBoxMarkers.box_top_default)
@@ -514,12 +479,6 @@ class PassportBox(MoCapObjectMesh, PassportBoxMarkers, MeshToOriginMixin):
         self.markers2origin = np.copy(self.markers2mesh)
 
         self.set_data(box_top, box_left, box_right)
-
-    def load_mesh(self):
-        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
-        mesh.paint_uniform_color(np.array([0.58, 0.46, 0.25]))
-        mesh.compute_triangle_normals()
-        return mesh
 
     def set_data(self, box_top, box_left, box_right):
         if not any(np.isnan(box_top)):
