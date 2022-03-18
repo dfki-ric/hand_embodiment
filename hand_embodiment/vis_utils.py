@@ -304,9 +304,9 @@ class ElectronicTarget(pv.Artist):
             show_frame=True):
         target_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_target.stl")
-        self.target_mesh = o3d.io.read_triangle_mesh(target_filename)
-        self.target_mesh.paint_uniform_color(np.array([0.21, 0.20, 0.46]))
-        self.target_mesh.compute_triangle_normals()
+        self.mesh = o3d.io.read_triangle_mesh(target_filename)
+        self.mesh.paint_uniform_color(np.array([0.21, 0.20, 0.46]))
+        self.mesh.compute_triangle_normals()
 
         self.target_top = np.zeros(3)
         self.target_bottom = np.array([1, 0, 0])
@@ -314,7 +314,7 @@ class ElectronicTarget(pv.Artist):
         self.electronic_target2target_markers = pt.transform_from(
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
             p=-np.array([0.0625 + 0.014, -0.057 + 0.006, 0.0]) / 2.0)
-        self.target_markers2origin = np.copy(self.electronic_target2target_markers)
+        self.markers2origin = np.copy(self.electronic_target2target_markers)
 
         if show_frame:
             self.frame = pv.Frame(np.eye(4), s=0.1)
@@ -329,15 +329,15 @@ class ElectronicTarget(pv.Artist):
         if not any(np.isnan(target_bottom)):
             self.target_bottom = target_bottom
 
-        self.target_mesh.transform(pt.invert_transform(pt.concat(
-            self.electronic_target2target_markers, self.target_markers2origin)))
-        self.target_markers2origin = electronic_target_pose(
+        self.mesh.transform(pt.invert_transform(pt.concat(
+            self.electronic_target2target_markers, self.markers2origin)))
+        self.markers2origin = electronic_target_pose(
             self.target_top, self.target_bottom)
-        self.target_mesh.transform(pt.concat(
-            self.electronic_target2target_markers, self.target_markers2origin))
+        self.mesh.transform(pt.concat(
+            self.electronic_target2target_markers, self.markers2origin))
 
         if self.frame is not None:
-            self.frame.set_data(self.target_markers2origin)
+            self.frame.set_data(self.markers2origin)
 
     @property
     def geometries(self):
@@ -348,7 +348,7 @@ class ElectronicTarget(pv.Artist):
         geometries : list
             List of geometries that can be added to the visualizer.
         """
-        g = [self.target_mesh]
+        g = [self.mesh]
         if self.frame is not None:
             g += self.frame.geometries
         return g
@@ -363,9 +363,9 @@ class ElectronicObject(pv.Artist):
             object_top=np.array([1, 0, 0]), show_frame=True):
         mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_object.stl")
-        self.object_mesh = o3d.io.read_triangle_mesh(mesh_filename)
-        self.object_mesh.paint_uniform_color(np.array([0.68, 0.45, 0.23]))
-        self.object_mesh.compute_triangle_normals()
+        self.mesh = o3d.io.read_triangle_mesh(mesh_filename)
+        self.mesh.paint_uniform_color(np.array([0.68, 0.45, 0.23]))
+        self.mesh.compute_triangle_normals()
 
         self.object_left = np.zeros(3)
         self.object_right = np.array([0, 1, 0])
@@ -374,7 +374,7 @@ class ElectronicObject(pv.Artist):
         self.electronic_object2object_markers = pt.transform_from(
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
             p=np.array([0.0, 0.0, -0.01]))
-        self.object_markers2origin = np.copy(self.electronic_object2object_markers)
+        self.markers2origin = np.copy(self.electronic_object2object_markers)
 
         if show_frame:
             self.frame = pv.Frame(np.eye(4), s=0.1)
@@ -391,15 +391,15 @@ class ElectronicObject(pv.Artist):
         if not any(np.isnan(object_top)):
             self.object_top = object_top
 
-        self.object_mesh.transform(pt.invert_transform(pt.concat(
-            self.electronic_object2object_markers, self.object_markers2origin)))
-        self.object_markers2origin = electronic_object_pose(
+        self.mesh.transform(pt.invert_transform(pt.concat(
+            self.electronic_object2object_markers, self.markers2origin)))
+        self.markers2origin = electronic_object_pose(
             self.object_left, self.object_right, self.object_top)
-        self.object_mesh.transform(pt.concat(
-            self.electronic_object2object_markers, self.object_markers2origin))
+        self.mesh.transform(pt.concat(
+            self.electronic_object2object_markers, self.markers2origin))
 
         if self.frame:
-            self.frame.set_data(self.object_markers2origin)
+            self.frame.set_data(self.markers2origin)
 
     @property
     def geometries(self):
@@ -410,7 +410,7 @@ class ElectronicObject(pv.Artist):
         geometries : list
             List of geometries that can be added to the visualizer.
         """
-        g = [self.object_mesh]
+        g = [self.mesh]
         if self.frame is not None:
             g += self.frame.geometries
         return g
@@ -511,9 +511,9 @@ class PassportClosed(pv.Artist):
                  show_frame=True):
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_closed.stl")
-        self.passport_mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
-        self.passport_mesh.paint_uniform_color(np.array([0.35, 0.14, 0.21]))
-        self.passport_mesh.compute_triangle_normals()
+        self.mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
+        self.mesh.paint_uniform_color(np.array([0.35, 0.14, 0.21]))
+        self.mesh.compute_triangle_normals()
 
         self.passport_top = np.array([0, 1, 0])
         self.passport_left = np.zeros(3)
@@ -522,7 +522,7 @@ class PassportClosed(pv.Artist):
         self.passport2markers = pt.transform_from(
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
             p=-np.array([0.0, 0.0, 0.008]))
-        self.target_markers2origin = np.copy(self.passport2markers)
+        self.markers2origin = np.copy(self.passport2markers)
 
         if show_frame:
             self.frame = pv.Frame(np.eye(4), s=0.1)
@@ -539,15 +539,15 @@ class PassportClosed(pv.Artist):
         if not any(np.isnan(passport_right)):
             self.passport_right = passport_right
 
-        self.passport_mesh.transform(pt.invert_transform(pt.concat(
-            self.passport2markers, self.target_markers2origin)))
-        self.target_markers2origin = passport_closed_pose(
+        self.mesh.transform(pt.invert_transform(pt.concat(
+            self.passport2markers, self.markers2origin)))
+        self.markers2origin = passport_closed_pose(
             self.passport_top, self.passport_left, self.passport_right)
-        self.passport_mesh.transform(pt.concat(
-            self.passport2markers, self.target_markers2origin))
+        self.mesh.transform(pt.concat(
+            self.passport2markers, self.markers2origin))
 
         if self.frame is not None:
-            self.frame.set_data(self.target_markers2origin)
+            self.frame.set_data(self.markers2origin)
 
     @property
     def geometries(self):
@@ -558,7 +558,7 @@ class PassportClosed(pv.Artist):
         geometries : list
             List of geometries that can be added to the visualizer.
         """
-        g = [self.passport_mesh]
+        g = [self.mesh]
         if self.frame is not None:
             g += self.frame.geometries
         return g
@@ -572,9 +572,9 @@ class PassportBox(pv.Artist):
                  box_right=np.array([1, 0, 0]), show_frame=True):
         box_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_box.stl")
-        self.box_mesh = o3d.io.read_triangle_mesh(box_filename)
-        self.box_mesh.paint_uniform_color(np.array([0.58, 0.46, 0.25]))
-        self.box_mesh.compute_triangle_normals()
+        self.mesh = o3d.io.read_triangle_mesh(box_filename)
+        self.mesh.paint_uniform_color(np.array([0.58, 0.46, 0.25]))
+        self.mesh.compute_triangle_normals()
 
         self.box_top = np.array([0, 1, 0])
         self.box_left = np.zeros(3)
@@ -583,7 +583,7 @@ class PassportBox(pv.Artist):
         self.box2markers = pt.transform_from(
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 180, 0])),
             p=-np.array([0.0, 0.0, -0.046]))
-        self.box_markers2origin = np.copy(self.box2markers)
+        self.markers2origin = np.copy(self.box2markers)
 
         if show_frame:
             self.frame = pv.Frame(np.eye(4), s=0.1)
@@ -600,15 +600,15 @@ class PassportBox(pv.Artist):
         if not any(np.isnan(box_right)):
             self.box_right = box_right
 
-        self.box_mesh.transform(pt.invert_transform(pt.concat(
-            self.box2markers, self.box_markers2origin)))
-        self.box_markers2origin = box_pose(
+        self.mesh.transform(pt.invert_transform(pt.concat(
+            self.box2markers, self.markers2origin)))
+        self.markers2origin = box_pose(
             self.box_top, self.box_left, self.box_right)
-        self.box_mesh.transform(pt.concat(
-            self.box2markers, self.box_markers2origin))
+        self.mesh.transform(pt.concat(
+            self.box2markers, self.markers2origin))
 
         if self.frame is not None:
-            self.frame.set_data(self.box_markers2origin)
+            self.frame.set_data(self.markers2origin)
 
     @property
     def geometries(self):
@@ -619,7 +619,7 @@ class PassportBox(pv.Artist):
         geometries : list
             List of geometries that can be added to the visualizer.
         """
-        g = [self.box_mesh]
+        g = [self.mesh]
         if self.frame is not None:
             g += self.frame.geometries
         return g
