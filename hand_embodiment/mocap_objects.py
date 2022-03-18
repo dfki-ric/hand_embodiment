@@ -87,9 +87,11 @@ class PillowMarkers:
 
 
 class ElectronicTargetMarkers:
+    target_top_default = np.array([0, 0, 0])
+    target_bottom_default = np.array([1, 0, 0])
     default_marker_positions = {
-        "target_top": np.array([0, 0, 0]),
-        "target_bottom": np.array([1, 0, 0])
+        "target_top": target_top_default,
+        "target_bottom": target_bottom_default
     }
     marker_names = tuple(default_marker_positions.keys())
 
@@ -99,10 +101,13 @@ class ElectronicTargetMarkers:
 
 
 class ElectronicObjectMarkers:
+    object_left_default = np.zeros(3)
+    object_right_default = np.array([1, 0, 0])
+    object_top_default = np.array([1, 1, 0])
     default_marker_positions = {
-        "object_left": np.zeros(3),
-        "object_right": np.array([1, 0, 0]),
-        "object_top": np.array([1, 1, 0])
+        "object_left": object_left_default,
+        "object_right": object_right_default,
+        "object_top": object_top_default
     }
     marker_names = tuple(default_marker_positions.keys())
 

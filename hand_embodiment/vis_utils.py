@@ -9,8 +9,8 @@ import pytransform3d.transformations as pt
 import pytransform3d.visualizer as pv
 
 from .mocap_objects import (
-    InsoleMarkers, PillowMarkers, electronic_target_pose,
-    electronic_object_pose, PassportMarkers, passport_closed_pose, box_pose)
+    InsoleMarkers, PillowMarkers, ElectronicTargetMarkers,
+    ElectronicObjectMarkers, PassportMarkers, passport_closed_pose, box_pose)
 
 
 def make_coordinate_system(s, short_tick_length=0.01, long_tick_length=0.05):
@@ -295,25 +295,23 @@ class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
         return g
 
 
-class ElectronicTarget(pv.Artist):
+class ElectronicTarget(pv.Artist, ElectronicTargetMarkers, MeshToOriginMixin):
     """Representation of electronic object and target component."""
-    marker_names = ["target_top", "target_bottom"]
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+        p=-np.array([0.0625 + 0.014, -0.057 + 0.006, 0.0]) / 2.0)
 
     def __init__(
-            self, target_top=np.zeros(3), target_bottom=np.array([1, 0, 0]),
+            self, target_top=np.copy(ElectronicTargetMarkers.target_top_default),
+            target_bottom=np.copy(ElectronicTargetMarkers.target_bottom_default),
             show_frame=True):
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_target.stl")
-        self.mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
-        self.mesh.paint_uniform_color(np.array([0.21, 0.20, 0.46]))
-        self.mesh.compute_triangle_normals()
+        self.mesh = self.load_mesh()
 
-        self.target_top = np.zeros(3)
-        self.target_bottom = np.array([1, 0, 0])
+        self.target_top = np.copy(self.target_top_default)
+        self.target_bottom = np.copy(self.target_bottom_default)
 
-        self.markers2mesh = pt.transform_from(
-            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
-            p=-np.array([0.0625 + 0.014, -0.057 + 0.006, 0.0]) / 2.0)
         self.markers2origin = np.copy(self.markers2mesh)
 
         if show_frame:
@@ -323,6 +321,12 @@ class ElectronicTarget(pv.Artist):
 
         self.set_data(target_top, target_bottom)
 
+    def load_mesh(self):
+        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
+        mesh.paint_uniform_color(np.array([0.21, 0.20, 0.46]))
+        mesh.compute_triangle_normals()
+        return mesh
+
     def set_data(self, target_top, target_bottom):
         if not any(np.isnan(target_top)):
             self.target_top = target_top
@@ -331,7 +335,7 @@ class ElectronicTarget(pv.Artist):
 
         self.mesh.transform(pt.invert_transform(pt.concat(
             self.markers2mesh, self.markers2origin)))
-        self.markers2origin = electronic_target_pose(
+        self.markers2origin = self.pose_from_markers(
             self.target_top, self.target_bottom)
         self.mesh.transform(pt.concat(
             self.markers2mesh, self.markers2origin))
@@ -354,26 +358,25 @@ class ElectronicTarget(pv.Artist):
         return g
 
 
-class ElectronicObject(pv.Artist):
+class ElectronicObject(pv.Artist, ElectronicObjectMarkers, MeshToOriginMixin):
     """Representation of electronic object and target component."""
-    marker_names = ["object_left", "object_right", "object_top"]
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+        p=np.array([0.0, 0.0, -0.01]))
 
     def __init__(
-            self, object_left=np.zeros(3), object_right=np.array([0, 1, 0]),
-            object_top=np.array([1, 0, 0]), show_frame=True):
+            self, object_left=np.copy(ElectronicObjectMarkers.object_left_default),
+            object_right=np.copy(ElectronicObjectMarkers.object_right_default),
+            object_top=np.copy(ElectronicObjectMarkers.object_top_default),
+            show_frame=True):
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_object.stl")
-        self.mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
-        self.mesh.paint_uniform_color(np.array([0.68, 0.45, 0.23]))
-        self.mesh.compute_triangle_normals()
+        self.mesh = self.load_mesh()
 
-        self.object_left = np.zeros(3)
-        self.object_right = np.array([0, 1, 0])
-        self.object_top = np.array([1, 0, 0])
+        self.object_left = np.copy(ElectronicObjectMarkers.object_left_default)
+        self.object_right = np.copy(ElectronicObjectMarkers.object_right_default)
+        self.object_top = np.copy(ElectronicObjectMarkers.object_top_default)
 
-        self.markers2mesh = pt.transform_from(
-            R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
-            p=np.array([0.0, 0.0, -0.01]))
         self.markers2origin = np.copy(self.markers2mesh)
 
         if show_frame:
@@ -382,6 +385,12 @@ class ElectronicObject(pv.Artist):
             self.frame = None
 
         self.set_data(object_left, object_right, object_top)
+
+    def load_mesh(self):
+        mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
+        mesh.paint_uniform_color(np.array([0.68, 0.45, 0.23]))
+        mesh.compute_triangle_normals()
+        return mesh
 
     def set_data(self, object_left, object_right, object_top):
         if not any(np.isnan(object_left)):
@@ -393,7 +402,7 @@ class ElectronicObject(pv.Artist):
 
         self.mesh.transform(pt.invert_transform(pt.concat(
             self.markers2mesh, self.markers2origin)))
-        self.markers2origin = electronic_object_pose(
+        self.markers2origin = self.pose_from_markers(
             self.object_left, self.object_right, self.object_top)
         self.mesh.transform(pt.concat(
             self.markers2mesh, self.markers2origin))
