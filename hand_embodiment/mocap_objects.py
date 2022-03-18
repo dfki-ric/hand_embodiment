@@ -323,3 +323,33 @@ class PassportBoxMarkers:
         object_middle = 0.5 * (box_left + box_right) + 0.5 * left2top
         pose[:3, 3] = object_middle
         return pose
+
+
+def extract_mocap_origin2object(dataset, object_info):
+    """Extract transformation from MoCap origin to object.
+
+    Parameters
+    ----------
+    dataset : hand_embodiment.mocap_dataset.MotionCaptureDatasetBase
+        MoCap dataset.
+
+    object_info : class
+        MoCap object information.
+
+    Returns
+    -------
+    mocap_origin2object : array, shape (n_steps, 4, 4)
+        Transform from MoCap origin to object frame.
+    """
+    mocap_origin2object = np.empty((dataset.n_steps, 4, 4))
+    marker_positions = {
+        k: np.copy(v) for k, v in object_info.default_marker_positions.items()}
+    for t in range(dataset.n_steps):
+        additional_markers = dataset.get_additional_markers(t)
+        marker_names = dataset.config.get("additional_markers", ())
+        for marker_name in object_info.marker_names:
+            if not any(np.isnan(additional_markers[marker_names.index(marker_name)])):
+                marker_positions[marker_name] = additional_markers[marker_names.index(marker_name)]
+        object2mocap_origin = object_info.pose_from_markers(**marker_positions)
+        mocap_origin2object[t] = pt.invert_transform(object2mocap_origin)
+    return mocap_origin2object

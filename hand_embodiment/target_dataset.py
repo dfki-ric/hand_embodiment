@@ -154,7 +154,7 @@ class RoboticHandDataset:
         return self.finger_joint_angles[t]
 
 
-def convert_mocap_to_robot(dataset, pipeline, ee2origin=None, verbose=0):
+def convert_mocap_to_robot(dataset, pipeline, mocap_origin2origin=None, verbose=0):
     """Convert MoCap data to robot.
 
     Parameters
@@ -165,7 +165,7 @@ def convert_mocap_to_robot(dataset, pipeline, ee2origin=None, verbose=0):
     pipeline : MoCapToRobot
         Converter from motion capture data to robot commands.
 
-    ee2origin : array, shape (4, 4), optional (default: None)
+    mocap_origin2origin : array, shape (4, 4), optional (default: None)
         Frame conversion to transform end-effector poses to another coordinate
         system.
 
@@ -182,13 +182,13 @@ def convert_mocap_to_robot(dataset, pipeline, ee2origin=None, verbose=0):
 
     start_time = time.time()
     for t in tqdm.tqdm(range(dataset.n_steps)):
-        if ee2origin is not None and ee2origin.ndim == 3:
-            ee2origin_t = ee2origin[t]
+        if mocap_origin2origin is not None and mocap_origin2origin.ndim == 3:
+            mocap_origin2origin_t = mocap_origin2origin[t]
         else:
-            ee2origin_t = ee2origin
+            mocap_origin2origin_t = mocap_origin2origin
         ee_pose, joint_angles = pipeline.estimate(
             dataset.get_hand_markers(t), dataset.get_finger_markers(t),
-            ee2origin=ee2origin_t)
+            mocap_origin2origin=mocap_origin2origin_t)
         output_dataset.append(ee_pose, joint_angles)
 
     if verbose:

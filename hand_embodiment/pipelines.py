@@ -1,4 +1,5 @@
 """Pipelines are high-level interfaces that map human data to robotic hands."""
+import pytransform3d.transformations as pt
 from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.config import load_mano_config, load_record_mapping_config
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
@@ -85,12 +86,12 @@ class MoCapToRobot:
         assert len(hand_markers) == 3, hand_markers
         self.record_mapping_.estimate(hand_markers, finger_markers)
 
-    def estimate_robot(self, ee2origin=None):
+    def estimate_robot(self, mocap_origin2origin=None):
         """Estimate end-effector pose and joint angles of target system from MANO.
 
         Parameters
         ----------
-        ee2origin : array, shape (4, 4)
+        mocap_origin2origin : array, shape (4, 4)
             Transform that will be applied to end-effector pose.
 
         Returns
@@ -105,13 +106,13 @@ class MoCapToRobot:
         joint_angles = self.embodiment_mapping_.solve(
             self.record_mapping_.mano2world_,
             use_cached_forward_kinematics=True)
-        ee_pose = self.transform_manager_.get_transform(
+        ee2mocap_origin = self.transform_manager_.get_transform(
             self.hand_config_["base_frame"], "world")
-        if ee2origin is not None:
-            ee_pose = ee2origin.dot(ee_pose)
-        return ee_pose, joint_angles
+        if mocap_origin2origin is not None:
+            ee2mocap_origin = pt.concat(ee2mocap_origin, mocap_origin2origin)
+        return ee2mocap_origin, joint_angles
 
-    def estimate(self, hand_markers, finger_markers, ee2origin=None):
+    def estimate(self, hand_markers, finger_markers, mocap_origin2origin=None):
         """Estimate state of target system from MoCap markers.
 
         Parameters
@@ -122,7 +123,7 @@ class MoCapToRobot:
         finger_markers : dict (str to array-like)
             Positions of markers on fingers.
 
-        ee2origin : array, shape (4, 4), optional (default: None)
+        mocap_origin2origin : array, shape (4, 4), optional (default: None)
             Transform that will be applied to end-effector pose.
 
         Returns
@@ -135,7 +136,7 @@ class MoCapToRobot:
             is given in the target configuration.
         """
         self.estimate_hand(hand_markers, finger_markers)
-        return self.estimate_robot(ee2origin)
+        return self.estimate_robot(mocap_origin2origin)
 
     def make_hand_artist(self):
         """Create artist that visualizes internal state of the hand.
