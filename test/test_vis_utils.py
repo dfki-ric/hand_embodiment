@@ -46,6 +46,7 @@ def test_transform_from_pillow_mesh_to_origin():
     pillow_right = np.array([-0.11, -0.13, 0.2])
     pillow_top = np.array([0.11, -0.13, 0.2])
     artist = PillowSmall()
-    artist.set_data(pillow_left, pillow_right, pillow_top)
+    artist.set_data(pillow_left=pillow_left, pillow_right=pillow_right,
+                    pillow_top=pillow_top)
     p_in_origin = artist.transform_from_mesh_to_origin([0.1, 0.2, 0.3])
     assert_array_almost_equal(p_in_origin, [0.22, -0.1, 0.405])

@@ -103,10 +103,17 @@ class MoCapObjectMesh(pv.Artist):
         self.mesh_color = mesh_color
         self.mesh = self.load_mesh()
 
+        self.marker_positions = {
+            k: np.copy(v) for k, v in self.default_marker_positions.items()}
+
+        self.markers2origin = np.copy(self.markers2mesh)
+
         if show_frame:
             self.frame = pv.Frame(np.eye(4), s=0.1)
         else:
             self.frame = None
+
+        self.set_data(**self.marker_positions)
 
     def load_mesh(self):
         """Load mesh without specific pose.
@@ -138,6 +145,20 @@ class MoCapObjectMesh(pv.Artist):
         mesh2markers = pt.invert_transform(self.markers2mesh)
         mesh2origin = pt.concat(mesh2markers, self.markers2origin)
         return pt.transform(mesh2origin, pt.vector_to_point(point_in_mesh))[:3]
+
+    def set_data(self, **kwargs):
+        for marker_name, marker_position in kwargs.items():
+            if not any(np.isnan(marker_position)):
+                self.marker_positions[marker_name] = marker_position
+
+        self.mesh.transform(pt.invert_transform(pt.concat(self.markers2mesh, self.markers2origin)))
+
+        self.markers2origin = self.pose_from_markers(**self.marker_positions)
+
+        self.mesh.transform(pt.concat(self.markers2mesh, self.markers2origin))
+
+        if self.frame is not None:
+            self.frame.set_data(self.markers2origin)
 
     @property
     def geometries(self):
@@ -177,27 +198,6 @@ class Insole(MoCapObjectMesh, InsoleMarkers):
             mesh_color=np.array([0.37, 0.28, 0.26]),
             show_frame=show_frame)
 
-        self.insole_back = np.copy(self.insole_back_default)
-        self.insole_front = np.copy(self.insole_front_default)
-        self.markers2origin = np.copy(self.markers2mesh)
-
-        self.set_data(self.insole_back, self.insole_front)
-
-    def set_data(self, insole_back, insole_front):
-        if not any(np.isnan(insole_back)):
-            self.insole_back = insole_back
-        if not any(np.isnan(insole_front)):
-            self.insole_front = insole_front
-
-        self.mesh.transform(pt.invert_transform(pt.concat(self.markers2mesh, self.markers2origin)))
-
-        self.markers2origin = self.pose_from_markers(self.insole_back, self.insole_front)
-
-        self.mesh.transform(pt.concat(self.markers2mesh, self.markers2origin))
-
-        if self.frame is not None:
-            self.frame.set_data(self.markers2origin)
-
 
 class PillowSmall(MoCapObjectMesh, PillowMarkers):
     """Representation of small pillow mesh.
@@ -222,33 +222,6 @@ class PillowSmall(MoCapObjectMesh, PillowMarkers):
             mesh_color=None,
             show_frame=show_frame)
 
-        self.pillow_left = np.copy(self.pillow_left_default)
-        self.pillow_right = np.copy(self.pillow_right_default)
-        self.pillow_top = np.copy(self.pillow_top_default)
-
-        self.markers2origin = np.copy(self.markers2mesh)
-
-        self.set_data(self.pillow_left, self.pillow_right, self.pillow_top)
-
-    def set_data(self, pillow_left, pillow_right, pillow_top):
-        if not any(np.isnan(pillow_left)):
-            self.pillow_left = pillow_left
-        if not any(np.isnan(pillow_right)):
-            self.pillow_right = pillow_right
-        if not any(np.isnan(pillow_top)):
-            self.pillow_top = pillow_top
-
-        self.mesh.transform(pt.invert_transform(
-            pt.concat(self.markers2mesh, self.markers2origin)))
-
-        self.markers2origin = self.pose_from_markers(
-            self.pillow_left, self.pillow_right, self.pillow_top)
-
-        self.mesh.transform(pt.concat(self.markers2mesh, self.markers2origin))
-
-        if self.frame is not None:
-            self.frame.set_data(self.markers2origin)
-
 
 class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers):
     """Representation of electronic object and target component."""
@@ -262,29 +235,6 @@ class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers):
             mesh_color=np.array([0.21, 0.20, 0.46]),
             show_frame=show_frame)
 
-        self.target_top = np.copy(self.target_top_default)
-        self.target_bottom = np.copy(self.target_bottom_default)
-
-        self.markers2origin = np.copy(self.markers2mesh)
-
-        self.set_data(self.target_top, self.target_bottom)
-
-    def set_data(self, target_top, target_bottom):
-        if not any(np.isnan(target_top)):
-            self.target_top = target_top
-        if not any(np.isnan(target_bottom)):
-            self.target_bottom = target_bottom
-
-        self.mesh.transform(pt.invert_transform(pt.concat(
-            self.markers2mesh, self.markers2origin)))
-        self.markers2origin = self.pose_from_markers(
-            self.target_top, self.target_bottom)
-        self.mesh.transform(pt.concat(
-            self.markers2mesh, self.markers2origin))
-
-        if self.frame is not None:
-            self.frame.set_data(self.markers2origin)
-
 
 class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers):
     """Representation of electronic object and target component."""
@@ -297,32 +247,6 @@ class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers):
             mesh_filename=resource_filename("hand_embodiment", "model/objects/electronic_object.stl"),
             mesh_color=np.array([0.68, 0.45, 0.23]),
             show_frame=show_frame)
-
-        self.object_left = np.copy(ElectronicObjectMarkers.object_left_default)
-        self.object_right = np.copy(ElectronicObjectMarkers.object_right_default)
-        self.object_top = np.copy(ElectronicObjectMarkers.object_top_default)
-
-        self.markers2origin = np.copy(self.markers2mesh)
-
-        self.set_data(self.object_left, self.object_right, self.object_top)
-
-    def set_data(self, object_left, object_right, object_top):
-        if not any(np.isnan(object_left)):
-            self.object_left = object_left
-        if not any(np.isnan(object_right)):
-            self.object_right = object_right
-        if not any(np.isnan(object_top)):
-            self.object_top = object_top
-
-        self.mesh.transform(pt.invert_transform(pt.concat(
-            self.markers2mesh, self.markers2origin)))
-        self.markers2origin = self.pose_from_markers(
-            self.object_left, self.object_right, self.object_top)
-        self.mesh.transform(pt.concat(
-            self.markers2mesh, self.markers2origin))
-
-        if self.frame:
-            self.frame.set_data(self.markers2origin)
 
 
 class Passport(MoCapObjectMesh, PassportMarkers):
@@ -348,29 +272,6 @@ class Passport(MoCapObjectMesh, PassportMarkers):
             mesh_color=np.array([0.38, 0.48, 0.42]),
             show_frame=show_frame)
 
-        self.passport_left = np.copy(self.passport_left_default)
-        self.passport_right = np.copy(self.passport_right_default)
-
-        self.markers2origin = np.copy(self.markers2mesh)
-
-        self.set_data(self.passport_left, self.passport_right)
-
-    def set_data(self, passport_left, passport_right):
-        if not any(np.isnan(passport_left)):
-            self.passport_left = passport_left
-        if not any(np.isnan(passport_right)):
-            self.passport_right = passport_right
-
-        self.mesh.transform(pt.invert_transform(pt.concat(
-            self.markers2mesh, self.markers2origin)))
-        self.markers2origin = self.pose_from_markers(
-            self.passport_left, self.passport_right)
-        self.mesh.transform(pt.concat(
-            self.markers2mesh, self.markers2origin))
-
-        if self.frame is not None:
-            self.frame.set_data(self.markers2origin)
-
 
 class PassportClosed(MoCapObjectMesh, PassportClosedMarkers):
     """Representation of passport."""
@@ -384,32 +285,6 @@ class PassportClosed(MoCapObjectMesh, PassportClosedMarkers):
             mesh_color=np.array([0.35, 0.14, 0.21]),
             show_frame=show_frame)
 
-        self.passport_top = np.copy(PassportClosedMarkers.passport_top_default)
-        self.passport_left = np.copy(PassportClosedMarkers.passport_left_default)
-        self.passport_right = np.copy(PassportClosedMarkers.passport_right_default)
-
-        self.markers2origin = np.copy(self.markers2mesh)
-
-        self.set_data(self.passport_top, self.passport_left, self.passport_right)
-
-    def set_data(self, passport_top, passport_left, passport_right):
-        if not any(np.isnan(passport_top)):
-            self.passport_top = passport_top
-        if not any(np.isnan(passport_left)):
-            self.passport_left = passport_left
-        if not any(np.isnan(passport_right)):
-            self.passport_right = passport_right
-
-        self.mesh.transform(pt.invert_transform(pt.concat(
-            self.markers2mesh, self.markers2origin)))
-        self.markers2origin = self.pose_from_markers(
-            self.passport_top, self.passport_left, self.passport_right)
-        self.mesh.transform(pt.concat(
-            self.markers2mesh, self.markers2origin))
-
-        if self.frame is not None:
-            self.frame.set_data(self.markers2origin)
-
 
 class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
     """Representation of passport box."""
@@ -422,32 +297,6 @@ class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
             mesh_filename=resource_filename("hand_embodiment", "model/objects/passport_box.stl"),
             mesh_color=np.array([0.58, 0.46, 0.25]),
             show_frame=show_frame)
-
-        self.box_top = np.copy(PassportBoxMarkers.box_top_default)
-        self.box_left = np.copy(PassportBoxMarkers.box_left_default)
-        self.box_right = np.copy(PassportBoxMarkers.box_right_default)
-
-        self.markers2origin = np.copy(self.markers2mesh)
-
-        self.set_data(self.box_top, self.box_left, self.box_right)
-
-    def set_data(self, box_top, box_left, box_right):
-        if not any(np.isnan(box_top)):
-            self.box_top = box_top
-        if not any(np.isnan(box_left)):
-            self.box_left = box_left
-        if not any(np.isnan(box_right)):
-            self.box_right = box_right
-
-        self.mesh.transform(pt.invert_transform(pt.concat(
-            self.markers2mesh, self.markers2origin)))
-        self.markers2origin = self.pose_from_markers(
-            self.box_top, self.box_left, self.box_right)
-        self.mesh.transform(pt.concat(
-            self.markers2mesh, self.markers2origin))
-
-        if self.frame is not None:
-            self.frame.set_data(self.markers2origin)
 
 
 class AnimationCallback:
