@@ -474,18 +474,16 @@ class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
         return g
 
 
-class PassportClosed(pv.Artist):  # TODO split into two artists
+class PassportClosed(pv.Artist):
     """Representation of passport."""
-    marker_names = ["passport_top", "passport_left", "passport_right",
-                    "box_top", "box_left", "box_right"]
+    marker_names = ["passport_top", "passport_left", "passport_right"]
 
     def __init__(self, passport_top=np.array([0, 1, 0]),
                  passport_left=np.zeros(3), passport_right=np.array([1, 0, 0]),
-                 box_top=np.array([0, 1, 0]), box_left=np.zeros(3),
-                 box_right=np.array([1, 0, 0]), show_frame=True):
-        passport_filename = resource_filename(
+                 show_frame=True):
+        self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_closed.stl")
-        self.passport_mesh = o3d.io.read_triangle_mesh(passport_filename)
+        self.passport_mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
         self.passport_mesh.paint_uniform_color(np.array([0.35, 0.14, 0.21]))
         self.passport_mesh.compute_triangle_normals()
 
@@ -498,6 +496,52 @@ class PassportClosed(pv.Artist):  # TODO split into two artists
             p=-np.array([0.0, 0.0, 0.008]))
         self.target_markers2origin = np.copy(self.passport2markers)
 
+        if show_frame:
+            self.frame = pv.Frame(np.eye(4), s=0.1)
+        else:
+            self.frame = None
+
+        self.set_data(passport_top, passport_left, passport_right)
+
+    def set_data(self, passport_top, passport_left, passport_right):
+        if not any(np.isnan(passport_top)):
+            self.passport_top = passport_top
+        if not any(np.isnan(passport_left)):
+            self.passport_left = passport_left
+        if not any(np.isnan(passport_right)):
+            self.passport_right = passport_right
+
+        self.passport_mesh.transform(pt.invert_transform(pt.concat(
+            self.passport2markers, self.target_markers2origin)))
+        self.target_markers2origin = passport_closed_pose(
+            self.passport_top, self.passport_left, self.passport_right)
+        self.passport_mesh.transform(pt.concat(
+            self.passport2markers, self.target_markers2origin))
+
+        if self.frame is not None:
+            self.frame.set_data(self.target_markers2origin)
+
+    @property
+    def geometries(self):
+        """Expose geometries.
+
+        Returns
+        -------
+        geometries : list
+            List of geometries that can be added to the visualizer.
+        """
+        g = [self.passport_mesh]
+        if self.frame is not None:
+            g += self.frame.geometries
+        return g
+
+
+class PassportBox(pv.Artist):
+    """Representation of passport box."""
+    marker_names = ["box_top", "box_left", "box_right"]
+
+    def __init__(self, box_top=np.array([0, 1, 0]), box_left=np.zeros(3),
+                 box_right=np.array([1, 0, 0]), show_frame=True):
         box_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_box.stl")
         self.box_mesh = o3d.io.read_triangle_mesh(box_filename)
@@ -514,35 +558,19 @@ class PassportClosed(pv.Artist):  # TODO split into two artists
         self.box_markers2origin = np.copy(self.box2markers)
 
         if show_frame:
-            self.frames = [pv.Frame(np.eye(4), s=0.1),
-                           pv.Frame(np.eye(4), s=0.1)]
+            self.frame = pv.Frame(np.eye(4), s=0.1)
         else:
-            self.frames = []
+            self.frames = None
 
-        self.set_data(passport_top, passport_left, passport_right,
-                      box_top, box_left, box_right)
+        self.set_data(box_top, box_left, box_right)
 
-    def set_data(self, passport_top, passport_left, passport_right,
-                 box_top, box_left, box_right):
-        if not any(np.isnan(passport_top)):
-            self.passport_top = passport_top
-        if not any(np.isnan(passport_left)):
-            self.passport_left = passport_left
-        if not any(np.isnan(passport_right)):
-            self.passport_right = passport_right
+    def set_data(self, box_top, box_left, box_right):
         if not any(np.isnan(box_top)):
             self.box_top = box_top
         if not any(np.isnan(box_left)):
             self.box_left = box_left
         if not any(np.isnan(box_right)):
             self.box_right = box_right
-
-        self.passport_mesh.transform(pt.invert_transform(pt.concat(
-            self.passport2markers, self.target_markers2origin)))
-        self.target_markers2origin = passport_closed_pose(
-            self.passport_top, self.passport_left, self.passport_right)
-        self.passport_mesh.transform(pt.concat(
-            self.passport2markers, self.target_markers2origin))
 
         self.box_mesh.transform(pt.invert_transform(pt.concat(
             self.box2markers, self.box_markers2origin)))
@@ -551,9 +579,8 @@ class PassportClosed(pv.Artist):  # TODO split into two artists
         self.box_mesh.transform(pt.concat(
             self.box2markers, self.box_markers2origin))
 
-        if self.frames:
-            self.frames[0].set_data(self.target_markers2origin)
-            self.frames[1].set_data(self.box_markers2origin)
+        if self.frame is not None:
+            self.frame.set_data(self.box_markers2origin)
 
     @property
     def geometries(self):
@@ -564,9 +591,9 @@ class PassportClosed(pv.Artist):  # TODO split into two artists
         geometries : list
             List of geometries that can be added to the visualizer.
         """
-        g = [self.passport_mesh, self.box_mesh]
-        for f in self.frames:
-            g += f.geometries
+        g = [self.box_mesh]
+        if self.frame is not None:
+            g += self.frame.geometries
         return g
 
 
@@ -609,6 +636,7 @@ class AnimationCallback:
             self.object_meshes.append(Passport())
         if self.args.passport_closed:
             self.object_meshes.append(PassportClosed())
+            self.object_meshes.append(PassportBox())
         for object_mesh in self.object_meshes:
             object_mesh.add_artist(self.fig)
 
