@@ -17,14 +17,14 @@ python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config exa
 python bin/convert_segments.py shadow grasp --mocap-config examples/config/markers/20211105_april.yaml --demo-file data/20211105_april/2021*_r_WK37_electronic_set*.json --output 2021_r_WK37_electronic_%d.csv --electronic-object-hack --measure-time --interpolate-missing-markers
 python bin/convert_segments.py mia insert --mia-thumb-adducted --mocap-config examples/config/markers/20211105_april.yaml --demo-file data/20211105_april/2021*_r_WK37_electronic_set*.json --output 2021_r_WK37_electronic_insert_%d.csv --electronic-target-hack --measure-time --interpolate-missing-markers
 python bin/convert_segments.py shadow insert --mocap-config examples/config/markers/20211105_april.yaml --demo-file data/20211105_april/2021*_r_WK37_electronic_set*.json --output 2021_r_WK37_electronic_insert_%d.csv --electronic-target-hack --measure-time --interpolate-missing-markers
-python bin/convert_segments.py mia flip --mia-thumb-adducted --mocap-config examples/config/markers/20211112_april.yaml --demo-file data/20211112_april/20211112_r_WK37_passport_set*.json --output 2021_r_WK37_flip_passport_%d.csv --measure-time --interpolate-missing-markers
-python bin/convert_segments.py shadow flip --mocap-config examples/config/markers/20211112_april.yaml --demo-file data/20211112_april/20211112_r_WK37_passport_set*.json --output 2021_r_WK37_flip_passport_%d.csv --measure-time --interpolate-missing-markers
+python bin/convert_segments.py mia flip --mia-thumb-adducted --mocap-config examples/config/markers/20211112_april.yaml --demo-file data/20211112_april/20211112_r_WK37_passport_set*.json --output 2021_r_WK37_flip_passport_%d.csv --passport-hack --measure-time --interpolate-missing-markers
+python bin/convert_segments.py shadow flip --mocap-config examples/config/markers/20211112_april.yaml --demo-file data/20211112_april/20211112_r_WK37_passport_set*.json --output 2021_r_WK37_flip_passport_%d.csv --passport-hack --measure-time --interpolate-missing-markers
 python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20211126_april_pillow.yaml --demo-file data/20211126_april_pillow/20211126_r_WK37_big_pillow_set*.json --output 2021_r_WK37_big_pillow_%d.csv --measure-time --interpolate-missing-markers
 python bin/convert_segments.py shadow grasp --mocap-config examples/config/markers/20211126_april_pillow.yaml --demo-file data/20211126_april_pillow/20211126_r_WK37_big_pillow_set*.json --output 2021_r_WK37_big_pillow_%d.csv --measure-time --interpolate-missing-markers
 python bin/convert_segments.py mia insert --mocap-config examples/config/markers/20211126_april_insole.yaml --demo-file data/20211126_april_insole/20211126_r_WK37_insert_insole_set*.json --output 2021_r_WK37_insert_insole_%d.csv --measure-time --interpolate-missing-markers
 python bin/convert_segments.py shadow insert --mocap-config examples/config/markers/20211126_april_insole.yaml --demo-file data/20211126_april_insole/20211126_r_WK37_insert_insole_set*.json --output 2021_r_WK37_insert_insole_%d.csv --measure-time --interpolate-missing-markers
-python bin/convert_segments.py mia insert --mia-thumb-adducted --mocap-config examples/config/markers/20211217_april.yaml --demo-file data/20211217_april/20211217_r_WK37_passport_box_set*.json --output 2021_r_WK37_insert_passport_%d.csv --measure-time --interpolate-missing-markers
-python bin/convert_segments.py shadow insert --mocap-config examples/config/markers/20211217_april.yaml --demo-file data/20211217_april/20211217_r_WK37_passport_box_set*.json --output 2021_r_WK37_insert_passport_%d.csv --measure-time --interpolate-missing-markers
+python bin/convert_segments.py mia insert --mia-thumb-adducted --mocap-config examples/config/markers/20211217_april.yaml --demo-file data/20211217_april/20211217_r_WK37_passport_box_set*.json --output 2021_r_WK37_insert_passport_%d.csv --passport-box-hack --measure-time --interpolate-missing-markers
+python bin/convert_segments.py shadow insert --mocap-config examples/config/markers/20211217_april.yaml --demo-file data/20211217_april/20211217_r_WK37_passport_box_set*.json --output 2021_r_WK37_insert_passport_%d.csv --passport-box-hack --measure-time --interpolate-missing-markers
 """
 import argparse
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
@@ -34,8 +34,9 @@ from hand_embodiment.timing import timing_report
 from hand_embodiment.command_line import (
     add_hand_argument, add_configuration_arguments)
 from hand_embodiment.mocap_objects import (
-    ElectronicTargetMarkers, ElectronicObjectMarkers, PillowMarkers,
-    InsoleMarkers, extract_mocap_origin2object)
+    InsoleMarkers, PillowMarkers, ElectronicTargetMarkers, ElectronicObjectMarkers,
+    PassportMarkers, PassportClosedMarkers, PassportBoxMarkers,
+    extract_mocap_origin2object)
 
 
 def parse_args():
@@ -68,16 +69,25 @@ def parse_args():
         help="Measure time of record and embodiment mapping.")
     parser.add_argument(
         "--insole-hack", action="store_true",
-        help="Save insole pose at the beginning of the segment.")
+        help="Insole-relative end-effector coordinates.")
     parser.add_argument(
         "--pillow-hack", action="store_true",
-        help="Save pillow pose at the beginning of the segment.")
+        help="Pillow-relative end-effector coordinates.")
     parser.add_argument(
         "--electronic-object-hack", action="store_true",
-        help="Save electronic object pose at the beginning of the segment.")
+        help="Electronic-object-relative end-effector coordinates.")
     parser.add_argument(
         "--electronic-target-hack", action="store_true",
-        help="Save electronic target pose at the beginning of the segment.")
+        help="Electronic-target-relative end-effector coordinates.")
+    parser.add_argument(
+        "--passport-hack", action="store_true",
+        help="Passport-relative end-effector coordinates.")
+    parser.add_argument(
+        "--passport-closed-hack", action="store_true",
+        help="Passport-relative end-effector coordinates.")
+    parser.add_argument(
+        "--passport-box-hack", action="store_true",
+        help="Passport-box-relative end-effector coordinates.")
 
     return parser.parse_args()
 
@@ -112,7 +122,13 @@ def main():
                 mocap_origin2origin = extract_mocap_origin2object(dataset, ElectronicObjectMarkers)
             elif args.electronic_target_hack:
                 mocap_origin2origin = extract_mocap_origin2object(dataset, ElectronicTargetMarkers)
-            else:  # TODO extend to other objects
+            elif args.passport_hack:
+                mocap_origin2origin = extract_mocap_origin2object(dataset, PassportMarkers)
+            elif args.passport_closed_hack:
+                mocap_origin2origin = extract_mocap_origin2object(dataset, PassportClosedMarkers)
+            elif args.passport_box_hack:
+                mocap_origin2origin = extract_mocap_origin2object(dataset, PassportBoxMarkers)
+            else:
                 mocap_origin2origin = None
 
             output_dataset = convert_mocap_to_robot(
