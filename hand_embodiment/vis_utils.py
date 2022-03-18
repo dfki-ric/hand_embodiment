@@ -98,7 +98,11 @@ class ManoHand(pv.Artist):
 
 
 class MoCapObjectMesh(pv.Artist):
-    def __init__(self, show_frame=True):
+    def __init__(self, mesh_filename, mesh_color=None, show_frame=True):
+        self.mesh_filename = mesh_filename
+        self.mesh_color = mesh_color
+        self.mesh = self.load_mesh()
+
         if show_frame:
             self.frame = pv.Frame(np.eye(4), s=0.1)
         else:
@@ -177,11 +181,10 @@ class Insole(MoCapObjectMesh, InsoleMarkers):
             self, insole_back=np.copy(InsoleMarkers.insole_back_default),
             insole_front=np.copy(InsoleMarkers.insole_front_default),
             show_frame=True):
-        super(Insole, self).__init__(show_frame)
-        self.mesh_filename = resource_filename(
-            "hand_embodiment", "model/objects/insole.stl")
-        self.mesh_color = np.array([0.37, 0.28, 0.26])
-        self.mesh = self.load_mesh()
+        super(Insole, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/insole.stl"),
+            mesh_color=np.array([0.37, 0.28, 0.26]),
+            show_frame=show_frame)
 
         self.insole_back = np.copy(self.insole_back_default)
         self.insole_front = np.copy(self.insole_front_default)
@@ -236,11 +239,10 @@ class PillowSmall(MoCapObjectMesh, PillowMarkers):
             pillow_right=np.copy(PillowMarkers.pillow_right_default),
             pillow_top=np.copy(PillowMarkers.pillow_top_default),
             show_frame=True):
-        super(PillowSmall, self).__init__(show_frame)
-        self.mesh_filename = resource_filename(
-            "hand_embodiment", "model/objects/pillow_small.stl")
-        self.mesh_color = None
-        self.mesh = self.load_mesh()
+        super(PillowSmall, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/pillow_small.stl"),
+            mesh_color=None,
+            show_frame=show_frame)
 
         self.pillow_left = np.copy(self.pillow_left_default)
         self.pillow_right = np.copy(self.pillow_right_default)
@@ -280,11 +282,10 @@ class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers):
             self, target_top=np.copy(ElectronicTargetMarkers.target_top_default),
             target_bottom=np.copy(ElectronicTargetMarkers.target_bottom_default),
             show_frame=True):
-        super(ElectronicTarget, self).__init__(show_frame)
-        self.mesh_filename = resource_filename(
-            "hand_embodiment", "model/objects/electronic_target.stl")
-        self.mesh_color = np.array([0.21, 0.20, 0.46])
-        self.mesh = self.load_mesh()
+        super(ElectronicTarget, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/electronic_target.stl"),
+            mesh_color=np.array([0.21, 0.20, 0.46]),
+            show_frame=show_frame)
 
         self.target_top = np.copy(self.target_top_default)
         self.target_bottom = np.copy(self.target_bottom_default)
@@ -321,11 +322,10 @@ class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers):
             object_right=np.copy(ElectronicObjectMarkers.object_right_default),
             object_top=np.copy(ElectronicObjectMarkers.object_top_default),
             show_frame=True):
-        super(ElectronicObject, self).__init__(show_frame)
-        self.mesh_filename = resource_filename(
-            "hand_embodiment", "model/objects/electronic_object.stl")
-        self.mesh_color = np.array([0.68, 0.45, 0.23])
-        self.mesh = self.load_mesh()
+        super(ElectronicObject, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/electronic_object.stl"),
+            mesh_color=np.array([0.68, 0.45, 0.23]),
+            show_frame=show_frame)
 
         self.object_left = np.copy(ElectronicObjectMarkers.object_left_default)
         self.object_right = np.copy(ElectronicObjectMarkers.object_right_default)
@@ -380,11 +380,10 @@ class Passport(MoCapObjectMesh, PassportMarkers):
     def __init__(self, passport_left=np.copy(PassportMarkers.passport_left_default),
                  passport_right=np.copy(PassportMarkers.passport_right_default),
                  show_frame=True):
-        super(Passport, self).__init__(show_frame)
-        self.mesh_filename = resource_filename(
-            "hand_embodiment", "model/objects/passport_open.stl")
-        self.mesh_color = np.array([0.38, 0.48, 0.42])
-        self.mesh = self.load_mesh()
+        super(Passport, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/passport_open.stl"),
+            mesh_color=np.array([0.38, 0.48, 0.42]),
+            show_frame=show_frame)
 
         self.passport_left = np.copy(self.passport_left_default)
         self.passport_right = np.copy(self.passport_right_default)
@@ -420,11 +419,10 @@ class PassportClosed(MoCapObjectMesh, PassportClosedMarkers):
                  passport_left=np.copy(PassportClosedMarkers.passport_left_default),
                  passport_right=np.copy(PassportClosedMarkers.passport_right_default),
                  show_frame=True):
-        super(PassportClosed, self).__init__(show_frame)
-        self.mesh_filename = resource_filename(
-            "hand_embodiment", "model/objects/passport_closed.stl")
-        self.mesh_color = np.array([0.35, 0.14, 0.21])
-        self.mesh = self.load_mesh()
+        super(PassportClosed, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/passport_closed.stl"),
+            mesh_color=np.array([0.35, 0.14, 0.21]),
+            show_frame=show_frame)
 
         self.passport_top = np.copy(PassportClosedMarkers.passport_top_default)
         self.passport_left = np.copy(PassportClosedMarkers.passport_left_default)
@@ -463,11 +461,10 @@ class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
                  box_left=np.copy(PassportBoxMarkers.box_left_default),
                  box_right=np.copy(PassportBoxMarkers.box_right_default),
                  show_frame=True):
-        super(PassportBox, self).__init__(show_frame)
-        self.mesh_filename = resource_filename(
-            "hand_embodiment", "model/objects/passport_box.stl")
-        self.mesh_color = np.array([0.58, 0.46, 0.25])
-        self.mesh = self.load_mesh()
+        super(PassportBox, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/passport_box.stl"),
+            mesh_color=np.array([0.58, 0.46, 0.25]),
+            show_frame=show_frame)
 
         self.box_top = np.copy(PassportBoxMarkers.box_top_default)
         self.box_left = np.copy(PassportBoxMarkers.box_left_default)
