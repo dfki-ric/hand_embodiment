@@ -159,12 +159,6 @@ class Insole(MoCapObjectMesh, InsoleMarkers):
 
     Parameters
     ----------
-    insole_back : array, shape (3,), optional
-        Position of insole back marker.
-
-    insole_front : array, shape (3,), optional
-        Position of insole front marker.
-
     show_frame : bool, optional (default: True)
         Show frame.
 
