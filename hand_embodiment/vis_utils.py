@@ -302,9 +302,9 @@ class ElectronicTarget(pv.Artist):
     def __init__(
             self, target_top=np.zeros(3), target_bottom=np.array([1, 0, 0]),
             show_frame=True):
-        target_filename = resource_filename(
+        self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_target.stl")
-        self.mesh = o3d.io.read_triangle_mesh(target_filename)
+        self.mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
         self.mesh.paint_uniform_color(np.array([0.21, 0.20, 0.46]))
         self.mesh.compute_triangle_normals()
 
@@ -361,9 +361,9 @@ class ElectronicObject(pv.Artist):
     def __init__(
             self, object_left=np.zeros(3), object_right=np.array([0, 1, 0]),
             object_top=np.array([1, 0, 0]), show_frame=True):
-        mesh_filename = resource_filename(
+        self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_object.stl")
-        self.mesh = o3d.io.read_triangle_mesh(mesh_filename)
+        self.mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
         self.mesh.paint_uniform_color(np.array([0.68, 0.45, 0.23]))
         self.mesh.compute_triangle_normals()
 
@@ -570,9 +570,9 @@ class PassportBox(pv.Artist):
 
     def __init__(self, box_top=np.array([0, 1, 0]), box_left=np.zeros(3),
                  box_right=np.array([1, 0, 0]), show_frame=True):
-        box_filename = resource_filename(
+        self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_box.stl")
-        self.mesh = o3d.io.read_triangle_mesh(box_filename)
+        self.mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
         self.mesh.paint_uniform_color(np.array([0.58, 0.46, 0.25]))
         self.mesh.compute_triangle_normals()
 
