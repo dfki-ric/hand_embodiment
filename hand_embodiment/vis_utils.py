@@ -311,10 +311,10 @@ class ElectronicTarget(pv.Artist):
         self.target_top = np.zeros(3)
         self.target_bottom = np.array([1, 0, 0])
 
-        self.electronic_target2target_markers = pt.transform_from(
+        self.markers2mesh = pt.transform_from(
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
             p=-np.array([0.0625 + 0.014, -0.057 + 0.006, 0.0]) / 2.0)
-        self.markers2origin = np.copy(self.electronic_target2target_markers)
+        self.markers2origin = np.copy(self.markers2mesh)
 
         if show_frame:
             self.frame = pv.Frame(np.eye(4), s=0.1)
@@ -330,11 +330,11 @@ class ElectronicTarget(pv.Artist):
             self.target_bottom = target_bottom
 
         self.mesh.transform(pt.invert_transform(pt.concat(
-            self.electronic_target2target_markers, self.markers2origin)))
+            self.markers2mesh, self.markers2origin)))
         self.markers2origin = electronic_target_pose(
             self.target_top, self.target_bottom)
         self.mesh.transform(pt.concat(
-            self.electronic_target2target_markers, self.markers2origin))
+            self.markers2mesh, self.markers2origin))
 
         if self.frame is not None:
             self.frame.set_data(self.markers2origin)
@@ -371,10 +371,10 @@ class ElectronicObject(pv.Artist):
         self.object_right = np.array([0, 1, 0])
         self.object_top = np.array([1, 0, 0])
 
-        self.electronic_object2object_markers = pt.transform_from(
+        self.markers2mesh = pt.transform_from(
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
             p=np.array([0.0, 0.0, -0.01]))
-        self.markers2origin = np.copy(self.electronic_object2object_markers)
+        self.markers2origin = np.copy(self.markers2mesh)
 
         if show_frame:
             self.frame = pv.Frame(np.eye(4), s=0.1)
@@ -392,11 +392,11 @@ class ElectronicObject(pv.Artist):
             self.object_top = object_top
 
         self.mesh.transform(pt.invert_transform(pt.concat(
-            self.electronic_object2object_markers, self.markers2origin)))
+            self.markers2mesh, self.markers2origin)))
         self.markers2origin = electronic_object_pose(
             self.object_left, self.object_right, self.object_top)
         self.mesh.transform(pt.concat(
-            self.electronic_object2object_markers, self.markers2origin))
+            self.markers2mesh, self.markers2origin))
 
         if self.frame:
             self.frame.set_data(self.markers2origin)
@@ -519,10 +519,10 @@ class PassportClosed(pv.Artist):
         self.passport_left = np.zeros(3)
         self.passport_right = np.array([1, 0, 0])
 
-        self.passport2markers = pt.transform_from(
+        self.markers2mesh = pt.transform_from(
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
             p=-np.array([0.0, 0.0, 0.008]))
-        self.markers2origin = np.copy(self.passport2markers)
+        self.markers2origin = np.copy(self.markers2mesh)
 
         if show_frame:
             self.frame = pv.Frame(np.eye(4), s=0.1)
@@ -540,11 +540,11 @@ class PassportClosed(pv.Artist):
             self.passport_right = passport_right
 
         self.mesh.transform(pt.invert_transform(pt.concat(
-            self.passport2markers, self.markers2origin)))
+            self.markers2mesh, self.markers2origin)))
         self.markers2origin = passport_closed_pose(
             self.passport_top, self.passport_left, self.passport_right)
         self.mesh.transform(pt.concat(
-            self.passport2markers, self.markers2origin))
+            self.markers2mesh, self.markers2origin))
 
         if self.frame is not None:
             self.frame.set_data(self.markers2origin)
@@ -580,10 +580,10 @@ class PassportBox(pv.Artist):
         self.box_left = np.zeros(3)
         self.box_right = np.array([1, 0, 0])
 
-        self.box2markers = pt.transform_from(
+        self.markers2mesh = pt.transform_from(
             R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 180, 0])),
             p=-np.array([0.0, 0.0, -0.046]))
-        self.markers2origin = np.copy(self.box2markers)
+        self.markers2origin = np.copy(self.markers2mesh)
 
         if show_frame:
             self.frame = pv.Frame(np.eye(4), s=0.1)
@@ -601,11 +601,11 @@ class PassportBox(pv.Artist):
             self.box_right = box_right
 
         self.mesh.transform(pt.invert_transform(pt.concat(
-            self.box2markers, self.markers2origin)))
+            self.markers2mesh, self.markers2origin)))
         self.markers2origin = box_pose(
             self.box_top, self.box_left, self.box_right)
         self.mesh.transform(pt.concat(
-            self.box2markers, self.markers2origin))
+            self.markers2mesh, self.markers2origin))
 
         if self.frame is not None:
             self.frame.set_data(self.markers2origin)
