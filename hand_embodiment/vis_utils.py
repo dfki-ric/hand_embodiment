@@ -182,11 +182,6 @@ class Insole(MoCapObjectMesh, InsoleMarkers):
     ----------
     show_frame : bool, optional (default: True)
         Show frame.
-
-    Attributes
-    ----------
-    markers2origin : array, shape (4, 4)
-        Pose of marker frame.
     """
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([180, 0, -4.5])),
@@ -206,11 +201,6 @@ class PillowSmall(MoCapObjectMesh, PillowMarkers):
     ----------
     show_frame : bool, optional (default: True)
         Show frame.
-
-    Attributes
-    ----------
-    markers2origin : array, shape (4, 4)
-        Pose of marker frame.
     """
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 90])),
@@ -224,7 +214,13 @@ class PillowSmall(MoCapObjectMesh, PillowMarkers):
 
 
 class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers):
-    """Representation of electronic object and target component."""
+    """Representation of electronic object and target component.
+
+    Parameters
+    ----------
+    show_frame : bool, optional (default: True)
+        Show frame.
+    """
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
         p=-np.array([0.0625 + 0.014, -0.057 + 0.006, 0.0]) / 2.0)
@@ -237,7 +233,13 @@ class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers):
 
 
 class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers):
-    """Representation of electronic object and target component."""
+    """Representation of electronic object and target component.
+
+    Parameters
+    ----------
+    show_frame : bool, optional (default: True)
+        Show frame.
+    """
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
         p=np.array([0.0, 0.0, -0.01]))
@@ -256,11 +258,6 @@ class Passport(MoCapObjectMesh, PassportMarkers):
     ----------
     show_frame : bool, optional (default: True)
         Show frame.
-
-    Attributes
-    ----------
-    markers2origin : array, shape (4, 4)
-        Pose of marker frame.
     """
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
@@ -274,7 +271,13 @@ class Passport(MoCapObjectMesh, PassportMarkers):
 
 
 class PassportClosed(MoCapObjectMesh, PassportClosedMarkers):
-    """Representation of passport."""
+    """Representation of passport.
+
+    Parameters
+    ----------
+    show_frame : bool, optional (default: True)
+        Show frame.
+    """
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
         p=-np.array([0.0, 0.0, 0.008]))
@@ -287,7 +290,13 @@ class PassportClosed(MoCapObjectMesh, PassportClosedMarkers):
 
 
 class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
-    """Representation of passport box."""
+    """Representation of passport box.
+
+    Parameters
+    ----------
+    show_frame : bool, optional (default: True)
+        Show frame.
+    """
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 180, 0])),
         p=-np.array([0.0, 0.0, -0.046]))
