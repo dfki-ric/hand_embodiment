@@ -204,9 +204,21 @@ class PassportClosedMarkers:
 
 
 class PassportBoxMarkers:
-    box_top_default = np.array([0, 1, 0])
-    box_left_default = np.zeros(3)
-    box_right_default = np.array([1, 0, 0])
+    """Information about passport box markers.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        BT---------
+        |         |
+        |         |
+        |         |
+        BL-------BR
+    """
+    box_top_default = np.array([0.065, 0.08, 0])
+    box_left_default = np.array([0.065, -0.08, 0])
+    box_right_default = np.array([-0.065, -0.08, 0])
     default_marker_positions = {
         "box_top": box_top_default,
         "box_left": box_left_default,
@@ -216,6 +228,24 @@ class PassportBoxMarkers:
 
     @staticmethod
     def pose_from_markers(box_top, box_left, box_right):
+        """Compute pose of box.
+
+        Parameters
+        ----------
+        box_top : array, shape (3,)
+            Top box marker (BT).
+
+        box_left : array, shape (3,)
+            Left box marker (BL).
+
+        box_right : array, shape (3,)
+            Right box marker (BR).
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the box.
+        """
         return box_pose(box_top, box_left, box_right)
 
 
