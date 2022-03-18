@@ -11,11 +11,9 @@ class InsoleMarkers:
 
         IB-------------IF
     """
-    insole_back_default = np.zeros(3)
-    insole_front_default = np.array([0.19, 0, 0])
     default_marker_positions = {
-        "insole_back": insole_back_default,
-        "insole_front": insole_front_default
+        "insole_back": np.zeros(3),
+        "insole_front": np.array([0.19, 0, 0])
     }
     marker_names = tuple(default_marker_positions.keys())
 
@@ -58,13 +56,10 @@ class PillowMarkers:
         |               |
         PL-------------PR
     """
-    pillow_left_default = np.array([-0.11, 0.13, 0])
-    pillow_right_default = np.array([-0.11, -0.13, 0])
-    pillow_top_default = np.array([0.11, -0.13, 0])
     default_marker_positions = {
-        "pillow_left": pillow_left_default,
-        "pillow_right": pillow_right_default,
-        "pillow_top": pillow_top_default
+        "pillow_left": np.array([-0.11, 0.13, 0]),
+        "pillow_right": np.array([-0.11, -0.13, 0]),
+        "pillow_top": np.array([0.11, -0.13, 0])
     }
     marker_names = tuple(default_marker_positions.keys())
 
@@ -106,11 +101,9 @@ class ElectronicTargetMarkers:
 
         TT-------------TB
     """
-    target_top_default = np.array([0.076, 0, 0])
-    target_bottom_default = np.array([0.0, 0, 0])
     default_marker_positions = {
-        "target_top": target_top_default,
-        "target_bottom": target_bottom_default
+        "target_top": np.array([0.076, 0, 0]),
+        "target_bottom": np.array([0.0, 0, 0])
     }
     marker_names = tuple(default_marker_positions.keys())
 
@@ -153,13 +146,10 @@ class ElectronicObjectMarkers:
         |               |
         OL-------------OR
     """
-    object_left_default = np.array([0.025, -0.03, 0])
-    object_right_default = np.array([-0.025, -0.03, 0])
-    object_top_default = np.array([0.025, 0.03, 0])
     default_marker_positions = {
-        "object_left": object_left_default,
-        "object_right": object_right_default,
-        "object_top": object_top_default
+        "object_left": np.array([0.025, -0.03, 0]),
+        "object_right": np.array([-0.025, -0.03, 0]),
+        "object_top": np.array([0.025, 0.03, 0])
     }
     marker_names = tuple(default_marker_positions.keys())
 
@@ -205,11 +195,9 @@ class PassportMarkers:
             |           |
             -------------
     """
-    passport_left_default = np.array([-0.103, 0.0, 0.0])
-    passport_right_default = np.array([0.103, 0.0, 0.0])
     default_marker_positions = {
-        "passport_left": passport_left_default,
-        "passport_right": passport_right_default
+        "passport_left": np.array([-0.103, 0.0, 0.0]),
+        "passport_right": np.array([0.103, 0.0, 0.0])
     }
     marker_names = tuple(default_marker_positions.keys())
 
@@ -251,13 +239,10 @@ class PassportClosedMarkers:
         |         |
         PL-------PR
     """
-    passport_top_default = np.array([-0.043, 0.06, 0])
-    passport_left_default = np.array([0.043, -0.06, 0])
-    passport_right_default = np.array([-0.043, -0.06, 0])
     default_marker_positions = {
-        "passport_top": passport_top_default,
-        "passport_left": passport_left_default,
-        "passport_right": passport_right_default
+        "passport_top": np.array([-0.043, 0.06, 0]),
+        "passport_left": np.array([0.043, -0.06, 0]),
+        "passport_right": np.array([-0.043, -0.06, 0])
     }
     marker_names = tuple(default_marker_positions.keys())
 
@@ -303,13 +288,10 @@ class PassportBoxMarkers:
         |         |
         BL-------BR
     """
-    box_top_default = np.array([0.065, 0.08, 0])
-    box_left_default = np.array([0.065, -0.08, 0])
-    box_right_default = np.array([-0.065, -0.08, 0])
     default_marker_positions = {
-        "box_top": box_top_default,
-        "box_left": box_left_default,
-        "box_right": box_right_default
+        "box_top": np.array([0.065, 0.08, 0]),
+        "box_left": np.array([0.065, -0.08, 0]),
+        "box_right": np.array([-0.065, -0.08, 0])
     }
     marker_names = tuple(default_marker_positions.keys())
 
