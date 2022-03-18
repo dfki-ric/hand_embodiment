@@ -47,26 +47,31 @@ def main():
     for ObjectClass in object_classes:
         # Marker positions in marker frame
         markers = [p for p in ObjectClass.default_marker_positions.values()]
-        fig.scatter(markers, s=MARKER_RADIUS)
+        if not args.hide_marker_frame:
+            fig.scatter(markers, s=MARKER_RADIUS)
 
         # Marker positions in mesh frame
         markers_inv = [
             pt.transform(ObjectClass.markers2mesh, pt.vector_to_point(p))[:3]
             for p in ObjectClass.default_marker_positions.values()]
-        fig.scatter(markers_inv, s=MARKER_RADIUS, c=MARKER_COLORS)
+        if not args.hide_mesh_frame:
+            fig.scatter(markers_inv, s=MARKER_RADIUS, c=MARKER_COLORS)
 
         # Pose in marker frame
         pose = ObjectClass.pose_from_markers(
             **ObjectClass.default_marker_positions)
-        fig.plot_transform(pose, s=0.1)
+        if not args.hide_marker_frame:
+            fig.plot_transform(pose, s=0.1)
 
         # Mesh in marker frame
         artist = ObjectClass()
-        artist.add_artist(fig)
+        if not args.hide_marker_frame:
+            artist.add_artist(fig)
 
         # Mesh in mesh frame
         mesh = artist.load_mesh()
-        fig.add_geometry(mesh)
+        if not args.hide_mesh_frame:
+            fig.add_geometry(mesh)
 
     fig.show()
 
@@ -74,6 +79,10 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser()
     add_object_visualization_arguments(parser)
+    parser.add_argument("--hide-mesh-frame", action="store_true",
+                        help="Hide everything that is in mesh frame.")
+    parser.add_argument("--hide-marker-frame", action="store_true",
+                        help="Hide everything that is in marker frame.")
     return parser.parse_args()
 
 
