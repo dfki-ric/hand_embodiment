@@ -46,11 +46,11 @@ class PillowMarkers:
 
     .. code-block:: text
 
-                        PT
-                        |
-                        |
-                        |
-                        |
+        ---------------PT
+        |               |
+        |               |
+        |               |
+        |               |
         PL-------------PR
     """
     pillow_left_default = np.array([-0.11, 0.13, 0])
@@ -87,6 +87,14 @@ class PillowMarkers:
 
 
 class ElectronicTargetMarkers:
+    """Information about electronic target markers.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        TT-------------TB
+    """
     target_top_default = np.array([0.076, 0, 0])
     target_bottom_default = np.array([0.0, 0, 0])
     default_marker_positions = {
@@ -97,10 +105,38 @@ class ElectronicTargetMarkers:
 
     @staticmethod
     def pose_from_markers(target_top, target_bottom):
+        """Compute pose of electronic target.
+
+        Parameters
+        ----------
+        target_top : array, shape (3,)
+            Position of top marker (TT).
+
+        target_bottom : array, shape (3,)
+            Position of bottom marker (TB).
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the electronic target.
+        """
         return electronic_target_pose(target_top, target_bottom)
 
 
 class ElectronicObjectMarkers:
+    """Information about the electronic object markers.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        OT---------------
+        |               |
+        |               |
+        |               |
+        |               |
+        OL-------------OR
+    """
     object_left_default = np.array([0.025, -0.03, 0])
     object_right_default = np.array([-0.025, -0.03, 0])
     object_top_default = np.array([0.025, 0.03, 0])
@@ -113,6 +149,24 @@ class ElectronicObjectMarkers:
 
     @staticmethod
     def pose_from_markers(object_left, object_right, object_top):
+        """Compute pose of electronic object.
+
+        Parameters
+        ----------
+        object_left : array, shape (3,)
+            Position of left marker (OL).
+
+        object_right : array, shape (3,)
+            Position of right marker (OR).
+
+        object_top : array, shape (3,)
+            Position of top marker (OT).
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the electronic object.
+        """
         return electronic_object_pose(object_left, object_right, object_top)
 
 
