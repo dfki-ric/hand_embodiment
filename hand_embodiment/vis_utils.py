@@ -117,7 +117,29 @@ class MeshToOriginMixin:
         return pt.transform(mesh2origin, pt.vector_to_point(point_in_mesh))[:3]
 
 
-class Insole(pv.Artist, InsoleMarkers, MeshToOriginMixin):
+class MoCapObjectMesh(pv.Artist):
+    def __init__(self, show_frame=True):
+        if show_frame:
+            self.frame = pv.Frame(np.eye(4), s=0.1)
+        else:
+            self.frame = None
+
+    @property
+    def geometries(self):
+        """Expose geometries.
+
+        Returns
+        -------
+        geometries : list
+            List of geometries that can be added to the visualizer.
+        """
+        g = [self.mesh]
+        if self.frame is not None:
+            g += self.frame.geometries
+        return g
+
+
+class Insole(MoCapObjectMesh, InsoleMarkers, MeshToOriginMixin):
     """Representation of insole mesh.
 
     Parameters
@@ -144,6 +166,7 @@ class Insole(pv.Artist, InsoleMarkers, MeshToOriginMixin):
             self, insole_back=np.copy(InsoleMarkers.insole_back_default),
             insole_front=np.copy(InsoleMarkers.insole_front_default),
             show_frame=True):
+        super(Insole, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/insole.stl")
         self.mesh = self.load_mesh()
@@ -151,11 +174,6 @@ class Insole(pv.Artist, InsoleMarkers, MeshToOriginMixin):
         self.insole_back = np.copy(self.insole_back_default)
         self.insole_front = np.copy(self.insole_front_default)
         self.markers2origin = np.copy(self.markers2mesh)
-
-        if show_frame:
-            self.frame = pv.Frame(np.eye(4), s=0.1)
-        else:
-            self.frame = None
 
         self.set_data(insole_back, insole_front)
 
@@ -187,22 +205,8 @@ class Insole(pv.Artist, InsoleMarkers, MeshToOriginMixin):
         if self.frame is not None:
             self.frame.set_data(self.markers2origin)
 
-    @property
-    def geometries(self):
-        """Expose geometries.
 
-        Returns
-        -------
-        geometries : list
-            List of geometries that can be added to the visualizer.
-        """
-        g = [self.mesh]
-        if self.frame is not None:
-            g += self.frame.geometries
-        return g
-
-
-class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
+class PillowSmall(MoCapObjectMesh, PillowMarkers, MeshToOriginMixin):
     """Representation of small pillow mesh.
 
     Parameters
@@ -233,6 +237,7 @@ class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
             pillow_right=np.copy(PillowMarkers.pillow_right_default),
             pillow_top=np.copy(PillowMarkers.pillow_top_default),
             show_frame=True):
+        super(PillowSmall, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/pillow_small.stl")
         self.mesh = self.load_mesh()
@@ -242,11 +247,6 @@ class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
         self.pillow_top = np.copy(self.pillow_top_default)
 
         self.markers2origin = np.copy(self.markers2mesh)
-
-        if show_frame:
-            self.frame = pv.Frame(np.eye(4), s=0.1)
-        else:
-            self.frame = None
 
         self.set_data(pillow_left, pillow_right, pillow_top)
 
@@ -281,22 +281,8 @@ class PillowSmall(pv.Artist, PillowMarkers, MeshToOriginMixin):
         if self.frame is not None:
             self.frame.set_data(self.markers2origin)
 
-    @property
-    def geometries(self):
-        """Expose geometries.
 
-        Returns
-        -------
-        geometries : list
-            List of geometries that can be added to the visualizer.
-        """
-        g = [self.mesh]
-        if self.frame is not None:
-            g += self.frame.geometries
-        return g
-
-
-class ElectronicTarget(pv.Artist, ElectronicTargetMarkers, MeshToOriginMixin):
+class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers, MeshToOriginMixin):
     """Representation of electronic object and target component."""
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
@@ -306,6 +292,7 @@ class ElectronicTarget(pv.Artist, ElectronicTargetMarkers, MeshToOriginMixin):
             self, target_top=np.copy(ElectronicTargetMarkers.target_top_default),
             target_bottom=np.copy(ElectronicTargetMarkers.target_bottom_default),
             show_frame=True):
+        super(ElectronicTarget, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_target.stl")
         self.mesh = self.load_mesh()
@@ -314,11 +301,6 @@ class ElectronicTarget(pv.Artist, ElectronicTargetMarkers, MeshToOriginMixin):
         self.target_bottom = np.copy(self.target_bottom_default)
 
         self.markers2origin = np.copy(self.markers2mesh)
-
-        if show_frame:
-            self.frame = pv.Frame(np.eye(4), s=0.1)
-        else:
-            self.frame = None
 
         self.set_data(target_top, target_bottom)
 
@@ -344,22 +326,8 @@ class ElectronicTarget(pv.Artist, ElectronicTargetMarkers, MeshToOriginMixin):
         if self.frame is not None:
             self.frame.set_data(self.markers2origin)
 
-    @property
-    def geometries(self):
-        """Expose geometries.
 
-        Returns
-        -------
-        geometries : list
-            List of geometries that can be added to the visualizer.
-        """
-        g = [self.mesh]
-        if self.frame is not None:
-            g += self.frame.geometries
-        return g
-
-
-class ElectronicObject(pv.Artist, ElectronicObjectMarkers, MeshToOriginMixin):
+class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers, MeshToOriginMixin):
     """Representation of electronic object and target component."""
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
@@ -370,6 +338,7 @@ class ElectronicObject(pv.Artist, ElectronicObjectMarkers, MeshToOriginMixin):
             object_right=np.copy(ElectronicObjectMarkers.object_right_default),
             object_top=np.copy(ElectronicObjectMarkers.object_top_default),
             show_frame=True):
+        super(ElectronicObject, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/electronic_object.stl")
         self.mesh = self.load_mesh()
@@ -379,11 +348,6 @@ class ElectronicObject(pv.Artist, ElectronicObjectMarkers, MeshToOriginMixin):
         self.object_top = np.copy(ElectronicObjectMarkers.object_top_default)
 
         self.markers2origin = np.copy(self.markers2mesh)
-
-        if show_frame:
-            self.frame = pv.Frame(np.eye(4), s=0.1)
-        else:
-            self.frame = None
 
         self.set_data(object_left, object_right, object_top)
 
@@ -411,22 +375,8 @@ class ElectronicObject(pv.Artist, ElectronicObjectMarkers, MeshToOriginMixin):
         if self.frame:
             self.frame.set_data(self.markers2origin)
 
-    @property
-    def geometries(self):
-        """Expose geometries.
 
-        Returns
-        -------
-        geometries : list
-            List of geometries that can be added to the visualizer.
-        """
-        g = [self.mesh]
-        if self.frame is not None:
-            g += self.frame.geometries
-        return g
-
-
-class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
+class Passport(MoCapObjectMesh, PassportMarkers, MeshToOriginMixin):
     """Representation of open passport.
 
     Parameters
@@ -452,6 +402,7 @@ class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
     def __init__(self, passport_left=np.copy(PassportMarkers.passport_left_default),
                  passport_right=np.copy(PassportMarkers.passport_right_default),
                  show_frame=True):
+        super(Passport, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_open.stl")
         self.mesh = self.load_mesh()
@@ -460,11 +411,6 @@ class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
         self.passport_right = np.copy(self.passport_right_default)
 
         self.markers2origin = np.copy(self.markers2mesh)
-
-        if show_frame:
-            self.frame = pv.Frame(np.eye(4), s=0.1)
-        else:
-            self.frame = None
 
         self.set_data(passport_left, passport_right)
 
@@ -497,22 +443,8 @@ class Passport(pv.Artist, PassportMarkers, MeshToOriginMixin):
         if self.frame is not None:
             self.frame.set_data(self.markers2origin)
 
-    @property
-    def geometries(self):
-        """Expose geometries.
 
-        Returns
-        -------
-        geometries : list
-            List of geometries that can be added to the visualizer.
-        """
-        g = [self.mesh]
-        if self.frame is not None:
-            g += self.frame.geometries
-        return g
-
-
-class PassportClosed(pv.Artist, PassportClosedMarkers, MeshToOriginMixin):
+class PassportClosed(MoCapObjectMesh, PassportClosedMarkers, MeshToOriginMixin):
     """Representation of passport."""
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
@@ -522,6 +454,7 @@ class PassportClosed(pv.Artist, PassportClosedMarkers, MeshToOriginMixin):
                  passport_left=np.copy(PassportClosedMarkers.passport_left_default),
                  passport_right=np.copy(PassportClosedMarkers.passport_right_default),
                  show_frame=True):
+        super(PassportClosed, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_closed.stl")
         self.mesh = self.load_mesh()
@@ -531,11 +464,6 @@ class PassportClosed(pv.Artist, PassportClosedMarkers, MeshToOriginMixin):
         self.passport_right = np.copy(PassportClosedMarkers.passport_right_default)
 
         self.markers2origin = np.copy(self.markers2mesh)
-
-        if show_frame:
-            self.frame = pv.Frame(np.eye(4), s=0.1)
-        else:
-            self.frame = None
 
         self.set_data(passport_top, passport_left, passport_right)
 
@@ -563,22 +491,8 @@ class PassportClosed(pv.Artist, PassportClosedMarkers, MeshToOriginMixin):
         if self.frame is not None:
             self.frame.set_data(self.markers2origin)
 
-    @property
-    def geometries(self):
-        """Expose geometries.
 
-        Returns
-        -------
-        geometries : list
-            List of geometries that can be added to the visualizer.
-        """
-        g = [self.mesh]
-        if self.frame is not None:
-            g += self.frame.geometries
-        return g
-
-
-class PassportBox(pv.Artist, PassportBoxMarkers, MeshToOriginMixin):
+class PassportBox(MoCapObjectMesh, PassportBoxMarkers, MeshToOriginMixin):
     """Representation of passport box."""
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 180, 0])),
@@ -588,6 +502,7 @@ class PassportBox(pv.Artist, PassportBoxMarkers, MeshToOriginMixin):
                  box_left=np.copy(PassportBoxMarkers.box_left_default),
                  box_right=np.copy(PassportBoxMarkers.box_right_default),
                  show_frame=True):
+        super(PassportBox, self).__init__(show_frame)
         self.mesh_filename = resource_filename(
             "hand_embodiment", "model/objects/passport_box.stl")
         self.mesh = self.load_mesh()
@@ -597,11 +512,6 @@ class PassportBox(pv.Artist, PassportBoxMarkers, MeshToOriginMixin):
         self.box_right = np.copy(PassportBoxMarkers.box_right_default)
 
         self.markers2origin = np.copy(self.markers2mesh)
-
-        if show_frame:
-            self.frame = pv.Frame(np.eye(4), s=0.1)
-        else:
-            self.frames = None
 
         self.set_data(box_top, box_left, box_right)
 
@@ -628,20 +538,6 @@ class PassportBox(pv.Artist, PassportBoxMarkers, MeshToOriginMixin):
 
         if self.frame is not None:
             self.frame.set_data(self.markers2origin)
-
-    @property
-    def geometries(self):
-        """Expose geometries.
-
-        Returns
-        -------
-        geometries : list
-            List of geometries that can be added to the visualizer.
-        """
-        g = [self.mesh]
-        if self.frame is not None:
-            g += self.frame.geometries
-        return g
 
 
 class AnimationCallback:
