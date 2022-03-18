@@ -1,12 +1,10 @@
 """Visualize objects that will be used in datasets."""
 import argparse
 import numpy as np
-from hand_embodiment.command_line import add_object_visualization_arguments
-from hand_embodiment.vis_utils import (
-    Insole, PillowSmall, Passport, ElectronicObject, ElectronicTarget,
-    PassportClosed, PassportBox)
 import pytransform3d.visualizer as pv
 import pytransform3d.transformations as pt
+from hand_embodiment.command_line import add_artist_argument
+from hand_embodiment.vis_utils import ARTISTS
 
 
 MARKER_RADIUS = 0.006
@@ -22,29 +20,12 @@ MARKER_COLORS = (
 def main():
     args = parse_args()
 
-    object_classes = []
-
-    if args.insole:
-        object_classes.append(Insole)
-
-    if args.pillow:
-        object_classes.append(PillowSmall)
-
-    if args.electronic:
-        object_classes.append(ElectronicObject)
-        object_classes.append(ElectronicTarget)
-
-    if args.passport:
-        object_classes.append(Passport)
-
-    if args.passport_closed:
-        object_classes.append(PassportClosed)
-        object_classes.append(PassportBox)
-
     fig = pv.figure()
     fig.plot_transform(np.eye(4), s=0.1)
 
-    for ObjectClass in object_classes:
+    if args.artist is not None:
+        ObjectClass = ARTISTS[args.artist]
+
         # Marker positions in marker frame
         markers = [p for p in ObjectClass.default_marker_positions.values()]
         if not args.hide_marker_frame:
@@ -64,7 +45,7 @@ def main():
             fig.plot_transform(pose, s=0.1)
 
         # Mesh in marker frame
-        artist = ObjectClass()
+        artist = ObjectClass(show_frame=False)
         if not args.hide_marker_frame:
             artist.add_artist(fig)
 
@@ -78,7 +59,7 @@ def main():
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    add_object_visualization_arguments(parser)
+    add_artist_argument(parser)
     parser.add_argument("--hide-mesh-frame", action="store_true",
                         help="Hide everything that is in mesh frame.")
     parser.add_argument("--hide-marker-frame", action="store_true",

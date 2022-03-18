@@ -308,6 +308,17 @@ class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
             show_frame=show_frame)
 
 
+ARTISTS = {
+    "insole": Insole,
+    "pillow-small": PillowSmall,
+    "electronic-object": ElectronicObject,
+    "electronic-target": ElectronicTarget,
+    "passport": Passport,
+    "passport-closed": PassportClosed,
+    "passport-box": PassportBox
+}
+
+
 class AnimationCallback:
     """Animation callback.
 

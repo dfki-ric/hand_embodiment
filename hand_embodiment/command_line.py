@@ -1,5 +1,6 @@
 """Common options for command line scripts."""
 from .target_configurations import TARGET_CONFIG
+from .vis_utils import ARTISTS
 
 
 def add_hand_argument(parser):
@@ -87,3 +88,16 @@ def add_object_visualization_arguments(parser):
     parser.add_argument(
         "--passport-closed", action="store_true",
         help="Visualize closed passport.")
+
+
+def add_artist_argument(parser):
+    """Add argument for artist selection to command line parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Command line parser
+    """
+    parser.add_argument(
+        "--artist", choices=ARTISTS.keys(),
+        help=f"Name of pytransform3d artist.")
