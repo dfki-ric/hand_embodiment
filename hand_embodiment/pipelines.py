@@ -41,7 +41,8 @@ class MoCapToRobot:
         self.record_mapping_ = MarkerBasedRecordMapping(
             left=False, mano2hand_markers=mano2hand_markers,
             shape_parameters=betas,
-            record_mapping_config=record_mapping_config, verbose=verbose,
+            record_mapping_config=record_mapping_config,
+            use_fingers=use_fingers, verbose=verbose,
             measure_time=measure_time)
         self.embodiment_mapping_ = HandEmbodiment(
             self.record_mapping_.hand_state_, self.hand_config_,

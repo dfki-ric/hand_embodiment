@@ -142,6 +142,9 @@ class MarkerBasedRecordMapping(TimeableMixin):
     record_mapping_config : dict, optional (default: None)
         Configuration of record mapping.
 
+    use_fingers : tuple of str, optional (default: ('thumb', 'index', 'middle', 'ring', 'little'))
+        Fingers for which we compute the record mapping.
+
     verbose : int, optional (default: 0)
         Verbosity level
 
@@ -150,6 +153,9 @@ class MarkerBasedRecordMapping(TimeableMixin):
 
     Attributes
     ----------
+    finger_names_ : set of str
+        Fingers for which we compute the record mapping.
+
     hand_state_ : mocap.mano.HandState
         MANO hand state. This state will be updated by the record mapping
         and should be used to perform a subsequent embodiment mapping based
@@ -164,10 +170,13 @@ class MarkerBasedRecordMapping(TimeableMixin):
     mano2world_ : array-like, shape (4, 4)
         MANO base pose in world frame.
     """
-    def __init__(self, left=False, mano2hand_markers=None,
-                 shape_parameters=None, hand_state=None,
-                 record_mapping_config=None, verbose=0, measure_time=False):
+    def __init__(
+            self, left=False, mano2hand_markers=None, shape_parameters=None,
+            hand_state=None, record_mapping_config=None,
+            use_fingers=("thumb", "index", "middle", "ring", "little"),
+            verbose=0, measure_time=False):
         super(MarkerBasedRecordMapping, self).__init__(verbose or measure_time)
+        self.finger_names_ = set(use_fingers)
 
         if hand_state is None:
             self.hand_state_ = HandState(left=left)
@@ -186,16 +195,9 @@ class MarkerBasedRecordMapping(TimeableMixin):
             record_mapping_config = MANO_CONFIG
 
         self.mano_finger_kinematics_ = {
-            "thumb": make_finger_kinematics(
-                self.hand_state_, "thumb", record_mapping_config),
-            "index": make_finger_kinematics(
-                self.hand_state_, "index", record_mapping_config),
-            "middle": make_finger_kinematics(
-                self.hand_state_, "middle", record_mapping_config),
-            "ring": make_finger_kinematics(
-                self.hand_state_, "ring", record_mapping_config),
-            "little": make_finger_kinematics(
-                self.hand_state_, "little", record_mapping_config),
+            finger_name: make_finger_kinematics(
+                self.hand_state_, finger_name, record_mapping_config)
+            for finger_name in self.finger_names_
         }
 
         if mano2hand_markers is None:
@@ -234,15 +236,18 @@ class MarkerBasedRecordMapping(TimeableMixin):
         self.mano2world_ = pt.concat(
             self.mano2hand_markers_, self.current_hand_markers2world)
 
+        available_fingers = self.finger_names_.intersection(
+            finger_markers.keys())
+
         world2mano = pt.invert_transform(self.mano2world_, check=False)
-        for finger_name in finger_markers:
+        for finger_name in available_fingers:
             markers_in_world = np.atleast_2d(finger_markers[finger_name])
             self.markers_in_mano[finger_name] = np.dot(
                 pt.vectors_to_points(markers_in_world), world2mano.T)[:, :3]
 
         self.start_measurement()
 
-        for finger_name in finger_markers.keys():
+        for finger_name in available_fingers:
             fe = self.mano_finger_kinematics_[finger_name]
             finger_pose = fe.inverse(self.markers_in_mano[finger_name])
             self.hand_state_.pose[fe.finger_pose_param_indices] = finger_pose
