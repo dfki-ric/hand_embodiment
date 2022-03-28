@@ -29,8 +29,8 @@ additional_markers:
 - middle_middle
 - ring_middle
 - little_middle
-- right_elbow
-- right_shoulder
+- elbow
+- shoulder
 - back_top
 - back_left
 - back_right
