@@ -379,16 +379,25 @@ class AnimationCallback:
         for object_mesh in self.object_meshes:
             marker_names = dataset.config.get("additional_markers", ())
             additional_markers = dataset.get_additional_markers(t)
-            try:
-                object_markers = {
-                    marker_name: additional_markers[marker_names.index(marker_name)]
-                    for marker_name in object_mesh.marker_names}
-            except ValueError as e:
-                raise e from ValueError(
-                    f"Could not find index of one of the markers. Available "
-                    f"marker names: {', '.join(marker_names)}. Required "
-                    f"marker names for object: "
-                    f"{', '.join(object_mesh.marker_names)}.")
+            object_markers = {}
+            for marker_name in object_mesh.marker_names:
+                try:
+                    marker_index = marker_names.index(marker_name)
+                except ValueError as e:
+                    raise e from ValueError(
+                        f"Could not find index of one of the markers. Available "
+                        f"marker names: {', '.join(marker_names)}. Required "
+                        f"marker names for object: "
+                        f"{', '.join(object_mesh.marker_names)}.")
+                try:
+                    object_markers[marker_name] = additional_markers[marker_index]
+                except IndexError:
+                    raise ValueError(
+                        f"Mismatch between expected number of additional "
+                        f"markers ({len(marker_names)}: "
+                        f"{', '.join(marker_names)}) and actual markers. "
+                        f"({len(additional_markers)}). Most likely the marker "
+                        f"configuration does not match the MoCap recording.")
             object_mesh.set_data(**object_markers)
             artists.append(object_mesh)
 
