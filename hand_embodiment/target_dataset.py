@@ -67,13 +67,28 @@ class RoboticHandDataset:
         hand_config : dict
             Configuration of the target hand. Must have a field 'joint_names'.
         """
+        df = self.export_to_dataframe(hand_config)
+        df.to_csv(filename)
+
+    def export_to_dataframe(self, hand_config):
+        """Export dataset to pandas dataframe.
+
+        Parameters
+        ----------
+        hand_config : dict
+            Configuration of the target hand. Must have a field 'joint_names'.
+
+        Returns
+        -------
+        df : pd.DataFrame
+            Dataframe.
+        """
         column_names = []
         for finger in self.finger_names:
             column_names += hand_config["joint_names"][finger]
         additional_joints = list(sorted(self.additional_finger_joint_angles.keys()))
         column_names += additional_joints
         column_names += POSE_COLUMNS
-
         raw_data = []
         for t in range(self.n_samples):
             joint_angles = []
@@ -83,9 +98,8 @@ class RoboticHandDataset:
                 joint_angles.append(self.additional_finger_joint_angles[joint_name])
             pose = pt.pq_from_transform(self.ee_poses[t])
             raw_data.append(np.hstack((joint_angles, pose)))
-
         df = pd.DataFrame(raw_data, columns=column_names)
-        df.to_csv(filename)
+        return df
 
     @staticmethod
     def import_from_file(filename, hand_config):
