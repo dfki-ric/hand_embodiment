@@ -379,9 +379,16 @@ class AnimationCallback:
         for object_mesh in self.object_meshes:
             marker_names = dataset.config.get("additional_markers", ())
             additional_markers = dataset.get_additional_markers(t)
-            object_markers = {
-                marker_name: additional_markers[marker_names.index(marker_name)]
-                for marker_name in object_mesh.marker_names}
+            try:
+                object_markers = {
+                    marker_name: additional_markers[marker_names.index(marker_name)]
+                    for marker_name in object_mesh.marker_names}
+            except IndexError:
+                raise Exception(
+                    f"Could not find index of one of the markers. Available "
+                    f"marker names: {', '.join(marker_names)}; required "
+                    f"marker names for object: "
+                    f"{', '.join(object_mesh.marker_names)}")
             object_mesh.set_data(**object_markers)
             artists.append(object_mesh)
 
