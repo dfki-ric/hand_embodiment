@@ -9,22 +9,34 @@ python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config exa
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210819_april.yaml --demo-file data/20210819_april/20210819_r_WK37_insole_set0.json --output 20210819_r_WK37_insole_set0_%d.csv --insole-hack
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210826_april.yaml --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.json --output 20210826_r_WK37_small_pillow_set0_%d.csv --pillow-hack --measure-time
 
+# grasp insole
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210819_april.yaml --demo-file data/20210819_april/2021*_r_WK37_insole_set*.json --output 2021_r_WK37_insole_%d.csv --insole-hack --measure-time
 python bin/convert_segments.py shadow close --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20211105_april.yaml --demo-file data/20210819_april/2021*_r_WK37_insole_set*.json --output 2021_r_WK37_insole_%d.csv --insole-hack --measure-time
+# grasp small pillow
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210826_april.yaml --demo-file data/20210826_april/2021*_r_WK37_small_pillow_set*.json --output 2021_r_WK37_small_pillow_%d.csv --pillow-hack --measure-time
 python bin/convert_segments.py shadow close --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20211105_april.yaml --demo-file data/20210826_april/2021*_r_WK37_small_pillow_set*.json --output 2021_r_WK37_small_pillow_%d.csv --pillow-hack --measure-time
+# grasp electronic component
 python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20211105_april.yaml --demo-file data/20211105_april/2021*_r_WK37_electronic_set*.json --output 2021_r_WK37_electronic_%d.csv --electronic-object-hack --measure-time --interpolate-missing-markers
 python bin/convert_segments.py shadow grasp --mocap-config examples/config/markers/20211105_april.yaml --demo-file data/20211105_april/2021*_r_WK37_electronic_set*.json --output 2021_r_WK37_electronic_%d.csv --electronic-object-hack --measure-time --interpolate-missing-markers
+# assembly of electronic components
 python bin/convert_segments.py mia insert --mia-thumb-adducted --mocap-config examples/config/markers/20211105_april.yaml --demo-file data/20211105_april/2021*_r_WK37_electronic_set*.json --output 2021_r_WK37_electronic_insert_%d.csv --electronic-target-hack --measure-time --interpolate-missing-markers
 python bin/convert_segments.py shadow insert --mocap-config examples/config/markers/20211105_april.yaml --demo-file data/20211105_april/2021*_r_WK37_electronic_set*.json --output 2021_r_WK37_electronic_insert_%d.csv --electronic-target-hack --measure-time --interpolate-missing-markers
+# flip pages of a passport
 python bin/convert_segments.py mia flip --mia-thumb-adducted --mocap-config examples/config/markers/20211112_april.yaml --demo-file data/20211112_april/20211112_r_WK37_passport_set*.json --output 2021_r_WK37_flip_passport_%d.csv --passport-hack --measure-time --interpolate-missing-markers
 python bin/convert_segments.py shadow flip --mocap-config examples/config/markers/20211112_april.yaml --demo-file data/20211112_april/20211112_r_WK37_passport_set*.json --output 2021_r_WK37_flip_passport_%d.csv --passport-hack --measure-time --interpolate-missing-markers
+# grasp big pillow
 python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20211126_april_pillow.yaml --demo-file data/20211126_april_pillow/20211126_r_WK37_big_pillow_set*.json --output 2021_r_WK37_big_pillow_%d.csv --measure-time --interpolate-missing-markers
 python bin/convert_segments.py shadow grasp --mocap-config examples/config/markers/20211126_april_pillow.yaml --demo-file data/20211126_april_pillow/20211126_r_WK37_big_pillow_set*.json --output 2021_r_WK37_big_pillow_%d.csv --measure-time --interpolate-missing-markers
+# insert insole
 python bin/convert_segments.py mia insert --mocap-config examples/config/markers/20211126_april_insole.yaml --demo-file data/20211126_april_insole/20211126_r_WK37_insert_insole_set*.json --output 2021_r_WK37_insert_insole_%d.csv --measure-time --interpolate-missing-markers
 python bin/convert_segments.py shadow insert --mocap-config examples/config/markers/20211126_april_insole.yaml --demo-file data/20211126_april_insole/20211126_r_WK37_insert_insole_set*.json --output 2021_r_WK37_insert_insole_%d.csv --measure-time --interpolate-missing-markers
+# insert passport in a box
 python bin/convert_segments.py mia insert --mia-thumb-adducted --mocap-config examples/config/markers/20211217_april.yaml --demo-file data/20211217_april/20211217_r_WK37_passport_box_set*.json --output 2021_r_WK37_insert_passport_%d.csv --passport-box-hack --measure-time --interpolate-missing-markers
 python bin/convert_segments.py shadow insert --mocap-config examples/config/markers/20211217_april.yaml --demo-file data/20211217_april/20211217_r_WK37_passport_box_set*.json --output 2021_r_WK37_insert_passport_%d.csv --passport-box-hack --measure-time --interpolate-missing-markers
+
+# insole pinch and lateral grasp
+python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20220328_april.yaml --demo-file data/20220328_april/20220328_r_WK37_insole_lateral_*.json --output 2022_r_WK37_insole_lateral_%d.csv --insole-hack --measure-time
+python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20220328_april.yaml --demo-file data/20220328_april/20220328_r_WK37_insole_pinch_*.json --output 2022_r_WK37_insole_pinch_%d.csv --insole-hack --measure-time
 """
 import argparse
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
