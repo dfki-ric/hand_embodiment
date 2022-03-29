@@ -36,7 +36,7 @@ python bin/convert_segments.py shadow insert --mocap-config examples/config/mark
 
 # insole pinch and lateral grasp
 python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20220328_april.yaml --demo-file data/20220328_april/20220328_r_WK37_insole_lateral_*.json --output 2022_r_WK37_insole_lateral_%d.csv --insole-hack --measure-time
-python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20220328_april.yaml --demo-file data/20220328_april/20220328_r_WK37_insole_pinch_*.json --output 2022_r_WK37_insole_pinch_%d.csv --insole-hack --measure-time
+python bin/convert_segments.py mia close --mia-thumb-adducted --mia-thumb-adducted --mocap-config examples/config/markers/20220328_april.yaml --demo-file data/20220328_april/20220328_r_WK37_insole_pinch_*.json --output 2022_r_WK37_insole_pinch_%d.csv --insole-hack --measure-time
 """
 import argparse
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
