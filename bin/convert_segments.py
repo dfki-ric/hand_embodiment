@@ -34,11 +34,18 @@ python bin/convert_segments.py shadow insert --mocap-config examples/config/mark
 python bin/convert_segments.py mia insert --mia-thumb-adducted --mocap-config examples/config/markers/20211217_april.yaml --demo-file data/20211217_april/20211217_r_WK37_passport_box_set*.json --output 2021_r_WK37_insert_passport_%d.csv --passport-box-hack --measure-time --interpolate-missing-markers
 python bin/convert_segments.py shadow insert --mocap-config examples/config/markers/20211217_april.yaml --demo-file data/20211217_april/20211217_r_WK37_passport_box_set*.json --output 2021_r_WK37_insert_passport_%d.csv --passport-box-hack --measure-time --interpolate-missing-markers
 
-# insole pinch and lateral grasp
-python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20220328_april.yaml --demo-file data/20220328_april/20220328_r_WK37_insole_lateral_*.json --output 2022_r_WK37_insole_lateral_%d.csv --insole-hack --measure-time
-python bin/convert_segments.py mia close --mia-thumb-adducted --mia-thumb-adducted --mocap-config examples/config/markers/20220328_april.yaml --demo-file data/20220328_april/20220328_r_WK37_insole_pinch_*.json --output 2022_r_WK37_insole_pinch_%d.csv --insole-hack --measure-time
+# insole dataset with labels: grasp point (front, middle, back) and grasp type (spherical, pinch, lateral)
+python bin/convert_segments.py mia grasp_spherical_insole_middle --demo-files data/20210819_april/*.json data/20211119_april/*.json data/20220328_april/*.json --label-field l2 --mocap-config examples/config/markers/20211119_april.yaml --output 2022_r_WK37_insole_spherical_middle_%d.csv --insole-hack --measure-time
+python bin/convert_segments.py mia grasp_spherical_insole_front --demo-files data/20210819_april/*.json data/20211119_april/*.json data/20220328_april/*.json --label-field l2 --mocap-config examples/config/markers/20210819_april.yaml --output 2022_r_WK37_insole_spherical_front_%d.csv --insole-hack --measure-time
+python bin/convert_segments.py mia grasp_spherical_insole_back --demo-files data/20210819_april/*.json data/20211119_april/*.json data/20220328_april/*.json --label-field l2 --mocap-config examples/config/markers/20210819_april.yaml --output 2022_r_WK37_insole_spherical_back_%d.csv --insole-hack --measure-time
+python bin/convert_segments.py mia grasp_pinch_insole_back --demo-files data/20210819_april/*.json data/20211119_april/*.json data/20220328_april/*.json --label-field l2 --mia-thumb-adducted --mocap-config examples/config/markers/20220328_april.yaml --output 2022_r_WK37_insole_pinch_back_%d.csv --insole-hack --measure-time
+python bin/convert_segments.py mia grasp_pinch_insole_front --demo-files data/20210819_april/*.json data/20211119_april/*.json data/20220328_april/*.json --label-field l2 --mia-thumb-adducted --mocap-config examples/config/markers/20220328_april.yaml --output 2022_r_WK37_insole_pinch_front_%d.csv --insole-hack --measure-time
+python bin/convert_segments.py mia grasp_lateral_insole_back --demo-files data/20210819_april/*.json data/20211119_april/*.json data/20220328_april/*.json --label-field l2 --mocap-config examples/config/markers/20220328_april.yaml --output 2022_r_WK37_insole_lateral_back_%d.csv --insole-hack --measure-time
+python bin/convert_segments.py mia grasp_lateral_insole_front --demo-files data/20210819_april/*.json data/20211119_april/*.json data/20220328_april/*.json --label-field l2 --mocap-config examples/config/markers/20220328_april.yaml --output 2022_r_WK37_insole_lateral_front_%d.csv --insole-hack --measure-time
 """
 import argparse
+import warnings
+
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.target_dataset import convert_mocap_to_robot
@@ -62,6 +69,9 @@ def parse_args():
         default=["data/20210616_april/metadata/Measurement24.json"],
         help="Demonstrations that should be used.")
     add_configuration_arguments(parser)
+    parser.add_argument(
+        "--label-field", type=str, default="label 1",
+        help="Name of the label field in metadata file.")
     parser.add_argument(
         "--output", type=str, default="segment_%02d.csv",
         help="Output file pattern (.csv).")
@@ -108,7 +118,8 @@ def main():
     args = parse_args()
 
     dataset = SegmentedHandMotionCaptureDataset(
-        args.demo_files[0], args.segment_label, mocap_config=args.mocap_config)
+        args.demo_files[0], args.segment_label, mocap_config=args.mocap_config,
+        label_field=args.label_field)
     pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names,
                             record_mapping_config=args.record_mapping_config,
                             measure_time=args.measure_time)
@@ -117,7 +128,10 @@ def main():
     for demo_file in args.demo_files:
         dataset = SegmentedHandMotionCaptureDataset(
             demo_file, args.segment_label, mocap_config=args.mocap_config,
-            interpolate_missing_markers=args.interpolate_missing_markers)
+            interpolate_missing_markers=args.interpolate_missing_markers,
+            label_field=args.label_field)
+        if dataset.n_segments == 0:
+            continue
 
         if args.hand == "mia":
             angle = 1.0 if args.mia_thumb_adducted else -1.0

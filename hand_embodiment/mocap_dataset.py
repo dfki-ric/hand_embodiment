@@ -459,29 +459,40 @@ class SegmentedHandMotionCaptureDataset(MotionCaptureDatasetBase):
 
     interpolate_missing_markers : bool, optional (default: False)
         Interpolate unknown marker positions (indicated by nan).
+
+    label_field : str, optional (default: 'label')
+        Name of the label field in metadata file.
     """
     def __init__(self, filename, segment_label, mocap_config=None,
-                 interpolate_missing_markers=False, **kwargs):
+                 interpolate_missing_markers=False, label_field="l1",
+                 **kwargs):
         super(SegmentedHandMotionCaptureDataset, self).__init__(mocap_config, **kwargs)
         self.interpolate_missing_markers = interpolate_missing_markers
+        self.label_field = label_field
 
         import mocap
         record = mocap.load(metadata=filename)
         streams = [f"{mn} .*" for mn in self.marker_names]
         try:
+            # old format
             self.segments = record.get_segments_as_dataframes(
-                label=segment_label, streams=streams, label_field="l1",
+                label=segment_label, streams=streams, label_field=label_field,
                 start_field="start_frame", end_field="end_frame")
         except KeyError:
+            # new format
             self.segments = record.get_segments_as_dataframes(
-                label=segment_label, streams=streams, label_field="label 1",
+                label=segment_label, streams=streams, label_field=label_field,
                 start_field="start index", end_field="end index")
+        except ValueError as e:
+            warnings.warn(f"Error occured when loading '{filename}': {e}")
+            self.segments = []
 
         self.n_segments = len(self.segments)
         self.selected_segment = 0
         self.n_steps = 0
 
-        self.select_segment(self.selected_segment)
+        if self.n_segments > 0:
+            self.select_segment(self.selected_segment)
 
     def select_segment(self, i):
         """Select a movement segment from the dataset.
