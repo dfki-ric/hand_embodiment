@@ -6,8 +6,9 @@ Embodiment mapping for robotic hands from human hand motions
 
 ## Idea
 
-The general idea of this software package is to use the MANO hand model to
-represent human hand configurations and then transfer the state of the MANO
+The general idea of this software package is to use the
+[MANO hand model](https://mano.is.tue.mpg.de/) to represent human
+hand configurations and then transfer the state of the MANO
 model to robotic hands. This allows us to quickly change the motion capture
 approach because we have an independent representation of the hand's state.
 Furthermore, we can easily change the target system because we just need to
