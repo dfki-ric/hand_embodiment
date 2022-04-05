@@ -51,6 +51,10 @@ cd ../../../
 pip install -e .
 ```
 
+The Python version used to produce the results in the paper was 3.8. Exact
+versions of the dependencies are listed in
+[`requirements.txt`](requirements.txt).
+
 ### Optional Dependency
 
 The library [mocap](https://git.hb.dfki.de/dfki-interaction/mocap) is only
