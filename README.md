@@ -137,8 +137,8 @@ See [bin/gui_mano_shape.py](bin/gui_mano_shape.py)
 ## Integrating a New Robotic Hand
 
 Each target hand needs a configuration. These are typically stored in
-`hand_embodiment.target_configurations`, but you can define them in your
-own python script or module.
+[`hand_embodiment.target_configurations`](hand_embodiment/target_configurations.py),
+but you can define them in your own python script or module.
 
 A configuration includes information about the kinematic setup of the hand:
 
