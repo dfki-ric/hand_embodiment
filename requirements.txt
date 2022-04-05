@@ -1,0 +1,12 @@
+numpy==1.22.2
+open3d==0.15.2
+pytransform3d==1.13.0
+pandas==1.2.2
+tqdm==4.56.2
+pytest==6.2.3
+pybullet==3.2.1
+setuptools==52.0.0
+cython==0.29.23
+scipy==1.6.2
+pyyaml==5.4.1
+numba==0.53.1
