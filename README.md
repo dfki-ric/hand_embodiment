@@ -67,6 +67,29 @@ stored in a custom format based on JSON.
 Some examples need motion capture data. Ask me about it. Unfortunately,
 we cannot release the data publicly.
 
+## API Documentation
+
+You can build a simple documentation for this project with pdoc3
+(`pip install pdoc3`):
+
+```bash
+pdoc hand_embodiment --html
+```
+
+## Tests
+
+There are unit tests for this library. You need to install
+
+    pip install -e .[test]
+
+to run them. Then you can run the tests from the main folder with
+
+    pytest test/
+
+You can generate a coverage report with
+
+    pytest --cov-report html --cov=hand_embodiment test/
+
 ## Examples
 
 ### Motion Capture Data Fitted to MANO
@@ -216,29 +239,6 @@ visible. Segments with the label `close` are marked with green background
 color. On the left side, there is a list of annotated segments. In the middle
 we can see a 3D view of markers and on the right side we see the segment and
 annotation editor.
-
-## API Documentation
-
-You can build a simple documentation for this project with pdoc3
-(`pip install pdoc3`):
-
-```bash
-pdoc hand_embodiment --html
-```
-
-## Tests
-
-There are unit tests for this library. You need to install
-
-    pip install -e .[test]
-
-to run them. Then you can run the tests from the main folder with
-
-    pytest test/
-
-You can generate a coverage report with
-
-    pytest --cov-report html --cov=hand_embodiment test/
 
 ## Funding
 
