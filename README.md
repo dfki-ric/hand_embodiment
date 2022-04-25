@@ -53,7 +53,7 @@ pip install -e .
 
 The Python version used to produce the results in the paper was 3.8. Exact
 versions of the dependencies are listed in
-[`requirements.txt`](requirements.txt).
+[`requirements.txt`](requirements.txt) (`pip install -r requirements.txt`).
 
 ### Optional Dependency
 
