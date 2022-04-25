@@ -8,7 +8,7 @@ if __name__ == "__main__":
         long_description = f.read()
     setup_config = dict(
         name="hand_embodiment",
-        version="0.0",
+        version="0.1.0",
         maintainer="Alexander Fabisch",
         maintainer_email="alexander.fabisch@dfki.de",
         description="Embodiment mapping for robotic hands from human hand motions",
