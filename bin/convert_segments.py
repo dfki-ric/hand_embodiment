@@ -70,7 +70,7 @@ def parse_args():
         help="Demonstrations that should be used.")
     add_configuration_arguments(parser)
     parser.add_argument(
-        "--label-field", type=str, default="label 1",
+        "--label-field", type=str, default="l1",
         help="Name of the label field in metadata file.")
     parser.add_argument(
         "--output", type=str, default="segment_%02d.csv",
