@@ -37,17 +37,40 @@ This software is implemented in Python. If you do not have a working Python
 environment so far, we recommend to install it with
 [Anaconda](https://www.anaconda.com/). Then you can follow these instructions:
 
+**Clone repository:**
+
 ```bash
-# clone repository
 git clone git@git.hb.dfki.de:dfki-interaction/experimental/hand_embodiment.git
-# prepare MANO model, see subfolder hand_embodiment/hand_embodiment/model/mano
-# for details
+```
+
+**Prepare MANO model:**
+
+1. Download MANO model from [here](https://mano.is.tue.mpg.de/) and unzip it
+   to `hand_embodiment/hand_embodiment/model/mano`.
+2. Go to `hand_embodiment/hand_embodiment/model/mano`.
+```bash
 cd hand_embodiment/hand_embodiment/model/mano
-# download MANO model to this folder from https://mano.is.tue.mpg.de/
-pip install numpy scipy chumpy  # required to convert MANO model
+```
+3. For this preparation step, please install following dependencies.
+   (All dependencies are available via pip and conda)
+    - chumpy
+    - scipy
+```bash
+pip install numpy scipy chumpy
+```
+4. Run `python prepare_mano.py`, you will get the converted MANO model that is
+   compatible with this project.
+```bash
 python prepare_mano.py  # convert model to JSON
+```
+5. Go back to the main folder.
+```bash
 cd ../../../
-# install hand_embodiment from main directory
+```
+
+**Install hand_embodiment from main directory:**
+
+```bash
 pip install -e .
 ```
 
