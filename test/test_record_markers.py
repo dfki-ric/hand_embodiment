@@ -7,9 +7,10 @@ def test_smoke_record():
     rm = MarkerBasedRecordMapping()
     rm.reset()
     rm.estimate(
-        hand_markers=[np.array([0, 0, 0]), np.array([0, 0, 1]),
-                      np.array([0, 1, 0])],
-        finger_markers={"index": [np.array([0, 0, 1])]})
+        hand_markers=[np.array([0, 0, 0], dtype=float),
+                      np.array([0, 0, 1], dtype=float),
+                      np.array([0, 1, 0], dtype=float)],
+        finger_markers={"index": [np.array([0, 0, 1], dtype=float)]})
     pose = np.zeros(48)
     pose[:12] = np.array(
         [0.000000e+00, 0.000000e+00, 0.000000e+00, 4.461087e-02,
