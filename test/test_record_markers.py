@@ -11,7 +11,7 @@ def test_smoke_record():
                       np.array([0, 0, 1], dtype=float),
                       np.array([0, 1, 0], dtype=float)],
         finger_markers={"index": [np.array([0, 0, 1], dtype=float)]})
-    pose = np.zeros(48)
+    pose = np.zeros(48, dtype=float)
     pose[:12] = np.array(
         [0.000000e+00, 0.000000e+00, 0.000000e+00, 4.461087e-02,
          -1.256637e+00, 4.029302e-01, 4.745406e-05, -1.230391e-01,
