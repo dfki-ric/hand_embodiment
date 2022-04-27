@@ -3,7 +3,6 @@ import time
 
 from pkg_resources import resource_filename
 import numpy as np
-import open3d as o3d
 import pytransform3d.rotations as pr
 import pytransform3d.transformations as pt
 import pytransform3d.visualizer as pv
@@ -33,6 +32,7 @@ def make_coordinate_system(s, short_tick_length=0.01, long_tick_length=0.05):
     coordinate_system : o3d.geometry.LineSet
         Coordinate system.
     """
+    import open3d as o3d
     coordinate_system = o3d.geometry.LineSet()
     points = []
     lines = []
@@ -123,6 +123,7 @@ class MoCapObjectMesh(pv.Artist):
         mesh : open3d.geometry.TriangleMesh
             Object mesh.
         """
+        import open3d as o3d
         mesh = o3d.io.read_triangle_mesh(self.mesh_filename)
         if self.mesh_color is not None:
             mesh.paint_uniform_color(self.mesh_color)
