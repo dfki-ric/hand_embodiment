@@ -396,11 +396,28 @@ def kinematic_model_hook_robotiq(kin):
     print("TODO implement kinematic_model_hook_robotiq")
 
 
+class RobotiqJoint:
+    def __init__(self):
+        pass
+
+    def make_virtual_joint(self, joint_name, tm):
+        return (joint_name + "_from", joint_name + "_to", np.eye(4),
+                np.array([0, 0, 0]), (0, 0.7), "revolute")
+
+    def __call__(self, value):
+        return {"finger_joint": value,
+                "right_outer_knuckle_joint": -value,
+                "left_inner_knuckle_joint": -value,
+                "right_inner_knuckle_joint": -value,
+                "left_inner_finger_joint": value,
+                "right_inner_finger_joint": value}
+
+
 ROBOTIQ_CONFIG = {
     "joint_names":
         {
-            "thumb": ["left_finger"],
-            "index": ["right_finger"],
+            "thumb": ["joint"],
+            "index": ["joint"],
         },
     "base_frame": "robotiq_arg2f_base_link",
     "ee_frames":
@@ -428,9 +445,9 @@ ROBOTIQ_CONFIG = {
             "kinematic_model_hook": kinematic_model_hook_robotiq
         },
     "virtual_joints_callbacks":
-        {  # TODO
-        },
-    "coupled_joints": []
+        {
+            "joint": RobotiqJoint(),
+        }
 }
 
 
