@@ -58,7 +58,9 @@ from pkg_resources import resource_filename
 #         ("middle", "j_mrl_fle"),
 #         ("ring", "j_ring_fle"),
 #         ("little", "j_little_fle"),
-#     ]
+#     ],
+#     # function will be executed after embodiment mapping to modify the result
+#     "post_embodiment_hook": ...
 # }
 
 
@@ -423,6 +425,15 @@ def kinematic_model_hook_robotiq(kin):
             [0, 0, 0, 1]]))
 
 
+def robotiq_post_embodiment_hook(joint_angles):
+    angle1 = joint_angles["thumb"][0]
+    angle2 = joint_angles["index"][0]
+    angle = 0.5 * (angle1 + angle2)
+    joint_angles["thumb"][0] = angle
+    joint_angles["index"][0] = angle
+    return {"thumb", "index"}
+
+
 class RobotiqJoint:
     def __init__(self):
         pass
@@ -474,7 +485,8 @@ ROBOTIQ_CONFIG = {
     "virtual_joints_callbacks":
         {
             "joint": RobotiqJoint(),
-        }
+        },
+    "post_embodiment_hook": robotiq_post_embodiment_hook
 }
 
 
