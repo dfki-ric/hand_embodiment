@@ -393,7 +393,34 @@ SHADOW_HAND_CONFIG = {
 
 def kinematic_model_hook_robotiq(kin):
     """Extends kinematic model to include links for embodiment mapping."""
-    print("TODO implement kinematic_model_hook_robotiq")
+    kin.tm.add_transform(
+        "left_finger_tip", "left_inner_finger_pad",
+        np.array([
+            [1, 0, 0, 0.0],
+            [0, 1, 0, 0.03],
+            [0, 0, 1, 0.01],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "left_finger_middle", "left_inner_finger",
+        np.array([
+            [1, 0, 0, 0.0],
+            [0, 1, 0, 0.02],
+            [0, 0, 1, -0.01],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "right_finger_tip", "right_inner_finger_pad",
+        np.array([
+            [1, 0, 0, 0.0],
+            [0, 1, 0, 0.03],
+            [0, 0, 1, 0.01],
+            [0, 0, 0, 1]]))
+    kin.tm.add_transform(
+        "right_finger_middle", "right_inner_finger",
+        np.array([
+            [1, 0, 0, 0.0],
+            [0, 1, 0, 0.02],
+            [0, 0, 1, -0.01],
+            [0, 0, 0, 1]]))
 
 
 class RobotiqJoint:
@@ -413,6 +440,8 @@ class RobotiqJoint:
                 "right_inner_finger_joint": value}
 
 
+manobase2robotiqbase = pt.transform_from_exponential_coordinates(
+    [-0.522, 1.52, -0.881, -0.148, -0.009, 0.083])
 ROBOTIQ_CONFIG = {
     "joint_names":
         {
@@ -430,11 +459,9 @@ ROBOTIQ_CONFIG = {
             "thumb": "left_finger_middle",
             "index": "right_finger_middle",
         },
-    # transform from MANO base to hand base, array with shape (4, 4)
-    "handbase2robotbase": np.eye(4),
+    "handbase2robotbase": manobase2robotiqbase,
     "model":
         {
-            # this xacro is actually just plain urdf:
             "urdf": resource_filename(
                 "hand_embodiment",
                 "model/robotiq_2f_140_gripper_visualization/urdf/"

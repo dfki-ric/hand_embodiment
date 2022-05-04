@@ -332,7 +332,7 @@ def main():
         fig.add_hand_mesh(hand_state.hand_mesh, hand_state.material)
     emb = HandEmbodiment(
         hand_state, hand_config,
-        use_fingers=("thumb", "index", "middle", "ring", "little"))
+        use_fingers=hand_config["ee_frames"].keys())
 
     whitelist = [
         node for node in emb.transform_manager_.nodes
