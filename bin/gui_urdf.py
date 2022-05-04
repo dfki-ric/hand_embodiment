@@ -5,14 +5,13 @@ import open3d as o3d
 import pytransform3d.visualizer as pv
 from open3d.visualization import gui
 from hand_embodiment.embodiment import load_kinematic_model
+from hand_embodiment.command_line import add_hand_argument
 from hand_embodiment.target_configurations import TARGET_CONFIG
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "hand", type=str,
-        help="Name of the hand. Possible options: mia, shadow_hand")
+    add_hand_argument(parser)
     parser.add_argument(
         "--only-link-frames", action="store_true",
         help="Show only link frames.")

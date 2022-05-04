@@ -290,7 +290,12 @@ def load_kinematic_model(hand_config):
     """
     model = hand_config["model"]
     with open(model["urdf"], "r") as f:
-        kin = Kinematics(urdf=f.read(), package_dir=model["package_dir"])
+        extra_args = {}
+        if "package_dir" in model:
+            extra_args["package_dir"] = model["package_dir"]
+        if "mesh_path" in model:
+            extra_args["mesh_path"] = model["mesh_path"]
+        kin = Kinematics(urdf=f.read(), **extra_args)
     if "kinematic_model_hook" in model:
         model["kinematic_model_hook"](kin)
     if "virtual_joints_callbacks" in hand_config:

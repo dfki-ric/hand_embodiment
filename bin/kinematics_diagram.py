@@ -2,7 +2,7 @@
 import argparse
 from hand_embodiment.tools.graphviz_urdf import write_png
 from hand_embodiment.embodiment import load_kinematic_model
-from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
+from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.command_line import add_hand_argument
 
 
@@ -24,12 +24,7 @@ def main():
 
     args = parser.parse_args()
 
-    if args.hand == "mia":
-        hand_config = MIA_CONFIG
-    elif args.hand == "shadow_hand":
-        hand_config = SHADOW_HAND_CONFIG
-    else:
-        raise Exception(f"Unknown hand: '{args.hand}'")
+    hand_config = TARGET_CONFIG[args.hand]
 
     kin = load_kinematic_model(hand_config)
 

@@ -387,11 +387,61 @@ SHADOW_HAND_CONFIG = {
 
 
 ###############################################################################
+# Robotiq 2F-140
+###############################################################################
+
+
+def kinematic_model_hook_robotiq(kin):
+    """Extends kinematic model to include links for embodiment mapping."""
+    print("TODO implement kinematic_model_hook_robotiq")
+
+
+ROBOTIQ_CONFIG = {
+    "joint_names":
+        {
+            "thumb": ["left_finger"],
+            "index": ["right_finger"],
+        },
+    "base_frame": "robotiq_arg2f_base_link",
+    "ee_frames":
+        {
+            "thumb": "left_finger_tip",
+            "index": "right_finger_tip",
+        },
+    "intermediate_frames":
+        {
+            "thumb": "left_finger_middle",
+            "index": "right_finger_middle",
+        },
+    # transform from MANO base to hand base, array with shape (4, 4)
+    "handbase2robotbase": np.eye(4),
+    "model":
+        {
+            # this xacro is actually just plain urdf:
+            "urdf": resource_filename(
+                "hand_embodiment",
+                "model/robotiq_2f_140_gripper_visualization/urdf/"
+                "robotiq_2f_140.urdf"),
+            "mesh_path": resource_filename(
+                "hand_embodiment",
+                "model/robotiq_2f_140_gripper_visualization/meshes/"),
+            "kinematic_model_hook": kinematic_model_hook_robotiq
+        },
+    "virtual_joints_callbacks":
+        {  # TODO
+        },
+    "coupled_joints": []
+}
+
+
+###############################################################################
 # Selection
 ###############################################################################
 
 TARGET_CONFIG = {
     "mia": MIA_CONFIG,
     "shadow_hand": SHADOW_HAND_CONFIG,
-    "shadow": SHADOW_HAND_CONFIG
+    "shadow": SHADOW_HAND_CONFIG,
+    "robotiq": ROBOTIQ_CONFIG,
+    "robotiq_2f_140": ROBOTIQ_CONFIG,
 }
