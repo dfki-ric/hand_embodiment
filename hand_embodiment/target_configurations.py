@@ -428,7 +428,7 @@ def kinematic_model_hook_robotiq(kin):
 def robotiq_post_embodiment_hook(joint_angles):
     angle1 = joint_angles["thumb"][0]
     angle2 = joint_angles["index"][0]
-    angle = 0.5 * (angle1 + angle2)
+    angle = max(angle1, angle2)
     joint_angles["thumb"][0] = angle
     joint_angles["index"][0] = angle
     return {"thumb", "index"}
@@ -452,7 +452,7 @@ class RobotiqJoint:
 
 
 manobase2robotiqbase = pt.transform_from_exponential_coordinates(
-    [-0.522, 1.52, -0.881, -0.148, -0.009, 0.083])
+    [-0.148, 1.489, -0.881, -0.148, -0.009, 0.083])
 ROBOTIQ_CONFIG = {
     "joint_names":
         {
