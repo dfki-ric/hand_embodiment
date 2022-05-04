@@ -11,7 +11,7 @@ from pkg_resources import resource_filename
 # dict. Make sure to add this to the TARGET_CONFIG dict at the end of the file.
 
 # Required fields:
-# MIA_CONFIG = {
+# ROBOT_CONFIG = {
 #     "joint_names":
 #         {  # map finger names to a list of joint names that control the finger
 #             "thumb": [...],
