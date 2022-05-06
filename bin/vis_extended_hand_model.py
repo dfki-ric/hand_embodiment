@@ -176,10 +176,7 @@ def _objects_to_artists(objects):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "hand", type=str,
-        help="Hand for which we show the extended model. Possible "
-             "options: 'mia', 'shadow_hand'")
+    add_hand_argument(parser)
     parser.add_argument(
         "--show-frames", action="store_true", help="Show frames.")
     parser.add_argument(
