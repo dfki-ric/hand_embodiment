@@ -211,7 +211,7 @@ MIA_CONFIG = {
             "urdf": resource_filename(
                 "hand_embodiment",
                 "model/mia_hand_ros_pkgs/mia_hand_description/urdf/"
-                "mia_hand.urdf.xacro"),
+                "mia_hand_SSSA.urdf.xacro"),
             "package_dir": resource_filename(
                 "hand_embodiment", "model/mia_hand_ros_pkgs/"),
             "kinematic_model_hook": kinematic_model_hook_mia
