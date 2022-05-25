@@ -509,7 +509,7 @@ class OffsetJoint:
         return {self.joint_name: value + self.offset}
 
 
-def kinematic_model_hook_barret(kin):
+def kinematic_model_hook_barrett(kin):
     """Extends kinematic model to include links for embodiment mapping."""
     kin.tm.add_transform(
         "finger_1_tip", "finger_1_dist_link",
@@ -571,11 +571,11 @@ def kinematic_model_hook_barret(kin):
             [0, 0, 0, 1]]))
 
 
-manobase2barretbase = pt.transform_from_exponential_coordinates(
+manobase2barrettbase = pt.transform_from_exponential_coordinates(
     #[-1.692, -0.834, 1.551, -0.011, -0.182, 0.019])
     [-1.779, -0.600, 1.536, -0.033, -0.155, 0.016])
 
-BARRET_CONFIG = {
+BARRETT_CONFIG = {
     "joint_names":
         {
             "thumb": ["finger_2_prox_joint", "finger_2_med_joint",
@@ -597,14 +597,14 @@ BARRET_CONFIG = {
             "index": "finger_3_middle",
             "middle": "finger_1_middle",
         },
-    "handbase2robotbase": manobase2barretbase,
+    "handbase2robotbase": manobase2barrettbase,
     "model":
         {
             "urdf": resource_filename(
-                "hand_embodiment", "model/barret_hand/bhand_model.urdf"),
+                "hand_embodiment", "model/barrett_hand/bhand_model.urdf"),
             "mesh_path": resource_filename(
-                "hand_embodiment", "model/barret_hand/"),
-            "kinematic_model_hook": kinematic_model_hook_barret
+                "hand_embodiment", "model/barrett_hand/"),
+            "kinematic_model_hook": kinematic_model_hook_barrett
         },
     "virtual_joints_callbacks":
         {
@@ -624,5 +624,5 @@ TARGET_CONFIG = {
     "shadow": SHADOW_HAND_CONFIG,
     "robotiq": ROBOTIQ_CONFIG,
     "robotiq_2f_140": ROBOTIQ_CONFIG,
-    "barret": BARRET_CONFIG,
+    "barrett": BARRETT_CONFIG,
 }
