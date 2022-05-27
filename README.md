@@ -279,6 +279,14 @@ with your suggested changes. Pushing to the main branch is forbidden. Note
 that there might be no active maintenance and no support since this software
 is only intended as an implementation supporting the corresponding paper.
 
+## License
+
+While this source code is released under BSD-3-clause license, it also contains
+models of robotic hands that have been released under different licenses:
+
+* Mia hand: [BSD-3-clause license](hand_embodiment/model/mia_hand_ros_pkgs/mia_hand_description/LICENSE)
+* Shadow dexterous hand: [GPL v2.0](hand_embodiment/model/sr_common/LICENSE)
+
 ## Funding
 
 This library has been developed initially at the
