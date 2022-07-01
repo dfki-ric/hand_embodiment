@@ -43,6 +43,7 @@ from hand_embodiment.vis_utils import AnimationCallback
 from hand_embodiment.command_line import (
     add_hand_argument, add_animation_arguments, add_configuration_arguments,
     add_playback_control_arguments)
+from hand_embodiment.target_configurations import TARGET_CONFIG
 
 
 def parse_args():
@@ -78,7 +79,9 @@ def main():
         end_idx=args.end_idx,
         interpolate_missing_markers=args.interpolate_missing_markers)
 
-    pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names,
+    finger_names = list(set(dataset.finger_names).intersection(
+        set(TARGET_CONFIG[args.hand]["ee_frames"].keys())))
+    pipeline = MoCapToRobot(args.hand, args.mano_config, finger_names,
                             record_mapping_config=args.record_mapping_config,
                             verbose=1, measure_time=args.measure_time)
 

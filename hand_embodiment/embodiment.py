@@ -105,10 +105,9 @@ class HandEmbodiment(TimeableMixin):
 
         self._update_hand_base_pose(initial_handbase2world)
 
-        if "coupled_joints" in target_config:
-            self.coupled_joints = target_config["coupled_joints"]
-        else:
-            self.coupled_joints = None
+        self.coupled_joints = target_config.get("coupled_joints", None)
+        self.post_embodiment_hook = target_config.get(
+            "post_embodiment_hook", None)
 
         self.verbose = verbose
 
@@ -210,8 +209,16 @@ class HandEmbodiment(TimeableMixin):
                     desired_positions[finger_name],
                     self.joint_angles[finger_name])
 
+        updated_fingers = set()
         if self.coupled_joints is not None:
-            self._average_coupled_joints()
+            updated_fingers.update(self._average_coupled_joints())
+
+        if self.post_embodiment_hook is not None:
+            updated_fingers.update(self.post_embodiment_hook(self.joint_angles))
+
+        for finger_name in updated_fingers:
+            self.finger_forward_kinematics(
+                finger_name, self.joint_angles[finger_name])
 
     def _average_coupled_joints(self):
         """Average joint angles of coupled joints that move together."""
@@ -235,9 +242,7 @@ class HandEmbodiment(TimeableMixin):
                 self.target_finger_chains[finger_name].joint_names.index(
                     joint_name)] = average_angle
             updated_fingers.add(finger_name)
-        for finger_name in updated_fingers:
-            self.finger_forward_kinematics(
-                finger_name, self.joint_angles[finger_name])
+        return updated_fingers
 
     def _update_hand_base_pose(self, handbase2world):
         """Compute pose of the base of the robotic target hand.
@@ -290,7 +295,12 @@ def load_kinematic_model(hand_config):
     """
     model = hand_config["model"]
     with open(model["urdf"], "r") as f:
-        kin = Kinematics(urdf=f.read(), package_dir=model["package_dir"])
+        extra_args = {}
+        if "package_dir" in model:
+            extra_args["package_dir"] = model["package_dir"]
+        if "mesh_path" in model:
+            extra_args["mesh_path"] = model["mesh_path"]
+        kin = Kinematics(urdf=f.read(), **extra_args)
     if "kinematic_model_hook" in model:
         model["kinematic_model_hook"](kin)
     if "virtual_joints_callbacks" in hand_config:

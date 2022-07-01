@@ -20,6 +20,8 @@ The currently implemented motion capture approaches are:
 The currently implemented target systems are:
 * Mia hand from Prensilia
 * Dexterous Hand from Shadow
+* Robotiq 2F-140 gripper
+* BarrettHand
 
 ## Paper
 

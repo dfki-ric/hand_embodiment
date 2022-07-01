@@ -10,10 +10,10 @@ import numpy as np
 import open3d as o3d
 import pytransform3d.visualizer as pv
 import pytransform3d.rotations as pr
-import pytransform3d.transformations as pt
 from pytransform3d import urdf
 from hand_embodiment.embodiment import load_kinematic_model
 from hand_embodiment.target_configurations import TARGET_CONFIG
+from hand_embodiment.command_line import add_hand_argument
 
 
 def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
@@ -176,10 +176,7 @@ def _objects_to_artists(objects):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "hand", type=str,
-        help="Hand for which we show the extended model. Possible "
-             "options: 'mia', 'shadow_hand'")
+    add_hand_argument(parser)
     parser.add_argument(
         "--show-frames", action="store_true", help="Show frames.")
     parser.add_argument(
@@ -244,8 +241,13 @@ def main():
             "visual:rh_rfmiddle/0", "visual:rh_rfdistal/0",
             #"visual:rh_lfknuckle/0", "visual:rh_lfproximal/0",
             "visual:rh_lfmiddle/0", "visual:rh_lfdistal/0"]
+    elif args.hand == "robotiq":
+        # TODO
+        highlight_in_directions = np.array([])
+        highlight_visuals = []
     else:
-        raise ValueError("Hand '%s'" % args.hand)
+        highlight_in_directions = np.array([])
+        highlight_visuals = []
 
     fig = pv.figure()
 

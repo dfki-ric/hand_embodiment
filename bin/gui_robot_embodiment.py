@@ -8,7 +8,7 @@ import pytransform3d.visualizer as pv
 import pytransform3d.transformations as pt
 from hand_embodiment.mano import HandState, apply_shape_parameters
 from hand_embodiment.record_markers import make_finger_kinematics
-from hand_embodiment.target_configurations import MIA_CONFIG, SHADOW_HAND_CONFIG
+from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.embodiment import HandEmbodiment
 from hand_embodiment.config import load_mano_config
 from hand_embodiment.command_line import add_hand_argument
@@ -260,7 +260,6 @@ class OnManoPoseSlider(OnMano):
         self.hand_state.pose[:] = mano_pose
         self.embodiment = embodiment
         self.mano_index_kin = make_finger_kinematics(hand_state, "index")
-        self.q = np.zeros(len(MIA_CONFIG["joint_names"]["index"]))
 
     def pos_changed(self, value, i):
         self.pose[i] = value
@@ -296,11 +295,8 @@ def parse_args():
 def main():
     args = parse_args()
 
-    if args.hand == "shadow_hand":
-        hand_config = SHADOW_HAND_CONFIG
-        mano_pose = np.zeros(48)
-    elif args.hand == "mia":
-        hand_config = MIA_CONFIG
+    hand_config = TARGET_CONFIG[args.hand]
+    if args.hand == "mia":
         mano_pose = np.array([
             0, 0, 0,
             -0.068, 0, 0.068,
@@ -320,7 +316,7 @@ def main():
             0, 0, 0
         ])
     else:
-        raise Exception(f"Unknown hand: '{args.hand}'")
+        mano_pose = np.zeros(48)
 
     fig = Figure(args.hand, 1920, 1080, ax_s=0.2)
 
@@ -336,7 +332,7 @@ def main():
         fig.add_hand_mesh(hand_state.hand_mesh, hand_state.material)
     emb = HandEmbodiment(
         hand_state, hand_config,
-        use_fingers=("thumb", "index", "middle", "ring", "little"))
+        use_fingers=hand_config["ee_frames"].keys())
 
     whitelist = [
         node for node in emb.transform_manager_.nodes
