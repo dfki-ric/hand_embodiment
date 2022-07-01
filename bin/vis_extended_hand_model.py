@@ -90,17 +90,15 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
     highlight_vertex_indices = dict()
     for visual_frame, obj in visuals.items():
         if visual_frame in highlight_visuals:
-            try:
-                obj.mesh.compute_triangle_normals()
-            except AttributeError:
-                continue
-            vertex_colors = np.array(obj.mesh.vertex_colors)
+            mesh = obj.geometries[0]
+            mesh.compute_triangle_normals()
+            vertex_colors = np.array(mesh.vertex_colors)
             if len(vertex_colors) == 0:
-                obj.mesh.paint_uniform_color((0, 0, 0))
-                vertex_colors = np.array(obj.mesh.vertex_colors)
-            vertices = np.array(obj.mesh.vertices)
-            triangles = np.array(obj.mesh.triangles)
-            triangle_normals = np.array(obj.mesh.triangle_normals)
+                mesh.paint_uniform_color((0, 0, 0))
+                vertex_colors = np.array(mesh.vertex_colors)
+            vertices = np.array(mesh.vertices)
+            triangles = np.array(mesh.triangles)
+            triangle_normals = np.array(mesh.triangle_normals)
             highlight_vertices[visual_frame] = set()
             highlight_vertex_indices[visual_frame] = list()
             for i in range(len(vertices)):
@@ -113,7 +111,7 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
                     if return_highlighted_mesh:
                         highlight_vertices[visual_frame].add(tuple(vertices[i]))
                         highlight_vertex_indices[visual_frame].append(i)
-            obj.mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
+            mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
 
     for collision_object_frame, obj in collision_objects.items():
         A2B = tm.get_transform(collision_object_frame, frame)
@@ -241,7 +239,12 @@ def main():
             "visual:rh_rfmiddle/0", "visual:rh_rfdistal/0",
             #"visual:rh_lfknuckle/0", "visual:rh_lfproximal/0",
             "visual:rh_lfmiddle/0", "visual:rh_lfdistal/0"]
-    elif args.hand == "robotiq":
+    elif args.hand in ["robotiq", "robotiq_2f_140"]:
+        # TODO
+        highlight_in_directions = np.array([[0.0, 0.0, 0.175]])
+        highlight_visuals = ["visual:left_inner_finger_pad/0",
+                             "visual:right_inner_finger_pad/0"]
+    elif args.hand == "barrett":
         # TODO
         highlight_in_directions = np.array([])
         highlight_visuals = []
