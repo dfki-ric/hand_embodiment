@@ -288,6 +288,7 @@ models of robotic hands that have been released under different licenses:
 
 * Mia hand: [BSD-3-clause license](hand_embodiment/model/mia_hand_ros_pkgs/mia_hand_description/LICENSE)
 * Shadow dexterous hand: [GPL v2.0](hand_embodiment/model/sr_common/LICENSE)
+* Robotiq 2F-140: [BSD-2-clause license](hand_embodiment/model/robotiq_2f_140_gripper_visualization/LICENSE)
 
 ## Funding
 
