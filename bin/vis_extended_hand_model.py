@@ -220,7 +220,7 @@ def main():
             #"visual:little_fle/0"
             "visual:little_fle/1",
         ]
-    elif args.hand == "shadow_hand":
+    elif args.hand in ["shadow", "shadow_hand"]:
         highlight_in_directions = np.array([[0, -0.08, 0.4],
                                             [0, -0.08, 0.45],
                                             [0, -0.08, 0.5],
