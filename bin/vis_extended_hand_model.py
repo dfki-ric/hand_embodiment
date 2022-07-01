@@ -106,7 +106,7 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
                 if len(triangle_indices) == 0:
                     continue
                 mean_norm = pr.norm_vector(triangle_normals[triangle_indices].mean(axis=0))
-                if all((highlight_in_directions - vertices[np.newaxis, i]).dot(mean_norm) > 0):
+                if all((highlight_in_directions - vertices[np.newaxis, i]).dot(mean_norm) > 0.0):
                     vertex_colors[i] = (1, 0, 0)
                     if return_highlighted_mesh:
                         highlight_vertices[visual_frame].add(tuple(vertices[i]))
@@ -240,14 +240,18 @@ def main():
             #"visual:rh_lfknuckle/0", "visual:rh_lfproximal/0",
             "visual:rh_lfmiddle/0", "visual:rh_lfdistal/0"]
     elif args.hand in ["robotiq", "robotiq_2f_140"]:
-        # TODO
         highlight_in_directions = np.array([[0.0, 0.0, 0.175]])
         highlight_visuals = ["visual:left_inner_finger_pad/0",
                              "visual:right_inner_finger_pad/0"]
     elif args.hand == "barrett":
-        # TODO
-        highlight_in_directions = np.array([])
-        highlight_visuals = []
+        highlight_in_directions = np.array([
+            [0.0, 0.0, 0.4]])
+        highlight_visuals = [#"visual:finger_1_med_liink/0",
+                             "visual:finger_1_dist_link/0",
+                             #"visual:finger_2_med_link/0",
+                             "visual:finger_2_dist_link/0",
+                             #"visual:finger_3_med_link/0",
+                             "visual:finger_3_dist_link/0"]
     else:
         highlight_in_directions = np.array([])
         highlight_visuals = []
