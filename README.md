@@ -42,7 +42,7 @@ environment so far, we recommend to install it with
 **Clone repository:**
 
 ```bash
-git clone git@git.hb.dfki.de:dfki-interaction/experimental/hand_embodiment.git
+git clone https://github.com/dfki-ric/hand_embodiment.git
 ```
 
 **Prepare MANO model:**
