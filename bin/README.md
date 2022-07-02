@@ -2,7 +2,7 @@
 
 ## Visualize Record Mapping
 
-[vis_markers_to_mano_trajectory.py](vis_markers_to_mano_trajectory.py):
+Script: [vis_markers_to_mano_trajectory.py](vis_markers_to_mano_trajectory.py)
 
 Example calls:
 
