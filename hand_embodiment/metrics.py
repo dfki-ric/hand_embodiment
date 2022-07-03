@@ -86,8 +86,10 @@ SHADOW_CONTACT_SURFACE_VERTICES = {
 
 ROBOTIQ_CONTACT_SURFACE_VERTICES = {
     "thumb": {
+        "visual:left_inner_finger_pad/0": [0, 1, 4, 5]
     },
     "index": {
+        "visual:right_inner_finger_pad/0": [0, 1, 4, 5]
     }
 }
 
