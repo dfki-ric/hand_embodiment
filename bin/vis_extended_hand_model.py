@@ -308,7 +308,9 @@ def _configure_highlights(args):
                              "visual:right_inner_finger_pad/0"]
     elif args.hand == "barrett":
         highlight_in_directions = np.array([
-            [0.0, 0.0, 0.4]])
+            [0.0, 0.0, 0.4],
+            [-0.1, 0.0, 0.4],
+            [0.1, 0.0, 0.4]])
         highlight_visuals = [  # "visual:finger_1_med_liink/0",
             "visual:finger_1_dist_link/0",
             # "visual:finger_2_med_link/0",
