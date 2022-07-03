@@ -13,13 +13,13 @@ from pytransform3d import urdf, visualizer as pv
 from hand_embodiment.embodiment import load_kinematic_model
 from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.command_line import add_hand_argument
+from hand_embodiment.metrics import CONTACT_SURFACE_VERTICES
 
 
 def plot_tm(
-        tm, frame, show_frames=False, show_name=False, whitelist=None,
+        tm, frame, hand, show_frames=False, show_name=False, whitelist=None,
         s=1.0, highlight_visuals=(), highlight_in_directions=np.zeros((1, 3)),
-        return_highlighted_mesh=False):
-
+        return_highlighted_mesh=False, highlight_stored_vertices=False):
     if frame not in tm.nodes:
         raise KeyError("Unknown frame '%s'" % frame)
 
@@ -35,9 +35,13 @@ def plot_tm(
 
     _place_visuals(tm, frame, visuals)
 
-    highlight_vertex_indices, highlight_vertices = _highlight_vertices(
-        visuals, highlight_in_directions, highlight_visuals,
-        return_highlighted_mesh)
+    if highlight_stored_vertices:
+        highlight_vertex_indices, highlight_vertices = _highlight_stored_vertices(
+            hand, visuals, return_highlighted_mesh)
+    else:
+        highlight_vertex_indices, highlight_vertices = _highlight_vertices(
+            visuals, highlight_in_directions, highlight_visuals,
+            return_highlighted_mesh)
 
     for obj in visuals.values():
         geometries += obj.geometries
@@ -61,6 +65,29 @@ def _show_frames(tm, frame, s, show_name, whitelist):
         except KeyError:
             pass  # Frame is not connected to the reference frame
     return frames
+
+
+def _highlight_stored_vertices(hand, visuals, return_highlighted_mesh):
+    highlight_vertex_indices = dict()
+    highlight_vertices = dict()
+    contact_surface_vertices_per_finger = CONTACT_SURFACE_VERTICES[hand]
+    contact_surface_vertices = dict()
+    for finger_name in contact_surface_vertices_per_finger:
+        contact_surface_vertices.update(
+            contact_surface_vertices_per_finger[finger_name])
+    for visual_frame, obj in visuals.items():
+        if visual_frame in contact_surface_vertices:
+            mesh = obj.geometries[0]
+            mesh.compute_triangle_normals()
+            vertex_colors = _get_vertex_colors(mesh)
+            highlighted_vertices = contact_surface_vertices[visual_frame]
+            vertex_colors[highlighted_vertices] = (1, 0, 0)
+            mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
+            vertices = np.array(mesh.vertices)[highlighted_vertices]
+            if return_highlighted_mesh:
+                highlight_vertex_indices[visual_frame] = highlighted_vertices
+                highlight_vertices[visual_frame] = vertices
+    return highlight_vertex_indices, highlight_vertices
 
 
 def _highlight_vertices(
@@ -172,6 +199,9 @@ def main():
     parser.add_argument(
         "--write-vertex-indices", action="store_true",
         help="Write indices of highlighted vertices to files.")
+    parser.add_argument(
+        "--highlight-stored-vertices", action="store_true",
+        help="Highlight vertices used for similarity metric computation.")
     args = parser.parse_args()
 
     highlight_in_directions, highlight_visuals = _configure_highlights(args)
@@ -194,10 +224,12 @@ def main():
                 fig.plot_sphere(radius=0.005, A2B=finger2base, c=(1, 0, 0))
 
     geometries, highlighted_vertices, highlighted_vertex_indices = plot_tm(
-        kin.tm, hand_config["base_frame"], show_frames=args.show_frames,
-        show_name=False, s=0.02, highlight_visuals=highlight_visuals,
+        kin.tm, hand_config["base_frame"], args.hand,
+        show_frames=args.show_frames, show_name=False, s=0.02,
+        highlight_visuals=highlight_visuals,
         highlight_in_directions=highlight_in_directions,
-        return_highlighted_mesh=True)
+        return_highlighted_mesh=True,
+        highlight_stored_vertices=args.highlight_stored_vertices)
 
     if not args.hide_visuals:
         for g in geometries:
