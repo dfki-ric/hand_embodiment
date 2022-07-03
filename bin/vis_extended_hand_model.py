@@ -8,9 +8,8 @@ import argparse
 import warnings
 import numpy as np
 import open3d as o3d
-import pytransform3d.visualizer as pv
 import pytransform3d.rotations as pr
-from pytransform3d import urdf
+from pytransform3d import urdf, visualizer as pv
 from hand_embodiment.embodiment import load_kinematic_model
 from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.command_line import add_hand_argument
@@ -24,12 +23,9 @@ def plot_tm(
     if frame not in tm.nodes:
         raise KeyError("Unknown frame '%s'" % frame)
 
-    nodes = list(sorted(tm._whitelisted_nodes(whitelist)))
-
     geometries = []
     if show_frames:
-        frames = _create_frames(tm, frame, nodes, s, show_name)
-        _place_frames(tm, frame, nodes, frames)
+        frames = _show_frames(tm, frame, s, show_name, whitelist)
         for f in frames.values():
             geometries += f.geometries
 
@@ -52,6 +48,19 @@ def plot_tm(
                 {k: v for k, v in highlight_vertex_indices.items()})
     else:
         return geometries
+
+
+def _show_frames(tm, frame, s, show_name, whitelist):
+    nodes = list(sorted(tm._whitelisted_nodes(whitelist)))
+    frames = {}
+    for node in nodes:
+        try:
+            node2frame = tm.get_transform(node, frame)
+            name = node if show_name else None
+            frames[node] = pv.Frame(node2frame, name, s)
+        except KeyError:
+            pass  # Frame is not connected to the reference frame
+    return frames
 
 
 def _highlight_vertices(
@@ -85,27 +94,6 @@ def _highlight_vertices(
                         highlight_vertex_indices[visual_frame].append(i)
             mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
     return highlight_vertex_indices, highlight_vertices
-
-
-def _create_frames(tm, frame, nodes, s, show_name):
-    frames = {}
-    for node in nodes:
-        try:
-            node2frame = tm.get_transform(node, frame)
-            name = node if show_name else None
-            frames[node] = pv.Frame(node2frame, name, s)
-        except KeyError:
-            pass  # Frame is not connected to the reference frame
-    return frames
-
-
-def _place_frames(tm, frame, nodes, frames):
-    for node in nodes:
-        try:
-            node2frame = tm.get_transform(node, frame)
-            frames[node].set_data(node2frame)
-        except KeyError:
-            pass  # Frame is not connected to the reference frame
 
 
 def _place_visuals(tm, frame, visuals):
