@@ -8,17 +8,16 @@
 export OUTPUT_DIR=result_metric
 mkdir -p $OUTPUT_DIR
 
-export METRIC= #--no-metric  # TODO remove
+export METRIC= #--no-metric
 export RECORD_CONFIG="--record-mapping-config examples/config/record_mapping/20211105_april.yaml"
 export SUBJECT=r_WK37
+export HAND=robotiq  # mia shadow robotiq barrett
 
-: <<'END'
 export MESH=--insole
 export MOCAP_CONFIG="--mocap-config examples/config/markers/20210819_april.yaml"
 export MANO_CONFIG="--mano-config examples/config/mano/20210610_april.yaml"
 export LABEL=close
 export DATE=20210819
-export HAND=shadow  # mia shadow
 declare -a SEGMENTS=(12 15 16 17 18)
 for i in "${!SEGMENTS[@]}"; do
     for (( j=0; j < SEGMENTS[i]; j++ )); do
@@ -56,7 +55,6 @@ export MOCAP_CONFIG="--mocap-config examples/config/markers/20210826_april.yaml"
 export MANO_CONFIG="--mano-config examples/config/mano/20210610_april.yaml"
 export LABEL=close
 export DATE=20210826
-export HAND=shadow  # mia shadow
 declare -a SEGMENTS=(21 21 19 40 19 24)
 for i in "${!SEGMENTS[@]}"; do
     for (( j=0; j < SEGMENTS[i]; j++ )); do
@@ -94,7 +92,6 @@ export MOCAP_CONFIG="--mocap-config examples/config/markers/20211105_april.yaml"
 export MANO_CONFIG="--mano-config examples/config/mano/20210610_april.yaml"
 export LABEL=grasp
 export DATE=20211105
-export HAND=mia  # mia shadow
 declare -a SEGMENTS=(5 7 6 6 8 8 7 8)
 for i in "${!SEGMENTS[@]}"; do
     for (( j=0; j < SEGMENTS[i]; j++ )); do
@@ -110,7 +107,6 @@ for i in "${!SEGMENTS[@]}"; do
             --show-mano $MESH $METRIC
     done
 done
-END
 
 export MESH=--electronic
 export MOCAP_CONFIG="--mocap-config examples/config/markers/20211105_april.yaml"
@@ -118,7 +114,6 @@ export MANO_CONFIG="--mano-config examples/config/mano/20210610_april.yaml"
 export LABEL=insert
 export DATE=20211105
 declare -a SEGMENTS=(5 6 6 6 8 8 7 8)
-export HAND=mia  # mia shadow
 for i in "${!SEGMENTS[@]}"; do
     for (( j=0; j < SEGMENTS[i]; j++ )); do
         echo "Set ${i}; segment ${j}"
@@ -141,7 +136,6 @@ export MOCAP_CONFIG="--mocap-config examples/config/markers/20211112_april.yaml"
 export MANO_CONFIG="--mano-config examples/config/mano/20210610_april.yaml"
 export LABEL=flip
 export DATE=20211112
-export HAND=shadow  # mia shadow
 declare -a SEGMENTS=(11 13 14)
 for i in "${!SEGMENTS[@]}"; do
     for (( j=0; j < SEGMENTS[i]; j++ )); do
@@ -162,7 +156,6 @@ export MOCAP_CONFIG="--mocap-config examples/config/markers/20211126_april_insol
 export MANO_CONFIG="--mano-config examples/config/mano/20211105_april.yaml"
 export LABEL=insert
 export DATE=20211126
-export HAND=shadow  # mia shadow
 declare -a SEGMENTS=(6 6)
 for i in "${!SEGMENTS[@]}"; do
     for (( j=0; j < SEGMENTS[i]; j++ )); do
@@ -183,7 +176,6 @@ export MOCAP_CONFIG="--mocap-config examples/config/markers/20211126_april_pillo
 export MANO_CONFIG="--mano-config examples/config/mano/20211105_april.yaml"
 export LABEL=grasp
 export DATE=20211126
-export HAND=mia  # mia shadow
 declare -a SEGMENTS=(33 37 30 30)
 for i in "${!SEGMENTS[@]}"; do
     for (( j=0; j < SEGMENTS[i]; j++ )); do
@@ -205,7 +197,6 @@ export MOCAP_CONFIG="--mocap-config examples/config/markers/20211217_april.yaml"
 export MANO_CONFIG="--mano-config examples/config/mano/20211105_april.yaml"
 export LABEL=insert
 export DATE=20211217
-export HAND=mia  # mia shadow
 declare -a SEGMENTS=(8 8 9 12)
 for i in "${!SEGMENTS[@]}"; do
     for (( j=0; j < SEGMENTS[i]; j++ )); do
