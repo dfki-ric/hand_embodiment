@@ -223,11 +223,15 @@ def vertices_to_surface_mesh(vertices, triangles):
     return np.mean(distances)
 
 
-@numba.jit
+@numba.njit(numba.types.Tuple(
+    (numba.float64, numba.float64[:]))(numba.float64[:], numba.float64[:, :]),
+    cache=True)
 def point_to_triangle(point, triangle_points):
-    """Compute shortest distance between point and triangle.
+    """Compute the shortest distance between point and triangle.
 
-    Implementation according to Ericson: Real-Time Collision Detection (2005).
+    Implementation adapted from Real-Time Collision Detection by Christer
+    Ericson published by Morgan Kaufmann Publishers, Copyright 2005 Elsevier
+    Inc.
 
     Parameters
     ----------
@@ -240,9 +244,9 @@ def point_to_triangle(point, triangle_points):
     Returns
     -------
     distance : float
-        Shortest distance between point and triangle.
+        The shortest distance between point and triangle.
 
-    contact_point : array, shape (3,)
+    closest_point : array, shape (3,)
         Closest point on triangle.
     """
     ab = triangle_points[1] - triangle_points[0]
@@ -253,50 +257,50 @@ def point_to_triangle(point, triangle_points):
     d1 = np.dot(ab, ap)
     d2 = np.dot(ac, ap)
     if d1 <= 0.0 and d2 <= 0.0:
-        contact_point = triangle_points[0]
-        return np.linalg.norm(point - contact_point), contact_point
+        closest_point = triangle_points[0]
+        return np.linalg.norm(point - closest_point), closest_point
 
     # Check if point in vertex region outside B
     bp = point - triangle_points[1]
     d3 = np.dot(ab, bp)
     d4 = np.dot(ac, bp)
     if d3 >= 0 and d4 <= d3:
-        contact_point = triangle_points[1]
-        return np.linalg.norm(point - contact_point), contact_point
+        closest_point = triangle_points[1]
+        return np.linalg.norm(point - closest_point), closest_point
 
     # Check if point in edge region of AB
     vc = d1 * d4 - d3 * d2
     if vc <= 0.0 <= d1 and d3 <= 0.0:
         v = d1 / (d1 - d3)
-        contact_point = triangle_points[0] + v * ab
-        return np.linalg.norm(point - contact_point), contact_point
+        closest_point = triangle_points[0] + v * ab
+        return np.linalg.norm(point - closest_point), closest_point
 
     # Check if point in vertex region outside C
     cp = point - triangle_points[2]
     d5 = np.dot(ab, cp)
     d6 = np.dot(ac, cp)
     if d6 >= 0.0 and d5 <= d6:
-        contact_point = triangle_points[2]
-        return np.linalg.norm(point - contact_point), contact_point
+        closest_point = triangle_points[2]
+        return np.linalg.norm(point - closest_point), closest_point
 
     # Check if point in edge region of AC
     vb = d5 * d2 - d1 * d6
     if vb <= 0.0 <= d2 and d6 <= 0.0:
         w = d2 / (d2 - d6)
-        contact_point = triangle_points[0] + w * ac
-        return np.linalg.norm(point - contact_point), contact_point
+        closest_point = triangle_points[0] + w * ac
+        return np.linalg.norm(point - closest_point), closest_point
 
     # Check if point in edge region of BC
     va = d3 * d6 - d5 * d4
     if va <= 0.0 <= d4 - d3 and d5 - d6 >= 0.0:
         w = (d4 - d3) / ((d4 - d3) + (d5 - d6))
-        contact_point = triangle_points[1] + w * (triangle_points[2] - triangle_points[1])
-        return np.linalg.norm(point - contact_point), contact_point
+        closest_point = triangle_points[1] + w * (triangle_points[2] - triangle_points[1])
+        return np.linalg.norm(point - closest_point), closest_point
 
     # Point inside face region
     denom = 1.0 / (va + vb + vc)
     v = vb * denom
     w = vc * denom
-    contact_point = triangle_points[0] + ab * v + ac * w
+    closest_point = triangle_points[0] + ab * v + ac * w
 
-    return np.linalg.norm(point - contact_point), contact_point
+    return np.linalg.norm(point - closest_point), closest_point
