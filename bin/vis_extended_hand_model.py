@@ -3,6 +3,7 @@
 Example calls:
 
 python bin/vis_extended_hand_model.py --hide-visuals --show-focus --show-contact-vertices shadow_hand
+python bin/vis_extended_hand_model.py --hide-visuals --show-contact-vertices --highlight-stored-vertices barrett
 """
 import argparse
 import warnings
