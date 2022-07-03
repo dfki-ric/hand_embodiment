@@ -19,7 +19,7 @@ from hand_embodiment.command_line import add_hand_argument
 def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
             show_visuals=False, show_collision_objects=False,
             show_name=False, whitelist=None, s=1.0,
-            highlight_visuals=[], highlight_in_directions=np.zeros((1, 3)),
+            highlight_visuals=(), highlight_in_directions=np.zeros((1, 3)),
             return_highlighted_mesh=False):
 
     if frame not in tm.nodes:
