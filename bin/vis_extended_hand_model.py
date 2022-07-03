@@ -176,64 +176,7 @@ def main():
         help="Write indices of highlighted vertices to files.")
     args = parser.parse_args()
 
-    if args.hand == "mia":
-        highlight_in_directions = np.array([[-0.03, 0.125, 0.07],
-                                            [-0.03, 0.15, 0.07],
-                                            [-0.03, 0.175, 0.07],
-                                            [0, 0.125, 0.07],
-                                            [0, 0.15, 0.07],
-                                            [0, 0.175, 0.07],
-                                            [0.03, 0.125, 0.07],
-                                            [0.03, 0.15, 0.07],
-                                            [0.03, 0.175, 0.07]])
-        highlight_visuals = [
-            "visual:thumb_fle/0",
-            #"visual:index_sensor/0",
-            "visual:index_sensor/1",
-            #"visual:middle_sensor/0",
-            "visual:middle_sensor/1",
-            #"visual:ring_fle/0",
-            "visual:ring_fle/1",
-            #"visual:little_fle/0"
-            "visual:little_fle/1",
-        ]
-    elif args.hand in ["shadow", "shadow_hand"]:
-        highlight_in_directions = np.array([[0, -0.08, 0.4],
-                                            [0, -0.08, 0.45],
-                                            [0, -0.08, 0.5],
-                                            [0.05, -0.08, 0.4],
-                                            [0.05, -0.08, 0.45],
-                                            [0.05, -0.08, 0.5],
-                                            [-0.05, -0.08, 0.4],
-                                            [-0.05, -0.08, 0.45],
-                                            [-0.05, -0.08, 0.5]])
-        highlight_visuals = [
-            #"visual:rh_thbase/0", "visual:rh_thproximal/0",
-            "visual:rh_thhub/0", "visual:rh_thmiddle/0", "visual:rh_thdistal/0",
-            #"visual:rh_ffknuckle/0", "visual:rh_ffproximal/0",
-            "visual:rh_ffmiddle/0", "visual:rh_ffdistal/0",
-            #"visual:rh_mfknuckle/0", "visual:rh_mfproximal/0",
-            "visual:rh_mfmiddle/0", "visual:rh_mfdistal/0",
-            #"visual:rh_rfknuckle/0", "visual:rh_rfproximal/0",
-            "visual:rh_rfmiddle/0", "visual:rh_rfdistal/0",
-            #"visual:rh_lfknuckle/0", "visual:rh_lfproximal/0",
-            "visual:rh_lfmiddle/0", "visual:rh_lfdistal/0"]
-    elif args.hand in ["robotiq", "robotiq_2f_140"]:
-        highlight_in_directions = np.array([[0.0, 0.0, 0.175]])
-        highlight_visuals = ["visual:left_inner_finger_pad/0",
-                             "visual:right_inner_finger_pad/0"]
-    elif args.hand == "barrett":
-        highlight_in_directions = np.array([
-            [0.0, 0.0, 0.4]])
-        highlight_visuals = [#"visual:finger_1_med_liink/0",
-                             "visual:finger_1_dist_link/0",
-                             #"visual:finger_2_med_link/0",
-                             "visual:finger_2_dist_link/0",
-                             #"visual:finger_3_med_link/0",
-                             "visual:finger_3_dist_link/0"]
-    else:
-        highlight_in_directions = np.array([])
-        highlight_visuals = []
+    highlight_in_directions, highlight_visuals = _configure_highlights(args)
 
     fig = pv.figure()
 
@@ -282,6 +225,68 @@ def main():
         sphere.add_artist(fig)
 
     fig.show()
+
+
+def _configure_highlights(args):
+    if args.hand == "mia":
+        highlight_in_directions = np.array([[-0.03, 0.125, 0.07],
+                                            [-0.03, 0.15, 0.07],
+                                            [-0.03, 0.175, 0.07],
+                                            [0, 0.125, 0.07],
+                                            [0, 0.15, 0.07],
+                                            [0, 0.175, 0.07],
+                                            [0.03, 0.125, 0.07],
+                                            [0.03, 0.15, 0.07],
+                                            [0.03, 0.175, 0.07]])
+        highlight_visuals = [
+            "visual:thumb_fle/0",
+            # "visual:index_sensor/0",
+            "visual:index_sensor/1",
+            # "visual:middle_sensor/0",
+            "visual:middle_sensor/1",
+            # "visual:ring_fle/0",
+            "visual:ring_fle/1",
+            # "visual:little_fle/0"
+            "visual:little_fle/1",
+        ]
+    elif args.hand in ["shadow", "shadow_hand"]:
+        highlight_in_directions = np.array([[0, -0.08, 0.4],
+                                            [0, -0.08, 0.45],
+                                            [0, -0.08, 0.5],
+                                            [0.05, -0.08, 0.4],
+                                            [0.05, -0.08, 0.45],
+                                            [0.05, -0.08, 0.5],
+                                            [-0.05, -0.08, 0.4],
+                                            [-0.05, -0.08, 0.45],
+                                            [-0.05, -0.08, 0.5]])
+        highlight_visuals = [
+            # "visual:rh_thbase/0", "visual:rh_thproximal/0",
+            "visual:rh_thhub/0", "visual:rh_thmiddle/0", "visual:rh_thdistal/0",
+            # "visual:rh_ffknuckle/0", "visual:rh_ffproximal/0",
+            "visual:rh_ffmiddle/0", "visual:rh_ffdistal/0",
+            # "visual:rh_mfknuckle/0", "visual:rh_mfproximal/0",
+            "visual:rh_mfmiddle/0", "visual:rh_mfdistal/0",
+            # "visual:rh_rfknuckle/0", "visual:rh_rfproximal/0",
+            "visual:rh_rfmiddle/0", "visual:rh_rfdistal/0",
+            # "visual:rh_lfknuckle/0", "visual:rh_lfproximal/0",
+            "visual:rh_lfmiddle/0", "visual:rh_lfdistal/0"]
+    elif args.hand in ["robotiq", "robotiq_2f_140"]:
+        highlight_in_directions = np.array([[0.0, 0.0, 0.175]])
+        highlight_visuals = ["visual:left_inner_finger_pad/0",
+                             "visual:right_inner_finger_pad/0"]
+    elif args.hand == "barrett":
+        highlight_in_directions = np.array([
+            [0.0, 0.0, 0.4]])
+        highlight_visuals = [  # "visual:finger_1_med_liink/0",
+            "visual:finger_1_dist_link/0",
+            # "visual:finger_2_med_link/0",
+            "visual:finger_2_dist_link/0",
+            # "visual:finger_3_med_link/0",
+            "visual:finger_3_dist_link/0"]
+    else:
+        highlight_in_directions = np.array([])
+        highlight_visuals = []
+    return highlight_in_directions, highlight_visuals
 
 
 if __name__ == "__main__":
