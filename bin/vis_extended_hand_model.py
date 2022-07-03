@@ -16,39 +16,26 @@ from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.command_line import add_hand_argument
 
 
-def plot_tm(tm, frame, show_frames=False, show_connections=False,
-            show_visuals=False, show_collision_objects=False,
-            show_name=False, whitelist=None, s=1.0,
-            highlight_visuals=(), highlight_in_directions=np.zeros((1, 3)),
-            return_highlighted_mesh=False):
+def plot_tm(
+        tm, frame, show_frames=False, show_name=False, whitelist=None,
+        s=1.0, highlight_visuals=(), highlight_in_directions=np.zeros((1, 3)),
+        return_highlighted_mesh=False):
 
     if frame not in tm.nodes:
         raise KeyError("Unknown frame '%s'" % frame)
 
     nodes = list(sorted(tm._whitelisted_nodes(whitelist)))
 
+    geometries = []
     if show_frames:
         frames = _create_frames(tm, frame, nodes, s, show_name)
-    else:
-        frames = {}
-
-    if show_connections:
-        connections = _create_connections(tm, frame)
-    else:
-        connections = {}
+        _place_frames(tm, frame, nodes, frames)
+        for f in frames.values():
+            geometries += f.geometries
 
     visuals = {}
-    if show_visuals and hasattr(tm, "visuals"):
+    if hasattr(tm, "visuals"):
         visuals.update(_objects_to_artists(tm.visuals))
-    collision_objects = {}
-    if show_collision_objects and hasattr(tm, "collision_objects"):
-        collision_objects.update(_objects_to_artists(tm.collision_objects))
-
-    if show_frames:
-        _place_frames(tm, frame, nodes, frames)
-
-    if show_connections:
-        _place_connections(tm, frame, connections)
 
     _place_visuals(tm, frame, visuals)
 
@@ -79,17 +66,7 @@ def plot_tm(tm, frame, show_frames=False, show_connections=False,
                         highlight_vertex_indices[visual_frame].append(i)
             mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
 
-    _place_collision_objects(tm, frame, collision_objects)
-
-    geometries = []
-    if show_frames:
-        for f in frames.values():
-            geometries += f.geometries
-    if show_connections:
-        geometries += list(connections.values())
     for obj in visuals.values():
-        geometries += obj.geometries
-    for obj in collision_objects.values():
         geometries += obj.geometries
 
     if return_highlighted_mesh:
@@ -112,21 +89,6 @@ def _create_frames(tm, frame, nodes, s, show_name):
     return frames
 
 
-def _create_connections(tm, frame):
-    connections = {}
-    for frame_names in tm.transforms.keys():
-        from_frame, to_frame = frame_names
-        if (from_frame in tm.nodes and
-                to_frame in tm.nodes):
-            try:
-                tm.get_transform(from_frame, frame)
-                tm.get_transform(to_frame, frame)
-                connections[frame_names] = o3d.geometry.LineSet()
-            except KeyError:
-                pass  # Frame is not connected to reference frame
-    return connections
-
-
 def _place_frames(tm, frame, nodes, frames):
     for node in nodes:
         try:
@@ -136,32 +98,9 @@ def _place_frames(tm, frame, nodes, frames):
             pass  # Frame is not connected to the reference frame
 
 
-def _place_connections(tm, frame, connections):
-    for frame_names in connections:
-        from_frame, to_frame = frame_names
-        try:
-            from2ref = tm.get_transform(
-                from_frame, frame)
-            to2ref = tm.get_transform(to_frame, frame)
-
-            points = np.vstack((from2ref[:3, 3], to2ref[:3, 3]))
-            connections[frame_names].points = \
-                o3d.utility.Vector3dVector(points)
-            connections[frame_names].lines = \
-                o3d.utility.Vector2iVector(np.array([[0, 1]]))
-        except KeyError:
-            pass  # Frame is not connected to the reference frame
-
-
 def _place_visuals(tm, frame, visuals):
     for visual_frame, obj in visuals.items():
         A2B = tm.get_transform(visual_frame, frame)
-        obj.set_data(A2B)
-
-
-def _place_collision_objects(tm, frame, collision_objects):
-    for collision_object_frame, obj in collision_objects.items():
-        A2B = tm.get_transform(collision_object_frame, frame)
         obj.set_data(A2B)
 
 
@@ -315,7 +254,6 @@ def main():
 
     geometries, highlighted_vertices, highlighted_vertex_indices = plot_tm(
         kin.tm, hand_config["base_frame"], show_frames=args.show_frames,
-        show_connections=False, show_visuals=True, show_collision_objects=False,
         show_name=False, s=0.02, highlight_visuals=highlight_visuals,
         highlight_in_directions=highlight_in_directions,
         return_highlighted_mesh=True)
