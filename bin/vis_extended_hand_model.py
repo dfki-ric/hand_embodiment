@@ -58,21 +58,21 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
         if visual_frame in highlight_visuals:
             mesh = obj.geometries[0]
             mesh.compute_triangle_normals()
-            vertex_colors = np.array(mesh.vertex_colors)
-            if len(vertex_colors) == 0:
-                mesh.paint_uniform_color((0, 0, 0))
-                vertex_colors = np.array(mesh.vertex_colors)
+            vertex_colors = _get_vertex_colors(mesh)
+
             vertices = np.array(mesh.vertices)
             triangles = np.array(mesh.triangles)
             triangle_normals = np.array(mesh.triangle_normals)
+
             highlight_vertices[visual_frame] = set()
             highlight_vertex_indices[visual_frame] = list()
             for i in range(len(vertices)):
-                triangle_indices = np.where(triangles == i)[0]
-                if len(triangle_indices) == 0:
+                triangles_containing_vertex = np.where(triangles == i)[0]
+                if len(triangles_containing_vertex) == 0:
                     continue
-                mean_norm = pr.norm_vector(triangle_normals[triangle_indices].mean(axis=0))
-                if all((highlight_in_directions - vertices[np.newaxis, i]).dot(mean_norm) > 0.0):
+                mean_triangle_normal = pr.norm_vector(triangle_normals[triangles_containing_vertex].mean(axis=0))
+                highlight_vertex = all((highlight_in_directions - vertices[np.newaxis, i]).dot(mean_triangle_normal) > 0.0)
+                if highlight_vertex:
                     vertex_colors[i] = (1, 0, 0)
                     if return_highlighted_mesh:
                         highlight_vertices[visual_frame].add(tuple(vertices[i]))
@@ -100,16 +100,16 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
         return geometries
 
 
-def _place_collision_objects(tm, frame, collision_objects):
-    for collision_object_frame, obj in collision_objects.items():
-        A2B = tm.get_transform(collision_object_frame, frame)
-        obj.set_data(A2B)
-
-
-def _place_visuals(tm, frame, visuals):
-    for visual_frame, obj in visuals.items():
-        A2B = tm.get_transform(visual_frame, frame)
-        obj.set_data(A2B)
+def _create_frames(tm, frame, nodes, s, show_name):
+    frames = {}
+    for node in nodes:
+        try:
+            node2frame = tm.get_transform(node, frame)
+            name = node if show_name else None
+            frames[node] = pv.Frame(node2frame, name, s)
+        except KeyError:
+            pass  # Frame is not connected to the reference frame
+    return frames
 
 
 def _create_connections(tm, frame):
@@ -125,18 +125,6 @@ def _create_connections(tm, frame):
             except KeyError:
                 pass  # Frame is not connected to reference frame
     return connections
-
-
-def _create_frames(tm, frame, nodes, s, show_name):
-    frames = {}
-    for node in nodes:
-        try:
-            node2frame = tm.get_transform(node, frame)
-            name = node if show_name else None
-            frames[node] = pv.Frame(node2frame, name, s)
-        except KeyError:
-            pass  # Frame is not connected to the reference frame
-    return frames
 
 
 def _place_frames(tm, frame, nodes, frames):
@@ -163,6 +151,26 @@ def _place_connections(tm, frame, connections):
                 o3d.utility.Vector2iVector(np.array([[0, 1]]))
         except KeyError:
             pass  # Frame is not connected to the reference frame
+
+
+def _place_visuals(tm, frame, visuals):
+    for visual_frame, obj in visuals.items():
+        A2B = tm.get_transform(visual_frame, frame)
+        obj.set_data(A2B)
+
+
+def _place_collision_objects(tm, frame, collision_objects):
+    for collision_object_frame, obj in collision_objects.items():
+        A2B = tm.get_transform(collision_object_frame, frame)
+        obj.set_data(A2B)
+
+
+def _get_vertex_colors(mesh):
+    vertex_colors = np.array(mesh.vertex_colors)
+    if len(vertex_colors) == 0:
+        mesh.paint_uniform_color((0, 0, 0))
+        vertex_colors = np.array(mesh.vertex_colors)
+    return vertex_colors
 
 
 def _objects_to_artists(objects):
