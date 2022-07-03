@@ -84,11 +84,29 @@ SHADOW_CONTACT_SURFACE_VERTICES = {
     }
 }
 
+ROBOTIQ_CONTACT_SURFACE_VERTICES = {
+    "thumb": {
+    },
+    "index": {
+    }
+}
+
+BARRETT_CONTACT_SURFACE_VERTICES = {
+    "thumb": {
+    },
+    "index": {
+    },
+    "middle": {
+    }
+}
 
 CONTACT_SURFACE_VERTICES = {
     "mia": MIA_CONTACT_SURFACE_VERTICES,
     "shadow_hand": SHADOW_CONTACT_SURFACE_VERTICES,
-    "shadow": SHADOW_CONTACT_SURFACE_VERTICES
+    "shadow": SHADOW_CONTACT_SURFACE_VERTICES,
+    "robotiq": ROBOTIQ_CONTACT_SURFACE_VERTICES,
+    "robotiq_2f_140": ROBOTIQ_CONTACT_SURFACE_VERTICES,
+    "barrett": BARRETT_CONTACT_SURFACE_VERTICES,
 }
 
 
