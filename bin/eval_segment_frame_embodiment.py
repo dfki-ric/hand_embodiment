@@ -16,6 +16,7 @@ from hand_embodiment.command_line import (
     add_hand_argument, add_animation_arguments, add_configuration_arguments)
 from hand_embodiment.metrics import (
     CONTACT_SURFACE_VERTICES, distances_robot_to_mano)
+from hand_embodiment.target_configurations import TARGET_CONFIG
 
 
 def parse_args():
@@ -65,8 +66,12 @@ def main():
 
     dataset.select_segment(args.segment)
 
+    finger_names = list(set(dataset.finger_names).intersection(
+        set(TARGET_CONFIG[args.hand]["ee_frames"].keys())))
+    print(f"Available fingers: {', '.join(finger_names)}")
+
     pipeline = MoCapToRobot(
-        args.hand, args.mano_config, dataset.finger_names,
+        args.hand, args.mano_config, finger_names,
         record_mapping_config=args.record_mapping_config, verbose=1)
 
     if args.hand == "mia":
@@ -89,10 +94,9 @@ def main():
     if not args.no_metric:
         print("Starting computation of distances...")
         ROBOT_CONTACT_SURFACE_VERTICES = CONTACT_SURFACE_VERTICES[args.hand]
-        fingers = ["thumb", "index", "middle", "ring", "little"]
         dists = distances_robot_to_mano(
             pipeline.embodiment_mapping_.hand_state_, animation_callback.robot,
-            ROBOT_CONTACT_SURFACE_VERTICES, fingers)
+            ROBOT_CONTACT_SURFACE_VERTICES, finger_names)
         print("DONE")
         print(dists)
         if args.output_file is not None:

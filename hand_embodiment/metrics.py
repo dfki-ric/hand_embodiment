@@ -177,7 +177,7 @@ def extract_graph_vertices(graph, vertex_indices_per_visual, finger_name):
     """
     vertices = []
     for visual in vertex_indices_per_visual[finger_name]:
-        original_mesh = graph.visuals[visual].mesh
+        original_mesh = graph.visuals[visual].geometries[0]
         vertex_indices = set(vertex_indices_per_visual[finger_name][visual])
 
         mesh = o3d.geometry.TriangleMesh()
