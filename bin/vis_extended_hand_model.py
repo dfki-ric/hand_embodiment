@@ -232,6 +232,9 @@ def main():
     parser.add_argument(
         "--show-frame", action="store_true",
         help="Show base frame.")
+    parser.add_argument(
+        "--write-vertex-indices", action="store_true",
+        help="Write indices of highlighted vertices to files.")
     args = parser.parse_args()
 
     if args.hand == "mia":
@@ -327,9 +330,10 @@ def main():
             pc.points = o3d.utility.Vector3dVector(v)
             fig.add_geometry(pc)
 
-    for k, v in highlighted_vertex_indices.items():
-        with open(k.replace("/", "_") + ".txt", "w") as f:
-            f.write(", ".join(map(str, v)))
+    if args.write_vertex_indices:
+        for k, v in highlighted_vertex_indices.items():
+            with open(k.replace("/", "_") + ".txt", "w") as f:
+                f.write(", ".join(map(str, v)))
 
     if args.show_frame:
         origin = pv.Frame(np.eye(4), s=0.1)
