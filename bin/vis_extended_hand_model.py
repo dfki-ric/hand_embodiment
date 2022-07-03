@@ -27,64 +27,30 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
 
     nodes = list(sorted(tm._whitelisted_nodes(whitelist)))
 
-    frames = {}
     if show_frames:
-        for node in nodes:
-            try:
-                node2frame = tm.get_transform(node, frame)
-                name = node if show_name else None
-                frames[node] = pv.Frame(node2frame, name, s)
-            except KeyError:
-                pass  # Frame is not connected to the reference frame
+        frames = _create_frames(tm, frame, nodes, s, show_name)
+    else:
+        frames = {}
 
-    connections = {}
     if show_connections:
-        for frame_names in tm.transforms.keys():
-            from_frame, to_frame = frame_names
-            if (from_frame in tm.nodes and
-                    to_frame in tm.nodes):
-                try:
-                    tm.get_transform(from_frame, frame)
-                    tm.get_transform(to_frame, frame)
-                    connections[frame_names] = o3d.geometry.LineSet()
-                except KeyError:
-                    pass  # Frame is not connected to reference frame
+        connections = _create_connections(tm, frame)
+    else:
+        connections = {}
 
     visuals = {}
     if show_visuals and hasattr(tm, "visuals"):
         visuals.update(_objects_to_artists(tm.visuals))
     collision_objects = {}
-    if show_collision_objects and hasattr(
-            tm, "collision_objects"):
+    if show_collision_objects and hasattr(tm, "collision_objects"):
         collision_objects.update(_objects_to_artists(tm.collision_objects))
 
     if show_frames:
-        for node in nodes:
-            try:
-                node2frame = tm.get_transform(node, frame)
-                frames[node].set_data(node2frame)
-            except KeyError:
-                pass  # Frame is not connected to the reference frame
+        _place_frames(tm, frame, nodes, frames)
 
     if show_connections:
-        for frame_names in connections:
-            from_frame, to_frame = frame_names
-            try:
-                from2ref = tm.get_transform(
-                    from_frame, frame)
-                to2ref = tm.get_transform(to_frame, frame)
+        _place_connections(tm, frame, connections)
 
-                points = np.vstack((from2ref[:3, 3], to2ref[:3, 3]))
-                connections[frame_names].points = \
-                    o3d.utility.Vector3dVector(points)
-                connections[frame_names].lines = \
-                    o3d.utility.Vector2iVector(np.array([[0, 1]]))
-            except KeyError:
-                pass  # Frame is not connected to the reference frame
-
-    for visual_frame, obj in visuals.items():
-        A2B = tm.get_transform(visual_frame, frame)
-        obj.set_data(A2B)
+    _place_visuals(tm, frame, visuals)
 
     highlight_vertices = dict()
     highlight_vertex_indices = dict()
@@ -113,9 +79,7 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
                         highlight_vertex_indices[visual_frame].append(i)
             mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
 
-    for collision_object_frame, obj in collision_objects.items():
-        A2B = tm.get_transform(collision_object_frame, frame)
-        obj.set_data(A2B)
+    _place_collision_objects(tm, frame, collision_objects)
 
     geometries = []
     if show_frames:
@@ -134,6 +98,71 @@ def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
                 {k: v for k, v in highlight_vertex_indices.items()})
     else:
         return geometries
+
+
+def _place_collision_objects(tm, frame, collision_objects):
+    for collision_object_frame, obj in collision_objects.items():
+        A2B = tm.get_transform(collision_object_frame, frame)
+        obj.set_data(A2B)
+
+
+def _place_visuals(tm, frame, visuals):
+    for visual_frame, obj in visuals.items():
+        A2B = tm.get_transform(visual_frame, frame)
+        obj.set_data(A2B)
+
+
+def _create_connections(tm, frame):
+    connections = {}
+    for frame_names in tm.transforms.keys():
+        from_frame, to_frame = frame_names
+        if (from_frame in tm.nodes and
+                to_frame in tm.nodes):
+            try:
+                tm.get_transform(from_frame, frame)
+                tm.get_transform(to_frame, frame)
+                connections[frame_names] = o3d.geometry.LineSet()
+            except KeyError:
+                pass  # Frame is not connected to reference frame
+    return connections
+
+
+def _create_frames(tm, frame, nodes, s, show_name):
+    frames = {}
+    for node in nodes:
+        try:
+            node2frame = tm.get_transform(node, frame)
+            name = node if show_name else None
+            frames[node] = pv.Frame(node2frame, name, s)
+        except KeyError:
+            pass  # Frame is not connected to the reference frame
+    return frames
+
+
+def _place_frames(tm, frame, nodes, frames):
+    for node in nodes:
+        try:
+            node2frame = tm.get_transform(node, frame)
+            frames[node].set_data(node2frame)
+        except KeyError:
+            pass  # Frame is not connected to the reference frame
+
+
+def _place_connections(tm, frame, connections):
+    for frame_names in connections:
+        from_frame, to_frame = frame_names
+        try:
+            from2ref = tm.get_transform(
+                from_frame, frame)
+            to2ref = tm.get_transform(to_frame, frame)
+
+            points = np.vstack((from2ref[:3, 3], to2ref[:3, 3]))
+            connections[frame_names].points = \
+                o3d.utility.Vector3dVector(points)
+            connections[frame_names].lines = \
+                o3d.utility.Vector2iVector(np.array([[0, 1]]))
+        except KeyError:
+            pass  # Frame is not connected to the reference frame
 
 
 def _objects_to_artists(objects):
