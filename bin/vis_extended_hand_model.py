@@ -16,7 +16,7 @@ from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.command_line import add_hand_argument
 
 
-def plot_tm(fig, tm, frame, show_frames=False, show_connections=False,
+def plot_tm(tm, frame, show_frames=False, show_connections=False,
             show_visuals=False, show_collision_objects=False,
             show_name=False, whitelist=None, s=1.0,
             highlight_visuals=(), highlight_in_directions=np.zeros((1, 3)),
@@ -311,7 +311,7 @@ def main():
                 fig.plot_sphere(radius=0.005, A2B=finger2base, c=(1, 0, 0))
 
     geometries, highlighted_vertices, highlighted_vertex_indices = plot_tm(
-        fig, kin.tm, hand_config["base_frame"], show_frames=args.show_frames,
+        kin.tm, hand_config["base_frame"], show_frames=args.show_frames,
         show_connections=False, show_visuals=True, show_collision_objects=False,
         show_name=False, s=0.02, highlight_visuals=highlight_visuals,
         highlight_in_directions=highlight_in_directions,
