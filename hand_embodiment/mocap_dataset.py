@@ -480,6 +480,7 @@ class SegmentedHandMotionCaptureDataset(MotionCaptureDatasetBase):
                 start_field="start_frame", end_field="end_frame")
         except KeyError:
             # new format
+            label_field = f"label {label_field[-1]}"
             self.segments = record.get_segments_as_dataframes(
                 label=segment_label, streams=streams, label_field=label_field,
                 start_field="start index", end_field="end index")

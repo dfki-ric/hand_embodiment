@@ -129,8 +129,6 @@ for i in "${!SEGMENTS[@]}"; do
     done
 done
 
-exit 0
-
 export MESH=--passport
 export MOCAP_CONFIG="--mocap-config examples/config/markers/20211112_april.yaml"
 export MANO_CONFIG="--mano-config examples/config/mano/20210610_april.yaml"
