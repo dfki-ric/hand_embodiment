@@ -39,6 +39,24 @@ def plot_tm(
 
     _place_visuals(tm, frame, visuals)
 
+    highlight_vertex_indices, highlight_vertices = _highlight_vertices(
+        visuals, highlight_in_directions, highlight_visuals,
+        return_highlighted_mesh)
+
+    for obj in visuals.values():
+        geometries += obj.geometries
+
+    if return_highlighted_mesh:
+        return (geometries,
+                {k: np.array(list(v)) for k, v in highlight_vertices.items()},
+                {k: v for k, v in highlight_vertex_indices.items()})
+    else:
+        return geometries
+
+
+def _highlight_vertices(
+        visuals, highlight_in_directions, highlight_visuals,
+        return_highlighted_mesh):
     highlight_vertices = dict()
     highlight_vertex_indices = dict()
     for visual_frame, obj in visuals.items():
@@ -58,23 +76,15 @@ def plot_tm(
                 if len(triangles_containing_vertex) == 0:
                     continue
                 mean_triangle_normal = pr.norm_vector(triangle_normals[triangles_containing_vertex].mean(axis=0))
-                highlight_vertex = all((highlight_in_directions - vertices[np.newaxis, i]).dot(mean_triangle_normal) > 0.0)
+                highlight_vertex = all(
+                    (highlight_in_directions - vertices[np.newaxis, i]).dot(mean_triangle_normal) > 0.0)
                 if highlight_vertex:
                     vertex_colors[i] = (1, 0, 0)
                     if return_highlighted_mesh:
                         highlight_vertices[visual_frame].add(tuple(vertices[i]))
                         highlight_vertex_indices[visual_frame].append(i)
             mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
-
-    for obj in visuals.values():
-        geometries += obj.geometries
-
-    if return_highlighted_mesh:
-        return (geometries,
-                {k: np.array(list(v)) for k, v in highlight_vertices.items()},
-                {k: v for k, v in highlight_vertex_indices.items()})
-    else:
-        return geometries
+    return highlight_vertex_indices, highlight_vertices
 
 
 def _create_frames(tm, frame, nodes, s, show_name):
