@@ -4,6 +4,8 @@
 
 Script: [vis_markers_to_mano_trajectory.py](vis_markers_to_mano_trajectory.py)
 
+<img src="../doc/source/_static/script_vis_record_mapping.png/" width="50%">
+
 Example calls:
 ```bash
 python bin/vis_markers_to_mano_trajectory.py --demo-file data/Qualisys_pnp/20151005_r_AV82_PickAndPlace_BesMan_labeled_02.tsv --mocap-config examples/config/markers/20151005_besman.yaml --mano-config examples/config/mano/20151005_besman.yaml
