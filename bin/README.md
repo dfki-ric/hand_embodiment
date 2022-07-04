@@ -140,7 +140,20 @@ python bin/vis_segment_markers_to_robot.py mia close --mocap-config examples/con
 Script: [vis_mano.py](vis_mano.py)
 
 Example call:
-
 ```bash
-python bin/vis_mano.py --config-filename examples/config/april_test_mano2.yaml  --show-tips --show-mesh --show-transforms
+python bin/vis_mano.py --config-filename examples/config/april_test_mano2.yaml --show-tips --show-mesh --show-transforms
+```
+
+## Visualize Extended Robotic Hand Model
+
+<img src="../doc/source/_static/script_vis_extended_hand.png" width="50%" />
+
+Script: [vis_extended_hand_model.py](vis_extended_hand_model.py)
+
+Example calls:
+```bash
+python bin/vis_extended_hand_model.py mia
+python bin/vis_extended_hand_model.py --hide-visuals --show-focus --show-contact-vertices shadow_hand
+python bin/vis_extended_hand_model.py --hide-visuals --show-contact-vertices --write-vertex-indices barrett
+python bin/vis_extended_hand_model.py --hide-visuals --show-contact-vertices --highlight-stored-vertices barrett
 ```
