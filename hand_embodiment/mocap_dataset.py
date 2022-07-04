@@ -473,17 +473,23 @@ class SegmentedHandMotionCaptureDataset(MotionCaptureDatasetBase):
         import mocap
         record = mocap.load(metadata=filename)
         streams = [f"{mn} .*" for mn in self.marker_names]
+
+        label_number = int(label_field[-1])
+        assert label_number in [1, 2], f"Unknown label format: {label_field}"
+
         try:
-            # old format
-            self.segments = record.get_segments_as_dataframes(
-                label=segment_label, streams=streams, label_field=label_field,
-                start_field="start_frame", end_field="end_frame")
-        except KeyError:
-            # new format
-            label_field = f"label {label_field[-1]}"
-            self.segments = record.get_segments_as_dataframes(
-                label=segment_label, streams=streams, label_field=label_field,
-                start_field="start index", end_field="end index")
+            try:
+                # old format: "l1" / "l2", "start_frame", "end_frame"
+                self.segments = record.get_segments_as_dataframes(
+                    label=segment_label, streams=streams,
+                    label_field=f"l{label_number}", start_field="start_frame",
+                    end_field="end_frame")
+            except KeyError:
+                # new format: "label 1" / "label 2", "start_frame", "end_frame"
+                self.segments = record.get_segments_as_dataframes(
+                    label=segment_label, streams=streams,
+                    label_field=f"label {label_number}",
+                    start_field="start index", end_field="end index")
         except ValueError as e:
             warnings.warn(f"Error occured when loading '{filename}': {e}")
             self.segments = []
