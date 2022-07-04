@@ -132,3 +132,15 @@ python bin/vis_segment_markers_to_robot.py mia insert --mocap-config examples/co
 python bin/vis_segment_markers_to_robot.py mia close --mocap-config examples/config/markers/20220328_april.yaml --mano-config examples/config/mano/20211105_april.yaml --show-mano --demo-file data/20220328_april/20220328_r_WK37_insole_lateral_front_set0.json --segment 0 --insole
 python bin/vis_segment_markers_to_robot.py mia close --mocap-config examples/config/markers/20220328_april.yaml --mano-config examples/config/mano/20211105_april.yaml --show-mano --demo-file data/20220328_april/20220328_r_WK37_insole_pinch_front_set0.json --segment 0 --insole --mia-thumb-adducted
 ```
+
+## Visualize MANO
+
+<img src="../doc/source/_static/script_vis_mano.png" width="50%" />
+
+Script: [vis_mano.py](vis_mano.py)
+
+Example call:
+
+```bash
+python bin/vis_mano.py --config-filename examples/config/april_test_mano2.yaml  --show-tips --show-mesh --show-transforms
+```

@@ -1,11 +1,4 @@
-"""Visualize MANO.
-
-Example call:
-
-python bin/vis_mano.py \
-    --config-filename examples/config/april_test_mano2.yaml \
-    --show-tips --show-mesh --show-transforms
-"""
+"""Visualize MANO."""
 import argparse
 import numpy as np
 import open3d as o3d
