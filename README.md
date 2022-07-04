@@ -126,6 +126,8 @@ You can generate a coverage report with
 
 ## Examples
 
+Scripts are located at [bin/](bin/).
+
 ### Motion Capture Data Fitted to MANO
 
 See [bin/vis_markers_to_mano_trajectory.py](bin/vis_markers_to_mano_trajectory.py)
