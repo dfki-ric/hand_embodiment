@@ -2,9 +2,9 @@
 
 ## Visualize Record Mapping
 
-Script: [vis_markers_to_mano_trajectory.py](vis_markers_to_mano_trajectory.py)
+<img src="../doc/source/_static/script_vis_record_mapping.png" width="50%" />
 
-<img src="../doc/source/_static/script_vis_record_mapping.png/" width="50%">
+Script: [vis_markers_to_mano_trajectory.py](vis_markers_to_mano_trajectory.py)
 
 Example calls:
 ```bash
@@ -58,6 +58,8 @@ python bin/vis_markers_to_mano_trajectory.py --demo-file data/20220328_april/202
 ```
 
 ## Visualize Record and Embodiment Mapping
+
+<img src="../doc/source/_static/script_vis_embodiment_mapping.png" width="50%" />
 
 ### Trajectory
 
