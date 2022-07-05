@@ -5,7 +5,7 @@
   <author>Alexander Fabisch/Alexander.Fabisch@dfki.de</author>
   <maintainer>Alexander Fabisch/Alexander.Fabisch@dfki.de</maintainer>
   <license>BSD-3-clause</license>
-  <url>https://git.hb.dfki.de/dfki-interaction/experimental/hand_embodiment</url>
+  <url>https://github.com/dfki-ric/hand_embodiment</url>
   <logo>none</logo>
   <keywords>
     <keyword>Interaction</keyword>
