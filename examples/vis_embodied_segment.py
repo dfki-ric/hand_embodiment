@@ -12,6 +12,7 @@ from hand_embodiment.command_line import add_hand_argument
 from hand_embodiment.target_dataset import RoboticHandDataset
 from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.embodiment import load_kinematic_model
+from hand_embodiment.vis_utils import make_coordinate_system
 
 
 def parse_args():
@@ -35,7 +36,8 @@ def main():
     tm.add_transform("world", hand_config["base_frame"], np.eye(4))
 
     fig = pv.figure()
-    fig.plot_transform(np.eye(4), s=0.3)
+    coordinate_system = make_coordinate_system(0.5)
+    fig.add_geometry(coordinate_system)
     graph = pv.Graph(
         tm, "world", show_frames=True,
         whitelist=[hand_config["base_frame"]], show_connections=False,
