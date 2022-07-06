@@ -341,7 +341,7 @@ class ShadowVirtualF0Joint:
 #manobase2shadowbase = pt.transform_from_exponential_coordinates(
 #    [0.008, 1.723, -0.133, -0.289, -0.014, 0.267])
 manobase2shadowbase = pt.transform_from_exponential_coordinates(
-    [-0.07, 1.77, -0.148, -0.309, -0.021, 0.272])
+    [-0.07, 1.692, -0.148, -0.309, -0.021, 0.272])
 SHADOW_HAND_CONFIG = {
     "joint_names":
         {  # wrist: rh_WRJ2, rh_WRJ1
