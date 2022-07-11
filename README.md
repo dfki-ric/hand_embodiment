@@ -251,8 +251,13 @@ The following shows the configuration of our glove for the right hand:
 
 ![MoCap glove](doc/source/_static/glove.png)
 
-In addition, we attached motion capture markers to object positions to transfer
-object manipulation trajectories into an object-relative coordinate system.
+The figure is based on
+[this work](https://commons.wikimedia.org/wiki/File:Scheme_human_hand_bones-en.svg)
+of Mariana Ruiz Villarreal (LadyofHats); retouches by Nyks.
+
+In addition, we attached motion capture markers to objects to track their poses
+and to transfer object manipulation trajectories into an object-relative
+coordinate system.
 
 ## Segmentation of Motion Capture Data
 
