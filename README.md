@@ -238,6 +238,22 @@ configuration with the button in the menu (left top). The MANO configuration
 will later on be used when we recover the state of the hand from the motion
 capture data.
 
+## Motion Capture Glove
+
+We used the following labelled marker on the glove to record the datasets used
+in the paper:
+
+* Hand pose: `hand_top`, `hand_left`, `hand_right`
+* Per finger (thumb, index, middle, ring, little): `[finger]_middle`,
+  `[finger]_tip`
+
+The following shows the configuration of our glove for the right hand:
+
+![MoCap glove](doc/source/_static/glove.png)
+
+In addition, we attached motion capture markers to object positions to transfer
+object manipulation trajectories into an object-relative coordinate system.
+
 ## Segmentation of Motion Capture Data
 
 Motion capture recordings typically contain a sequence of multiple movements,
