@@ -275,28 +275,41 @@ class MarkerBasedRecordMapping(TimeableMixin):
 
 
 def estimate_hand_pose(hand_top, hand_left, hand_right):
-    """Estimate pose of the hand from markers on the back of the hand."""
-    hand_middle = 0.5 * (hand_left + hand_right)
+    """Estimate pose of the hand from markers on the back of the hand.
+
+    To estimate the pose of the MANO frame in world frame, we first derive
+    the pose of the hand based on three labeled markers on the back of the
+    hand. In accordance with the two-vector representation (see Corke:
+    Robotics, Vision and Control), we define the hand frame orientation by
+    the approach vector (direction from right to front hand marker) and
+    the orientation vector (normal of the plane defined by the three
+    markers). The origin of the hand frame can be any point in the plane of
+    the three markers. We choose the right marker.
+
+    Parameters
+    ----------
+    hand_top : array, shape (3,)
+        Position of hand_top marker.
+
+    hand_left : array, shape (3,)
+        Position of hand_left marker.
+
+    hand_right : array, shape (3,)
+        Position of hand_right marker.
+
+    Returns
+    -------
+    hand_markers2world : array, shape (4, 4)
+        Pose of hand marker frame.
+    """
+    right2left = hand_left - hand_right
+    approach = pr.norm_vector(hand_top - hand_right)
+    orientation = pr.norm_vector(np.cross(approach, right2left))
+    normal = np.cross(orientation, approach)
     hand_pose = np.eye(4)
-    middle2top = hand_top - hand_middle
-    middle2right = hand_right - hand_middle
-    hand_pose[:3, :3] = pr.matrix_from_two_vectors(
-        middle2top, middle2right).dot(
-        pr.active_matrix_from_intrinsic_euler_xyz([0, 0.5 * np.pi, -0.5 * np.pi]))
-    hand_pose[:3, 3] = hand_middle
+    hand_pose[:3, :3] = np.column_stack((normal, orientation, approach))
+    hand_pose[:3, 3] = hand_right
     return hand_pose
-    # the previous frame was originally designed for cases in which the top
-    # marker was on top of the middle between left and right marker, since
-    # it is on top of the right marker now, this would have been a better way
-    # to compute the the frame:
-    #right2left = hand_left - hand_right
-    #approach = pr.norm_vector(hand_top - hand_right)
-    #orientation = pr.norm_vector(np.cross(approach, right2left))
-    #normal = np.cross(orientation, approach)
-    #hand_pose = np.eye(4)
-    #hand_pose[:3, :3] = np.column_stack((normal, orientation, approach))
-    #hand_pose[:3, 3] = hand_right
-    #return hand_pose
 
 
 class ManoFingerKinematics:
