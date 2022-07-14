@@ -1,9 +1,8 @@
 """Manage complex chains of transformations."""
+import numba
 import numpy as np
 import scipy.sparse as sp
 from scipy.sparse import csgraph
-from pytransform3d.transformations import (
-    check_transform, invert_transform, concat)
 
 
 class TransformManager(object):
@@ -20,31 +19,8 @@ class TransformManager(object):
     frame A. The transformation manager will automatically concatenate the
     transformations D2C, C2B, and B2A, where C2B and B2A are obtained by
     inverting B2C and A2B respectively.
-
-    .. warning::
-
-        It is possible to introduce inconsistencies in the transformation
-        manager. Adding A2B and B2A with inconsistent values will result in
-        an invalid state because inconsistencies will not be checked. It seems
-        to be trivial in this simple case but can be computationally complex
-        for large graphs. You can check the consistency explicitly with
-        :func:`TransformManager.check_consistency`.
-
-    Parameters
-    ----------
-    strict_check : bool, optional (default: True)
-        Raise a ValueError if the transformation matrix is not numerically
-        close enough to a real transformation matrix. Otherwise we print a
-        warning.
-
-    check : bool, optional (default: True)
-        Check if transformation matrices are valid and requested nodes exist,
-        which might significantly slow down some operations.
     """
-    def __init__(self, strict_check=True, check=True):
-        self.strict_check = strict_check
-        self.check = check
-
+    def __init__(self):
         self.transforms = {}
         self.nodes = []
 
@@ -85,8 +61,6 @@ class TransformManager(object):
         self : TransformManager
             This object for chaining
         """
-        if self.check:
-            A2B = check_transform(A2B, strict_check=self.strict_check)
         if from_frame not in self.nodes:
             self.nodes.append(from_frame)
         if to_frame not in self.nodes:
@@ -187,19 +161,12 @@ class TransformManager(object):
             If one of the frames is unknown or there is no connection between
             them
         """
-        if self.check:
-            if from_frame not in self.nodes:
-                raise KeyError("Unknown frame '%s'" % from_frame)
-            if to_frame not in self.nodes:
-                raise KeyError("Unknown frame '%s'" % to_frame)
-
         if (from_frame, to_frame) in self.transforms:
             return self.transforms[(from_frame, to_frame)]
 
         if (to_frame, from_frame) in self.transforms:
             return invert_transform(
-                self.transforms[(to_frame, from_frame)],
-                strict_check=self.strict_check, check=self.check)
+                self.transforms[(to_frame, from_frame)])
 
         i = self.nodes.index(from_frame)
         j = self.nodes.index(to_frame)
@@ -225,8 +192,7 @@ class TransformManager(object):
     def _path_transform(self, path):
         A2B = np.eye(4)
         for from_f, to_f in zip(path[:-1], path[1:]):
-            A2B = concat(A2B, self.get_transform(from_f, to_f),
-                         strict_check=self.strict_check, check=self.check)
+            A2B = np.dot(self.get_transform(from_f, to_f), A2B)
         return A2B
 
     def _whitelisted_nodes(self, whitelist):
@@ -256,3 +222,24 @@ class TransformManager(object):
                 raise KeyError("Whitelist contains unknown nodes: '%s'"
                                % nonwhitlisted_nodes)
         return nodes
+
+
+@numba.njit(numba.float64[:, :](numba.float64[:, :]), cache=True)
+def invert_transform(A2B):
+    """Invert transform.
+    Parameters
+    ----------
+    A2B : array-like, shape (4, 4)
+        Transform from frame A to frame B
+    Returns
+    -------
+    B2A : array-like, shape (4, 4)
+        Transform from frame B to frame A
+    """
+    B2A = np.empty((4, 4))
+    RT = A2B[:3, :3].T
+    B2A[:3, :3] = RT
+    B2A[:3, 3] = -np.dot(RT, A2B[:3, 3])
+    B2A[3, :3] = 0.0
+    B2A[3, 3] = 1.0
+    return B2A

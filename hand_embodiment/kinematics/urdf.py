@@ -27,20 +27,9 @@ class UrdfTransformManager(TransformManager):
     .. note::
 
         Joint angles must be given in radians.
-
-    Parameters
-    ----------
-    strict_check : bool, optional (default: True)
-        Raise a ValueError if the transformation matrix is not numerically
-        close enough to a real transformation matrix. Otherwise we print a
-        warning.
-
-    check : bool, optional (default: True)
-        Check if transformation matrices are valid and requested nodes exist,
-        which might significantly slow down some operations.
     """
-    def __init__(self, strict_check=True, check=False):
-        super(UrdfTransformManager, self).__init__(strict_check, check)
+    def __init__(self):
+        super(UrdfTransformManager, self).__init__()
         self.visuals = []
         self.collision_objects = []
         self._joints = {}
@@ -150,7 +139,7 @@ class UrdfTransformManager(TransformManager):
             variable defines to which path this prefix will be resolved.
         """
         robot_name, links, joints = parse_urdf(
-            urdf_xml, mesh_path, package_dir, self.strict_check)
+            urdf_xml, mesh_path, package_dir, False)
         initialize_urdf_transform_manager(self, robot_name, links, joints)
 
     def get_ee2base(self, ee_index, base_index):
