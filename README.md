@@ -1,6 +1,6 @@
 # Hand Embodiment
 
-![Overview](doc/source/_static/overview.svg)
+![Overview](doc/source/_static/overview.png)
 
 Embodiment mapping for robotic hands from human hand motions
 
