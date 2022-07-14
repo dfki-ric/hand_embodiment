@@ -5,114 +5,8 @@ Forward and inverse kinematics for robotic hands.
 import numpy as np
 import math
 import numba
-from pytransform3d.urdf import UrdfTransformManager
+from .urdf import UrdfTransformManager
 from scipy.optimize import minimize
-
-
-class FastUrdfTransformManager(UrdfTransformManager):
-    """Fast transformation manager that can load URDF files.
-
-    This version has efficient numba-accelerated code to update joints.
-    """
-    def __init__(self):
-        super(FastUrdfTransformManager, self).__init__(check=False)
-        self.virtual_joints = {}
-
-    def set_joint(self, joint_name, value):
-        """Set joint position.
-
-        Note that joint values are clipped to their limits.
-
-        Parameters
-        ----------
-        joint_name : string
-            Name of the joint
-
-        value : float
-            Joint angle in radians in case of revolute joints or position
-            in case of prismatic joint.
-        """
-        if joint_name in self.virtual_joints:
-            callback = self.virtual_joints[joint_name]
-            actual_joint_states = callback(value)
-            for actual_joint_name, actual_value in actual_joint_states.items():
-                self.set_joint(actual_joint_name, actual_value)
-            return
-
-        from_frame, to_frame, child2parent, axis, limits, joint_type = self._joints[joint_name]
-        value = min(max(value, limits[0]), limits[1])
-        if joint_type == "revolute":
-            joint2A = _fast_matrix_from_axis_angle(axis, value)
-        else:
-            joint2A = np.eye(4)
-            joint2A[:3, 3] = value * axis
-        self.transforms[(from_frame, to_frame)] = child2parent.dot(joint2A)
-
-    def get_ee2base(self, ee_index, base_index):
-        """Request a transform.
-
-        Parameters
-        ----------
-        ee_index : int
-            Index of the end-effector node
-
-        base_index : int
-            Index of the base node
-
-        Returns
-        -------
-        ee2base : array-like, shape (4, 4)
-            Homogeneous matrix that represents the transform from ee to base
-        """
-        return self._path_transform(self._shortest_path(ee_index, base_index))
-
-    def add_virtual_joint(self, joint_name, callback):
-        """Add virtual joint.
-
-         A virtual joint is a wrapper that controls multiple other joints.
-
-        Parameters
-        ----------
-        joint_name : str
-            Name of the new virtual joint.
-
-        callback : callable
-            A callable object that provides the function 'make_virtual_joint'
-            to initialize the transform manager. The function call operator
-            will be used to set the joint angle of the virtual joint.
-        """
-        self.virtual_joints[joint_name] = callback
-        self._joints[joint_name] = callback.make_virtual_joint(
-            joint_name, self)
-
-
-@numba.jit(nopython=True, cache=True)
-def _fast_matrix_from_axis_angle(axis, angle):
-    """Compute transformation matrix from axis-angle.
-
-    Parameters
-    ----------
-    a : array-like, shape (4,)
-        Axis of rotation and rotation angle: (x, y, z, angle)
-
-    Returns
-    -------
-    A2B : array-like, shape (4, 4)
-        Transformation matrix
-    """
-    ux, uy, uz = axis
-    c = math.cos(angle)
-    s = math.sin(angle)
-    ci = 1.0 - c
-    ciux = ci * ux
-    ciuy = ci * uy
-    ciuz = ci * uz
-    return np.array([
-        [ciux * ux + c, ciux * uy - uz * s, ciux * uz + uy * s, 0.0],
-        [ciuy * ux + uz * s, ciuy * uy + c, ciuy * uz - ux * s, 0.0],
-        [ciuz * ux - uy * s, ciuz * uy + ux * s, ciuz * uz + c, 0.0],
-        [0.0, 0.0, 0.0, 1.0]
-    ])
 
 
 class Kinematics:
@@ -131,7 +25,7 @@ class Kinematics:
         Path to corresponding ROS package
     """
     def __init__(self, urdf, mesh_path=None, package_dir=None):
-        self.tm = FastUrdfTransformManager()
+        self.tm = UrdfTransformManager()
         self.tm.load_urdf(urdf, mesh_path=mesh_path, package_dir=package_dir)
 
     def create_chain(self, joint_names, base_frame, ee_frame, verbose=0):

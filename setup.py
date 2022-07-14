@@ -27,7 +27,7 @@ if __name__ == "__main__":
         from Cython.Build import cythonize
         import numpy
         cython_config = dict(
-            ext_modules=cythonize("hand_embodiment/mano_fast.pyx"),
+            ext_modules=cythonize(["hand_embodiment/mano_fast.pyx"]),
             zip_safe=False,
             compiler_directives={"language_level": "3"},
             include_dirs=[numpy.get_include()],
