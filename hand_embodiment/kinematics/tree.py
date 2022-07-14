@@ -177,6 +177,13 @@ class TransformManager(object):
         path = self._shortest_path(i, j)
         return self._path_transform(path)
 
+    def _get_immediate_transform(self, from_frame, to_frame):
+        key = (from_frame, to_frame)
+        if key in self.transforms:
+            return self.transforms[key]
+        else:
+            return invert_transform(self.transforms[(to_frame, from_frame)])
+
     def _shortest_path(self, i, j):
         if (i, j) in self._cached_shortest_paths:
             return self._cached_shortest_paths[(i, j)]
@@ -186,8 +193,10 @@ class TransformManager(object):
 
     def _path_transform(self, path):
         A2B = np.eye(4)
-        for from_f, to_f in zip(path[:-1], path[1:]):
-            A2B = np.dot(self.get_transform(from_f, to_f), A2B)
+        for i in range(len(path) - 1):
+            from_f = path[i]
+            to_f = path[i + 1]
+            A2B = np.dot(self._get_immediate_transform(from_f, to_f), A2B)
         return A2B
 
     def _whitelisted_nodes(self, whitelist):
