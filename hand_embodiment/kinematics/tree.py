@@ -180,12 +180,7 @@ class TransformManager(object):
     def _shortest_path(self, i, j):
         if (i, j) in self._cached_shortest_paths:
             return self._cached_shortest_paths[(i, j)]
-
-        path = []
-        k = i
-        while k != -9999:
-            path.append(self.nodes[k])
-            k = self.predecessors[j, k]
+        path = _shortest_path(self.nodes, self.predecessors, i, j)
         self._cached_shortest_paths[(i, j)] = path
         return path
 
@@ -222,6 +217,16 @@ class TransformManager(object):
                 raise KeyError("Whitelist contains unknown nodes: '%s'"
                                % nonwhitlisted_nodes)
         return nodes
+
+
+@numba.njit(cache=True)
+def _shortest_path(nodes, predecessors, i, j):
+    path = []
+    k = i
+    while k != -9999:
+        path.append(nodes[k])
+        k = predecessors[j, k]
+    return path
 
 
 @numba.njit(numba.float64[:, :](numba.float64[:, :]), cache=True)
