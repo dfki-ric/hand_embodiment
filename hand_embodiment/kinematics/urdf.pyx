@@ -1,13 +1,12 @@
-"""Load transformations from URDF files.
-
-See :doc:`transform_manager` for more information.
-"""
+"""Load transformations from URDF files."""
 import math
-import numba
 import numpy as np
+cimport numpy as np
+cimport cython
 from pytransform3d.urdf import UrdfTransformManager
 
 
+@cython.cclass
 class FastUrdfTransformManager:
     """Transformation manager that can load URDF files.
 
@@ -15,8 +14,6 @@ class FastUrdfTransformManager:
     URDF allows to define joints between links that can be rotated about one
     axis. This transformation manager allows to set the joint angles after
     joints have been added or loaded from an URDF.
-
-    This version has efficient numba-accelerated code to update joints.
 
     .. warning::
 
@@ -26,10 +23,16 @@ class FastUrdfTransformManager:
 
         Joint angles must be given in radians.
     """
+    _tm : object
+    _compiled : bool
+    _virtual_joints : dict
+    _cached_shortest_paths : dict
+    _transforms : dict
+
     def __init__(self):
         self._tm = UrdfTransformManager()
-        self.compiled = False
-        self.virtual_joints = {}
+        self._compiled = False
+        self._virtual_joints = {}
 
         self._cached_shortest_paths = {}
         self._transforms = {}
@@ -64,8 +67,9 @@ class FastUrdfTransformManager:
         for ee_frame in ee_frames:
             self._compute_path(base_frame, ee_frame)
 
-        self.compiled = True
+        self._compiled = True
 
+    @cython.ccall
     def _compute_path(self, base_frame, ee_frame):
         i = self._tm.nodes.index(ee_frame)
         j = self._tm.nodes.index(base_frame)
@@ -76,6 +80,7 @@ class FastUrdfTransformManager:
             k = self._tm.predecessors[j, k]
         self._cached_shortest_paths[(i, j)] = path
 
+    @cython.ccall
     def _path_transform(self, path):
         A2B = np.eye(4)
         for i in range(len(path) - 1):
@@ -84,7 +89,7 @@ class FastUrdfTransformManager:
             if (from_f, to_f) in self._transforms:
                 B2C = self._transforms[(from_f, to_f)]
             else:
-                B2C = invert_transform(self._transforms[to_f, from_f])
+                B2C = _invert_transform(self._transforms[to_f, from_f])
             A2B = np.dot(B2C, A2B)
         return A2B
 
@@ -140,7 +145,7 @@ class FastUrdfTransformManager:
         self : TransformManager
             This object for chaining
         """
-        if self.compiled:
+        if self._compiled:
             assert (from_frame, to_frame) in self._tm.transforms
             self._transforms[(from_frame, to_frame)] = A2B
         else:
@@ -216,8 +221,8 @@ class FastUrdfTransformManager:
             Joint angle in radians in case of revolute joints or position
             in case of prismatic joint.
         """
-        if joint_name in self.virtual_joints:
-            callback = self.virtual_joints[joint_name]
+        if joint_name in self._virtual_joints:
+            callback = self._virtual_joints[joint_name]
             actual_joint_states = callback(value)
             for actual_joint_name, actual_value in actual_joint_states.items():
                 self.set_joint(actual_joint_name, actual_value)
@@ -285,7 +290,7 @@ class FastUrdfTransformManager:
             to initialize the transform manager. The function call operator
             will be used to set the joint angle of the virtual joint.
         """
-        self.virtual_joints[joint_name] = callback
+        self._virtual_joints[joint_name] = callback
         self._tm._joints[joint_name] = callback.make_virtual_joint(
             joint_name, self)
 
@@ -318,8 +323,11 @@ class FastUrdfTransformManager:
         return nodes
 
 
-@numba.jit(nopython=True, cache=True)
-def _fast_matrix_from_axis_angle(axis, angle):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+@cython.cdivision(True)
+cpdef np.ndarray[double, ndim=2] _fast_matrix_from_axis_angle(np.ndarray[double, ndim=1] axis, double angle):
     """Compute transformation matrix from axis-angle.
 
     Parameters
@@ -347,13 +355,18 @@ def _fast_matrix_from_axis_angle(axis, angle):
     ])
 
 
-@numba.njit(numba.float64[:, :](numba.float64[:, :]), cache=True)
-def invert_transform(A2B):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+@cython.cdivision(True)
+cpdef np.ndarray[double, ndim=2] _invert_transform(np.ndarray[double, ndim=2] A2B):
     """Invert transform.
+
     Parameters
     ----------
     A2B : array-like, shape (4, 4)
         Transform from frame A to frame B
+
     Returns
     -------
     B2A : array-like, shape (4, 4)
