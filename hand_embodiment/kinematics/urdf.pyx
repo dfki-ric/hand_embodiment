@@ -49,6 +49,7 @@ class FastUrdfTransformManager:
     def nodes(self):
         return self._tm.nodes
 
+    @cython.ccall
     def compile(self, joint_names, base_frame, ee_frames):
         """Compile kinematic tree.
 
@@ -69,7 +70,6 @@ class FastUrdfTransformManager:
 
         self._compiled = True
 
-    @cython.ccall
     def _compute_path(self, base_frame, ee_frame):
         i = self._tm.nodes.index(ee_frame)
         j = self._tm.nodes.index(base_frame)
@@ -81,8 +81,15 @@ class FastUrdfTransformManager:
         self._cached_shortest_paths[(i, j)] = path
 
     @cython.ccall
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    @cython.nonecheck(False)
     def _path_transform(self, path):
-        A2B = np.eye(4)
+        cdef np.ndarray[double, ndim=2] A2B = np.eye(4)
+        cdef np.ndarray[double, ndim=2] B2C
+        cdef int i
+        cdef str from_f
+        cdef str to_f
         for i in range(len(path) - 1):
             from_f = path[i]
             to_f = path[i + 1]
@@ -124,6 +131,7 @@ class FastUrdfTransformManager:
         """
         return self._tm.get_joint_limits(joint_name)
 
+    @cython.ccall
     def add_transform(self, from_frame, to_frame, A2B):
         """Update existing transform.
 
@@ -146,7 +154,6 @@ class FastUrdfTransformManager:
             This object for chaining
         """
         if self._compiled:
-            assert (from_frame, to_frame) in self._tm.transforms
             self._transforms[(from_frame, to_frame)] = A2B
         else:
             self._tm.add_transform(from_frame, to_frame, A2B)
@@ -207,6 +214,7 @@ class FastUrdfTransformManager:
             joint_name, from_frame, to_frame, child2parent, axis, limits,
             joint_type)
 
+    @cython.ccall
     def set_joint(self, joint_name, value):
         """Set joint position.
 
@@ -228,14 +236,26 @@ class FastUrdfTransformManager:
                 self.set_joint(actual_joint_name, actual_value)
             return
 
+        cdef str from_frame
+        cdef str to_frame
+        cdef np.ndarray[double, ndim=2] child2parent
+        cdef np.ndarray[double, ndim=1] axis
+        cdef str joint_type
         from_frame, to_frame, child2parent, axis, limits, joint_type = self._tm._joints[joint_name]
+
         value = min(max(value, limits[0]), limits[1])
+        cdef np.ndarray[double, ndim=2] joint2A
         if joint_type == "revolute":
             joint2A = _fast_matrix_from_axis_angle(axis, value)
         else:
             joint2A = np.eye(4)
             joint2A[:3, 3] = value * axis
-        self.add_transform(from_frame, to_frame, child2parent.dot(joint2A))
+
+        cdef np.ndarray[double, ndim=2] from2to = child2parent.dot(joint2A)
+        if self._compiled:
+            self._transforms[(from_frame, to_frame)] = from2to
+        else:
+            self._tm.add_transform(from_frame, to_frame, from2to)
 
     def load_urdf(self, urdf_xml, mesh_path=None, package_dir=None):
         """Load URDF file into transformation manager.
