@@ -5,7 +5,7 @@ Forward and inverse kinematics for robotic hands.
 import numpy as np
 import math
 import numba
-from .urdf import UrdfTransformManager
+from .urdf import FastUrdfTransformManager
 from scipy.optimize import minimize
 
 
@@ -25,7 +25,7 @@ class Kinematics:
         Path to corresponding ROS package
     """
     def __init__(self, urdf, mesh_path=None, package_dir=None):
-        self.tm = UrdfTransformManager()
+        self.tm = FastUrdfTransformManager()
         self.tm.load_urdf(urdf, mesh_path=mesh_path, package_dir=package_dir)
 
     def create_chain(self, joint_names, base_frame, ee_frame, verbose=0):
@@ -431,7 +431,8 @@ class MultiChain:
         self.ee_frames = ee_frames
         self.verbose = verbose
 
-        self.joint_limits = np.array([self.tm._joints[jn][4] for jn in self.joint_names])
+        self.joint_limits = np.array([
+            self.tm.get_joint_limits(jn) for jn in self.joint_names])
         for i in range(len(self.joint_limits)):
             if np.isinf(self.joint_limits[i, 0]):
                 self.joint_limits[i, 0] = -math.pi

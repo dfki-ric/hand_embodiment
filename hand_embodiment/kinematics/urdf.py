@@ -5,12 +5,10 @@ See :doc:`transform_manager` for more information.
 import math
 import numba
 import numpy as np
-from pytransform3d.rotations import norm_vector
-from pytransform3d.urdf import parse_urdf, initialize_urdf_transform_manager
-from .tree import TransformManager
+from pytransform3d.urdf import UrdfTransformManager
 
 
-class UrdfTransformManager(TransformManager):
+class FastUrdfTransformManager:
     """Transformation manager that can load URDF files.
 
     URDF is the `Unified Robot Description Format <http://wiki.ros.org/urdf>`_.
@@ -29,11 +27,108 @@ class UrdfTransformManager(TransformManager):
         Joint angles must be given in radians.
     """
     def __init__(self):
-        super(UrdfTransformManager, self).__init__()
-        self.visuals = []
-        self.collision_objects = []
-        self._joints = {}
+        self._tm = UrdfTransformManager()
+        self.compiled = False
         self.virtual_joints = {}
+
+    @property
+    def visuals(self):
+        return self._tm.visuals
+
+    @property
+    def collision_objects(self):
+        return self._tm.collision_objects
+
+    @property
+    def nodes(self):
+        return self._tm.nodes
+
+    def compile(self):
+        self.compiled = True
+
+    def set_joint_limits(self, joint_name, lower=None, upper=None):
+        joint_info = self._tm._joints[joint_name]
+        new_limits = [joint_info[4][0], joint_info[4][1]]
+        if lower is not None:
+            new_limits[0] = lower
+        if upper is not None:
+            new_limits[1] = upper
+        joint_info = (joint_info[0], joint_info[1], joint_info[2], joint_info[3],
+                      tuple(new_limits), joint_info[5])
+        self._tm._joints[joint_name] = joint_info
+
+    def get_joint_limits(self, joint_name):
+        """Get limits of a joint.
+
+        Parameters
+        ----------
+        joint_name : str
+            Name of the joint
+
+        Returns
+        -------
+        limits : pair of float
+            Lower and upper joint angle limit
+
+        Raises
+        ------
+        KeyError
+            If joint_name is unknown
+        """
+        return self._tm.get_joint_limits(joint_name)
+
+    def add_transform(self, from_frame, to_frame, A2B):
+        """Update existing transform.
+
+        Parameters
+        ----------
+        from_frame : Hashable
+            Name of the frame for which the transformation is added in the
+            to_frame coordinate system
+
+        to_frame : Hashable
+            Name of the frame in which the transformation is defined
+
+        A2B : array-like, shape (4, 4)
+            Homogeneous matrix that represents the transformation from
+            'from_frame' to 'to_frame'
+
+        Returns
+        -------
+        self : TransformManager
+            This object for chaining
+        """
+        if self.compiled:
+            self._tm.transforms[(from_frame, to_frame)] = A2B
+        else:
+            self._tm.add_transform(from_frame, to_frame, A2B)
+        return self
+
+    def get_transform(self, from_frame, to_frame):
+        """Request a transformation.
+
+        Parameters
+        ----------
+        from_frame : Hashable
+            Name of the frame for which the transformation is requested in the
+            to_frame coordinate system
+
+        to_frame : Hashable
+            Name of the frame in which the transformation is defined
+
+        Returns
+        -------
+        A2B : array-like, shape (4, 4)
+            Homogeneous matrix that represents the transformation from
+            'from_frame' to 'to_frame'
+
+        Raises
+        ------
+        KeyError
+            If one of the frames is unknown or there is no connection between
+            them
+        """
+        return self._tm.get_transform(from_frame, to_frame)
 
     def add_joint(self, joint_name, from_frame, to_frame, child2parent, axis,
                   limits=(float("-inf"), float("inf")), joint_type="revolute"):
@@ -63,9 +158,8 @@ class UrdfTransformManager(TransformManager):
             Joint type: revolute or prismatic (continuous is the same as
             revolute)
         """
-        self.add_transform(from_frame, to_frame, child2parent)
-        self._joints[joint_name] = (
-            from_frame, to_frame, child2parent, norm_vector(axis), limits,
+        self._tm.add_joint(
+            joint_name, from_frame, to_frame, child2parent, axis, limits,
             joint_type)
 
     def set_joint(self, joint_name, value):
@@ -89,36 +183,14 @@ class UrdfTransformManager(TransformManager):
                 self.set_joint(actual_joint_name, actual_value)
             return
 
-        from_frame, to_frame, child2parent, axis, limits, joint_type = self._joints[joint_name]
+        from_frame, to_frame, child2parent, axis, limits, joint_type = self._tm._joints[joint_name]
         value = min(max(value, limits[0]), limits[1])
         if joint_type == "revolute":
             joint2A = _fast_matrix_from_axis_angle(axis, value)
         else:
             joint2A = np.eye(4)
             joint2A[:3, 3] = value * axis
-        self.transforms[(from_frame, to_frame)] = child2parent.dot(joint2A)
-
-    def get_joint_limits(self, joint_name):
-        """Get limits of a joint.
-
-        Parameters
-        ----------
-        joint_name : str
-            Name of the joint
-
-        Returns
-        -------
-        limits : pair of float
-            Lower and upper joint angle limit
-
-        Raises
-        ------
-        KeyError
-            If joint_name is unknown
-        """
-        if joint_name not in self._joints:
-            raise KeyError("Joint '%s' is not known" % joint_name)
-        return self._joints[joint_name][4]
+        self._tm.transforms[(from_frame, to_frame)] = child2parent.dot(joint2A)
 
     def load_urdf(self, urdf_xml, mesh_path=None, package_dir=None):
         """Load URDF file into transformation manager.
@@ -138,9 +210,7 @@ class UrdfTransformManager(TransformManager):
             package in which these files (textures, meshes) are located. This
             variable defines to which path this prefix will be resolved.
         """
-        robot_name, links, joints = parse_urdf(
-            urdf_xml, mesh_path, package_dir, False)
-        initialize_urdf_transform_manager(self, robot_name, links, joints)
+        self._tm.load_urdf(urdf_xml, mesh_path, package_dir)
 
     def get_ee2base(self, ee_index, base_index):
         """Request a transform.
@@ -158,7 +228,7 @@ class UrdfTransformManager(TransformManager):
         ee2base : array-like, shape (4, 4)
             Homogeneous matrix that represents the transform from ee to base
         """
-        return self._path_transform(self._shortest_path(ee_index, base_index))
+        return self._tm._path_transform(self._tm._shortest_path(ee_index, base_index))
 
     def add_virtual_joint(self, joint_name, callback):
         """Add virtual joint.
@@ -176,8 +246,36 @@ class UrdfTransformManager(TransformManager):
             will be used to set the joint angle of the virtual joint.
         """
         self.virtual_joints[joint_name] = callback
-        self._joints[joint_name] = callback.make_virtual_joint(
+        self._tm._joints[joint_name] = callback.make_virtual_joint(
             joint_name, self)
+
+    def _whitelisted_nodes(self, whitelist):
+        """Get whitelisted nodes.
+
+        Parameters
+        ----------
+        whitelist : list or None
+            Whitelist of frames
+
+        Returns
+        -------
+        nodes : set
+            Existing whitelisted nodes
+
+        Raises
+        ------
+        KeyError
+            Will be raised if an unknown node is in the whitelist.
+        """
+        nodes = set(self.nodes)
+        if whitelist is not None:
+            whitelist = set(whitelist)
+            nodes = nodes.intersection(whitelist)
+            nonwhitlisted_nodes = whitelist.difference(nodes)
+            if nonwhitlisted_nodes:
+                raise KeyError("Whitelist contains unknown nodes: '%s'"
+                               % nonwhitlisted_nodes)
+        return nodes
 
 
 @numba.jit(nopython=True, cache=True)

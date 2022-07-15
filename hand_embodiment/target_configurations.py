@@ -71,10 +71,7 @@ from pkg_resources import resource_filename
 def kinematic_model_hook_mia(kin):
     """Extends kinematic model to include links for embodiment mapping."""
     # adjust index finger limit
-    joint_info = kin.tm._joints["j_index_fle"]
-    joint_info = (joint_info[0], joint_info[1], joint_info[2], joint_info[3],
-                  (0.0, joint_info[4][1]), joint_info[5])
-    kin.tm._joints["j_index_fle"] = joint_info
+    kin.tm.set_joint_limits("j_index_fle", lower=0.0)
 
     kin.tm.add_transform(
         "thumb_tip", "thumb_fle",
