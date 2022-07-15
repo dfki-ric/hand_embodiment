@@ -116,6 +116,7 @@ class Chain:
 
         self.ee_index = self.tm.nodes.index(ee_frame)
         self.base_index = self.tm.nodes.index(base_frame)
+        self.tm.compile(joint_names, base_frame, [ee_frame])
 
     def forward(self, joint_angles):
         """Forward kinematics.
@@ -445,6 +446,7 @@ class MultiChain:
         self.ee_indices = [self.tm.nodes.index(ee_frame)
                            for ee_frame in self.ee_frames]
         self.base_index = self.tm.nodes.index(base_frame)
+        self.tm.compile(joint_names, base_frame, ee_frames)
 
     def forward(self, joint_angles):
         """Forward kinematics.

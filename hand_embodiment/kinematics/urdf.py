@@ -31,6 +31,9 @@ class FastUrdfTransformManager:
         self.compiled = False
         self.virtual_joints = {}
 
+        self._cached_shortest_paths = {}
+        self._transforms = {}
+
     @property
     def visuals(self):
         return self._tm.visuals
@@ -43,8 +46,47 @@ class FastUrdfTransformManager:
     def nodes(self):
         return self._tm.nodes
 
-    def compile(self):
+    def compile(self, joint_names, base_frame, ee_frames):
+        """Compile kinematic tree.
+
+        Parameters
+        ----------
+        joint_names : list
+            Names of joints that should be used
+
+        base_frame : str
+            Name of the base link
+
+        ee_frames : list of str
+            Name of the end-effector links
+        """
+        self._transforms.update(self._tm.transforms)
+        for ee_frame in ee_frames:
+            self._compute_path(base_frame, ee_frame)
+
         self.compiled = True
+
+    def _compute_path(self, base_frame, ee_frame):
+        i = self._tm.nodes.index(ee_frame)
+        j = self._tm.nodes.index(base_frame)
+        path = []
+        k = i
+        while k != -9999:
+            path.append(self._tm.nodes[k])
+            k = self._tm.predecessors[j, k]
+        self._cached_shortest_paths[(i, j)] = path
+
+    def _path_transform(self, path):
+        A2B = np.eye(4)
+        for i in range(len(path) - 1):
+            from_f = path[i]
+            to_f = path[i + 1]
+            if (from_f, to_f) in self._transforms:
+                B2C = self._transforms[(from_f, to_f)]
+            else:
+                B2C = invert_transform(self._transforms[to_f, from_f])
+            A2B = np.dot(B2C, A2B)
+        return A2B
 
     def set_joint_limits(self, joint_name, lower=None, upper=None):
         joint_info = self._tm._joints[joint_name]
@@ -99,7 +141,8 @@ class FastUrdfTransformManager:
             This object for chaining
         """
         if self.compiled:
-            self._tm.transforms[(from_frame, to_frame)] = A2B
+            assert (from_frame, to_frame) in self._tm.transforms
+            self._transforms[(from_frame, to_frame)] = A2B
         else:
             self._tm.add_transform(from_frame, to_frame, A2B)
         return self
@@ -121,14 +164,11 @@ class FastUrdfTransformManager:
         A2B : array-like, shape (4, 4)
             Homogeneous matrix that represents the transformation from
             'from_frame' to 'to_frame'
-
-        Raises
-        ------
-        KeyError
-            If one of the frames is unknown or there is no connection between
-            them
         """
-        return self._tm.get_transform(from_frame, to_frame)
+        i = self.nodes.index(from_frame)
+        j = self.nodes.index(to_frame)
+        A2B = self._path_transform(self._tm._shortest_path(i, j))
+        return A2B
 
     def add_joint(self, joint_name, from_frame, to_frame, child2parent, axis,
                   limits=(float("-inf"), float("inf")), joint_type="revolute"):
@@ -190,7 +230,7 @@ class FastUrdfTransformManager:
         else:
             joint2A = np.eye(4)
             joint2A[:3, 3] = value * axis
-        self._tm.transforms[(from_frame, to_frame)] = child2parent.dot(joint2A)
+        self.add_transform(from_frame, to_frame, child2parent.dot(joint2A))
 
     def load_urdf(self, urdf_xml, mesh_path=None, package_dir=None):
         """Load URDF file into transformation manager.
@@ -228,7 +268,7 @@ class FastUrdfTransformManager:
         ee2base : array-like, shape (4, 4)
             Homogeneous matrix that represents the transform from ee to base
         """
-        return self._tm._path_transform(self._tm._shortest_path(ee_index, base_index))
+        return self._path_transform(self._cached_shortest_paths[ee_index, base_index])
 
     def add_virtual_joint(self, joint_name, callback):
         """Add virtual joint.
@@ -305,3 +345,24 @@ def _fast_matrix_from_axis_angle(axis, angle):
         [ciuz * ux - uy * s, ciuz * uy + ux * s, ciuz * uz + c, 0.0],
         [0.0, 0.0, 0.0, 1.0]
     ])
+
+
+@numba.njit(numba.float64[:, :](numba.float64[:, :]), cache=True)
+def invert_transform(A2B):
+    """Invert transform.
+    Parameters
+    ----------
+    A2B : array-like, shape (4, 4)
+        Transform from frame A to frame B
+    Returns
+    -------
+    B2A : array-like, shape (4, 4)
+        Transform from frame B to frame A
+    """
+    B2A = np.empty((4, 4))
+    RT = A2B[:3, :3].T
+    B2A[:3, :3] = RT
+    B2A[:3, 3] = -np.dot(RT, A2B[:3, 3])
+    B2A[3, :3] = 0.0
+    B2A[3, 3] = 1.0
+    return B2A

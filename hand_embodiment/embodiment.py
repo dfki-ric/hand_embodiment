@@ -89,6 +89,7 @@ class HandEmbodiment(TimeableMixin):
         self.target_finger_chains = {}
         self.joint_angles = {}
         self.base_frame = target_config["base_frame"]
+        self.target_kin.tm.add_transform("world", self.base_frame, np.eye(4))
         for finger_name in target_config["ee_frames"].keys():
             assert finger_name in target_config["joint_names"]
             assert finger_name in target_config["ee_frames"]
