@@ -5,6 +5,18 @@ import yaml
 import numpy as np
 import pandas as pd
 from scipy.signal import medfilt
+import mat4py  # TODO requirement
+
+
+def read_bts_matlab(filename, unit="m", verbose=0):
+    """TODO"""
+    data = mat4py.loadmat(filename)
+    marker_names = list(data.keys())
+    if verbose:
+        print("[read_bts_matlab] marker names: %s" % marker_names)
+    # TODO time?
+    for marker_name in marker_names:
+        np.column_stack(data[marker_name]["X"]
 
 
 def read_qualisys_tsv(filename, unit="m", verbose=0):
