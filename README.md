@@ -27,7 +27,8 @@ The currently implemented target systems are:
 
 This is the implementation of the paper
 
-Alexander Fabisch, Melvin Laux, Dennis Marschner, Johannes Brust:
+Alexander Fabisch, Manuela Uliano, Dennis Marschner, Melvin Laux,
+Johannes Brust, Marco Controzzi:
 **A Modular Approach to the Embodiment of Hand Motions from Human Demonstrations**,
 https://arxiv.org/abs/2203.02778
 
