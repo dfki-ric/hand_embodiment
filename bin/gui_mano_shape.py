@@ -14,7 +14,7 @@ from open3d.visualization import gui
 import pytransform3d.transformations as pt
 
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
-from hand_embodiment.vis_utils import make_coordinate_system
+from hand_embodiment.vis_utils import make_coordinate_system, compute_expected_marker_positions
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
 from hand_embodiment.config import load_mano_config, save_mano_config
 
@@ -130,17 +130,17 @@ class Figure:
             self.main_scene.remove_geometry(name)
         self.geometry_names = []
 
-    def add_markers_in_mano(self, marker_points):
-        for p in marker_points:  # TODO refactor
-            marker = o3d.geometry.TriangleMesh.create_sphere(radius=0.006)
-            n_vertices = len(marker.vertices)
-            colors = np.zeros((n_vertices, 3))
-            colors[:] = (0.3, 0.3, 0.3)
-            marker.vertex_colors = o3d.utility.Vector3dVector(colors)
-            marker.translate(p)
-            marker.compute_vertex_normals()
-            marker.compute_triangle_normals()
-            self.add_geometry(marker)
+    def add_markers_in_mano(self, marker_points, color):
+        for p in marker_points:
+            self.add_geometry(self._make_marker_sphere(p, color))
+
+    def _make_marker_sphere(self, p, color):
+        marker = o3d.geometry.TriangleMesh.create_sphere(radius=0.006)
+        marker.paint_uniform_color(color)
+        marker.compute_vertex_normals()
+        marker.compute_triangle_normals()
+        marker.translate(p)
+        return marker
 
     def add_hand_mesh(self, mesh, material):
         return self.main_scene.add_geometry("MANO", mesh, material)
@@ -204,12 +204,17 @@ class OnMano:
         self.frame_num = frame_num
 
     def draw_markers(self):
-        world2mano = pt.invert_transform(self.mbrm.mano2world_)
+        world2mano = np.linalg.inv(self.mbrm.mano2world_)
         markers_in_world = self.dataset.get_markers(self.frame_num)
         markers_in_mano = pt.transform(
             self.mbrm.mano2hand_markers_, pt.transform(
                 world2mano, pt.vectors_to_points(markers_in_world)))[:, :3]
-        self.fig.add_markers_in_mano(markers_in_mano)
+        self.fig.add_markers_in_mano(markers_in_mano, (0.3, 0.3, 0.3))
+        markers = compute_expected_marker_positions(self.mbrm)
+        markers_in_mano = pt.transform(
+            self.mbrm.mano2hand_markers_,
+            pt.vectors_to_points(markers))[:, :3]
+        self.fig.add_markers_in_mano(markers_in_mano, (1, 1, 1))
 
     def redraw_mano(self):
         self.fig.main_scene.remove_geometry("MANO")
@@ -264,7 +269,7 @@ class OnManoChange(OnMano):
         pose[i] = value
         self.mbrm.mano2hand_markers_ = pt.transform_from_exponential_coordinates(pose)
         self.update_mesh()
-        self.redraw_mano()
+        self.redraw_all()
 
     def update_mesh(self):
         self.mbrm.hand_state_.recompute_shape()

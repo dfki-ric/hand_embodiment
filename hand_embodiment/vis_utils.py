@@ -101,25 +101,25 @@ class ManoHand(pv.Artist):
         if self.show_vertices:
             geoms.append(self.mbrm.hand_state_.hand_pointcloud)
         if self.show_expected_markers:
-            geoms.extend(self._compute_expected_marker_positions())
+            expected_marker_positions = compute_expected_marker_positions(self.mbrm)
+            if self.expected_markers is not None:
+                expected_marker_positions = self.mbrm.mano2world_[:3, 3] + np.dot(
+                    expected_marker_positions, self.mbrm.mano2world_[:3, :3].T)
+                self.expected_markers.set_data(expected_marker_positions)
+                geoms.extend(self.expected_markers.geometries)
         return geoms
 
-    def _compute_expected_marker_positions(self):
-        expected_marker_positions = np.zeros((N_FINGER_MARKERS, 3))
-        i = 0
-        for fn in self.mbrm.mano_finger_kinematics_:
-            finger_kinematics = self.mbrm.mano_finger_kinematics_[fn]
-            if finger_kinematics.has_cached_forward_kinematics():
-                positions = finger_kinematics.forward(return_cached_result=True)
-                expected_marker_positions[i:i + len(positions)] = positions
-                i += len(positions)
-        if self.expected_markers is not None:
-            expected_marker_positions = self.mbrm.mano2world_[:3, 3] + np.dot(
-                expected_marker_positions, self.mbrm.mano2world_[:3, :3].T)
-            self.expected_markers.set_data(expected_marker_positions)
-            return self.expected_markers.geometries
-        else:
-            return []
+
+def compute_expected_marker_positions(mbrm):
+    expected_marker_positions = np.zeros((N_FINGER_MARKERS, 3))
+    i = 0
+    for fn in mbrm.mano_finger_kinematics_:
+        finger_kinematics = mbrm.mano_finger_kinematics_[fn]
+        if finger_kinematics.has_cached_forward_kinematics():
+            positions = finger_kinematics.forward(return_cached_result=True)
+            expected_marker_positions[i:i + len(positions)] = positions
+            i += len(positions)
+    return expected_marker_positions
 
 
 class MoCapObjectMesh(pv.Artist):
