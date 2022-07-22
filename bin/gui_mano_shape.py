@@ -1,10 +1,14 @@
 """Configure MANO shape parameters.
 
+White spheres represent expected markers on the MANO hand. Gray spheres are
+measured marker positions.
+
 Example call:
 
 python bin/gui_mano_shape.py examples/config/mano/20210610_april.yaml --mocap-filename data/20210610_april/Measurement2.tsv --mocap-config examples/config/markers/20210610_april.yaml --start-idx 3000 --fit-fingers
 python bin/gui_mano_shape.py examples/config/mano/20220718_april.yaml --mocap-filename data/20220718_april/OSAI_test1.txt --mocap-config examples/config/markers/20220718_april.yaml --fit-fingers
 """
+print(__doc__)
 import argparse
 import os
 from functools import partial
