@@ -52,6 +52,9 @@ def add_configuration_arguments(parser):
     parser.add_argument(
         "--record-mapping-config", type=str, default=None,
         help="Record mapping configuration file.")
+    parser.add_argument(
+        "--robot-config", type=str, default=None,
+        help="Target system configuration file.")
 
 
 def add_animation_arguments(parser):

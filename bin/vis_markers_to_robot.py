@@ -50,7 +50,8 @@ def main():
         set(TARGET_CONFIG[args.hand]["ee_frames"].keys())))
     pipeline = MoCapToRobot(args.hand, args.mano_config, finger_names,
                             record_mapping_config=args.record_mapping_config,
-                            verbose=1, measure_time=args.measure_time)
+                            verbose=1, measure_time=args.measure_time,
+                            robot_config=args.robot_config)
 
     if args.hand == "mia":
         angle = 1.0 if args.mia_thumb_adducted else -1.0

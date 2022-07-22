@@ -1,5 +1,7 @@
 """Pipelines are high-level interfaces that map human data to robotic hands."""
 import pytransform3d.transformations as pt
+import yaml
+
 from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.config import load_mano_config, load_record_mapping_config
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
@@ -28,10 +30,18 @@ class MoCapToRobot:
 
     measure_time : bool
         Measure computation time for each frame.
+
+    robot_config : str, optional (default: None)
+        Target system configuration.
     """
     def __init__(self, hand, mano_config, use_fingers,
-                 record_mapping_config=None, verbose=0, measure_time=False):
+                 record_mapping_config=None, verbose=0, measure_time=False,
+                 robot_config=None):
         self.hand_config_ = TARGET_CONFIG[hand]
+        if robot_config is not None:
+            with open(robot_config, "r") as f:
+                hand_config = yaml.load(f)
+                self.hand_config_.update(hand_config)
         mano2hand_markers, betas = load_mano_config(mano_config)
 
         if record_mapping_config is not None:
