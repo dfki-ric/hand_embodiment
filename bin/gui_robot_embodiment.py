@@ -1,4 +1,9 @@
-"""Interactive embodiment mapping."""
+"""Interactive embodiment mapping.
+
+Example call:
+
+python bin/gui_robot_embodiment.py mia --mano-config examples/config/mano/20220718_april.yaml --robot-config examples/config/robot/20220718_april_mia.yaml
+"""
 import argparse
 from functools import partial
 import numpy as np
