@@ -65,6 +65,9 @@ def add_animation_arguments(parser):
     parser.add_argument(
         "--delay", type=float, default=0,
         help="Delay in seconds before starting the animation.")
+    parser.add_argument(
+        "--show-expected-markers", action="store_true",
+        help="Show expected markers at MANO mesh.")
     add_object_visualization_arguments(parser)
 
 

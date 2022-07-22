@@ -139,8 +139,13 @@ class MoCapToRobot:
         self.estimate_hand(hand_markers, finger_markers)
         return self.estimate_robot(mocap_origin2origin)
 
-    def make_hand_artist(self):
+    def make_hand_artist(self, show_expected_markers=False):
         """Create artist that visualizes internal state of the hand.
+
+        Parameters
+        ----------
+        show_expected_markers : bool, optional (default: False)
+            Show expected marker positions at hand model.
 
         Returns
         -------
@@ -149,7 +154,8 @@ class MoCapToRobot:
         """
         from hand_embodiment.vis_utils import ManoHand
         return ManoHand(
-            self.embodiment_mapping_, show_mesh=True, show_vertices=False)
+            self.record_mapping_, show_mesh=True, show_vertices=False,
+            show_expected_markers=show_expected_markers)
 
     def make_robot_artist(self):
         """Create artist that visualizes state of the target system.

@@ -66,12 +66,18 @@ def make_coordinate_system(s, short_tick_length=0.01, long_tick_length=0.05):
     return coordinate_system
 
 
+N_FINGER_MARKERS = 10  # TODO load from config?
+
+
 class ManoHand(pv.Artist):
     """Representation of hand mesh as artist for 3D visualization in Open3D."""
-    def __init__(self, mbrm, show_mesh=True, show_vertices=False):
+    def __init__(self, mbrm, show_mesh=True, show_vertices=False, show_expected_markers=True):
         self.mbrm = mbrm
         self.show_mesh = show_mesh
         self.show_vertices = show_vertices
+        self.show_expected_markers = show_expected_markers
+        self.expected_markers = pv.PointCollection3D(
+            np.zeros((N_FINGER_MARKERS, 3)), s=0.006, c=(1, 1, 1))
 
     def set_data(self):
         """Does nothing.
@@ -94,7 +100,26 @@ class ManoHand(pv.Artist):
             geoms.append(self.mbrm.hand_state_.hand_mesh)
         if self.show_vertices:
             geoms.append(self.mbrm.hand_state_.hand_pointcloud)
+        if self.show_expected_markers:
+            geoms.extend(self._compute_expected_marker_positions())
         return geoms
+
+    def _compute_expected_marker_positions(self):
+        expected_marker_positions = np.zeros((N_FINGER_MARKERS, 3))
+        i = 0
+        for fn in self.mbrm.mano_finger_kinematics_:
+            finger_kinematics = self.mbrm.mano_finger_kinematics_[fn]
+            if finger_kinematics.has_cached_forward_kinematics():
+                positions = finger_kinematics.forward(return_cached_result=True)
+                expected_marker_positions[i:i + len(positions)] = positions
+                i += len(positions)
+        if self.expected_markers is not None:
+            expected_marker_positions = self.mbrm.mano2world_[:3, 3] + np.dot(
+                expected_marker_positions, self.mbrm.mano2world_[:3, :3].T)
+            self.expected_markers.set_data(expected_marker_positions)
+            return self.expected_markers.geometries
+        else:
+            return []
 
 
 class MoCapObjectMesh(pv.Artist):
@@ -331,7 +356,7 @@ class AnimationCallback:
     pipeline : MoCapToRobot
         Pipeline.
 
-    args : TODO result of ArgumentParser.parse_args()
+    args : argparse.Namespace
         Command line arguments
 
     show_robot : bool, optional (default: False)
@@ -345,7 +370,8 @@ class AnimationCallback:
         self.show_mano = (hasattr(args, "hide_mano") and not args.hide_mano
                           or hasattr(args, "show_mano") and args.show_mano)
         if self.show_mano:
-            self.hand = pipeline.make_hand_artist()
+            self.hand = pipeline.make_hand_artist(
+                show_expected_markers=args.show_expected_markers)
             self.hand.add_artist(self.fig)
 
         self.object_meshes = []
