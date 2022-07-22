@@ -52,6 +52,9 @@ def add_configuration_arguments(parser):
     parser.add_argument(
         "--record-mapping-config", type=str, default=None,
         help="Record mapping configuration file.")
+    parser.add_argument(
+        "--robot-config", type=str, default=None,
+        help="Target system configuration file.")
 
 
 def add_animation_arguments(parser):
@@ -65,6 +68,9 @@ def add_animation_arguments(parser):
     parser.add_argument(
         "--delay", type=float, default=0,
         help="Delay in seconds before starting the animation.")
+    parser.add_argument(
+        "--show-expected-markers", action="store_true",
+        help="Show expected markers at MANO mesh.")
     add_object_visualization_arguments(parser)
 
 

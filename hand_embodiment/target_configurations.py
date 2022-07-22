@@ -170,16 +170,8 @@ class MiaVirtualThumbJoint:
         return {self.real_joint_name: angle}
 
 
-# TODO make this configurable
-#manobase2miabase = pt.transform_from(
-#    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-1.634, 1.662, -0.182])),
-#    p=np.array([0.002, 0.131, -0.024]))
-#manobase2miabase = pt.transform_from_exponential_coordinates(
-#    [-1.348, 0.865, -1.38, -0.105, 0.12, 0.041])
 manobase2miabase = pt.transform_from_exponential_coordinates(
     [-1.006, 0.865, -1.723, -0.108, 0.088, 0.011])
-#manobase2miabase = pt.transform_from_exponential_coordinates(
-#    [-1.348, 0.476, -1.707, -0.088, 0.078, 0.014])
 MIA_CONFIG = {
     "joint_names":
         {  # map finger names to a list of joint names that control the finger
@@ -335,11 +327,6 @@ class ShadowVirtualF0Joint:
                 self.second_real_joint_name: second_joint_value}
 
 
-#manobase2shadowbase = pt.transform_from(
-#    R=pr.active_matrix_from_intrinsic_euler_xyz(np.array([-3.17, 1.427, 3.032])),
-#    p=np.array([0.011, -0.014, 0.36]))
-#manobase2shadowbase = pt.transform_from_exponential_coordinates(
-#    [0.008, 1.723, -0.133, -0.289, -0.014, 0.267])
 manobase2shadowbase = pt.transform_from_exponential_coordinates(
     [-0.07, 1.77, -0.148, -0.309, -0.021, 0.272])
 SHADOW_HAND_CONFIG = {
@@ -572,7 +559,6 @@ def kinematic_model_hook_barrett(kin):
 
 
 manobase2barrettbase = pt.transform_from_exponential_coordinates(
-    #[-1.692, -0.834, 1.551, -0.011, -0.182, 0.019])
     [-1.779, -0.600, 1.536, -0.033, -0.155, 0.016])
 
 BARRETT_CONFIG = {
