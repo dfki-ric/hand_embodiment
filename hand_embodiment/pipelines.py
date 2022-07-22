@@ -40,7 +40,11 @@ class MoCapToRobot:
         self.hand_config_ = TARGET_CONFIG[hand]
         if robot_config is not None:
             with open(robot_config, "r") as f:
-                hand_config = yaml.load(f)
+                hand_config = yaml.safe_load(f)
+                if "handbase2robotbase" in hand_config:
+                    hand_config["handbase2robotbase"] = \
+                        pt.transform_from_exponential_coordinates(
+                            hand_config["handbase2robotbase"])
                 self.hand_config_.update(hand_config)
         mano2hand_markers, betas = load_mano_config(mano_config)
 
