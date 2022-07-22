@@ -122,12 +122,7 @@ class Figure:
         name = str(len(self.geometry_names))
         self.geometry_names.append(name)
         if material is None:
-            try:  # Open3D <= 0.13
-                material = o3d.visualization.rendering.Material()
-                material.shader = "defaultLit"
-            except AttributeError:  # Open3d >= 0.14
-                material = o3d.visualization.rendering.MaterialRecord()
-                material.shader = "defaultLit"
+            material = make_material()
         self.main_scene.add_geometry(name, geometry, material)
 
     def clear_all_geometries(self):
@@ -207,8 +202,6 @@ class OnMano:
         self.mbrm = mbrm
         self.dataset = dataset
         self.frame_num = frame_num
-
-
 
     def draw_markers(self):
         world2mano = pt.invert_transform(self.mbrm.mano2world_)
@@ -296,15 +289,19 @@ def main():
     fig = Figure("MANO shape", 1920, 1080, config_filename, ax_s=0.2)
     fig.make_mano_widgets(mbrm, dataset, frame_num=args.start_idx, fit_fingers=args.fit_fingers)
     coordinate_system = make_coordinate_system(s=0.2)
+    fig.main_scene.add_geometry(
+        "COORDINATE_SYSTEM", coordinate_system, make_material())
+    fig.show()
+
+
+def make_material():
     try:  # Open3D <= 0.13
         material = o3d.visualization.rendering.Material()
         material.shader = "defaultLit"
     except AttributeError:  # Open3d >= 0.14
         material = o3d.visualization.rendering.MaterialRecord()
         material.shader = "defaultLit"
-    fig.main_scene.add_geometry(
-        "COORDINATE_SYSTEM", coordinate_system, material)
-    fig.show()
+    return material
 
 
 if __name__ == "__main__":
