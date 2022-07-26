@@ -198,7 +198,7 @@ def main(args):
 
     hand_config = TARGET_CONFIG[args.hand]
 
-    tm = load_kinematic_model(hand_config).tm
+    tm = load_kinematic_model(hand_config, unscaled_visual_model=False)[0].tm
     if args.only_link_frames:
         whitelist = [
             node for node in tm.nodes

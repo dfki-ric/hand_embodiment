@@ -26,7 +26,7 @@ def main():
 
     hand_config = TARGET_CONFIG[args.hand]
 
-    kin = load_kinematic_model(hand_config)
+    kin = load_kinematic_model(hand_config, unscaled_visual_model=False)[0]
 
     filename = f"{args.hand}.png"
     write_png(

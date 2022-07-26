@@ -204,7 +204,7 @@ def main():
     fig = pv.figure()
 
     hand_config = TARGET_CONFIG[args.hand]
-    kin = load_kinematic_model(hand_config)
+    kin = load_kinematic_model(hand_config, unscaled_visual_model=False)[0]
 
     if not args.hide_tips:
         for finger_name in hand_config["ee_frames"].keys():
