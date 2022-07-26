@@ -266,8 +266,10 @@ coordinate system. The following image shows these objects.
 
 ![MoCap objects](doc/source/_static/objects.png)
 
-The marker configuration is documented in
+The marker configuration and the definition of frames based on markers is
+implemented and documented in
 [`hand_embodiment/mocap_objects`](https://github.com/dfki-ric/hand_embodiment/blob/main/hand_embodiment/mocap_objects.py).
+We assume that the z-axis points up for all objects with only two markers.
 Meshes for visualization are available
 [here](https://github.com/dfki-ric/hand_embodiment/tree/main/hand_embodiment/model/objects)
 and transformations between marker frames and the mesh frames can be found in
