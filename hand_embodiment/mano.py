@@ -107,8 +107,8 @@ class HandState:
         self.vertices[:, :] = hand_vertices(
             pose=self.pose, **self.pose_parameters)
         if mesh2world is not None:
-            self.vertices[:, :] = pt.transform(
-                mesh2world, pt.vectors_to_points(self.vertices))[:, :3]
+            self.vertices[:, :] = self.vertices.dot(
+                mesh2world[:3, :3].T) + mesh2world[:3, 3]
         self._mesh.vertices = o3d.utility.Vector3dVector(self.vertices)
         if vertex_normals:
             self._mesh.compute_vertex_normals()
