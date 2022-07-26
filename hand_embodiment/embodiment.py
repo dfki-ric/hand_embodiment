@@ -300,6 +300,8 @@ def load_kinematic_model(hand_config):
             extra_args["package_dir"] = model["package_dir"]
         if "mesh_path" in model:
             extra_args["mesh_path"] = model["mesh_path"]
+        if "scale" in hand_config:
+            extra_args["scale"] = hand_config["scale"]
         kin = Kinematics(urdf=f.read(), **extra_args)
     if "kinematic_model_hook" in model:
         model["kinematic_model_hook"](kin)

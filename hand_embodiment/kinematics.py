@@ -178,10 +178,14 @@ class Kinematics:
 
     package_dir : str, optional (default: None)
         Path to corresponding ROS package
+
+    scale : float, optional (default: 1)
+        Scaling factor.
     """
-    def __init__(self, urdf, mesh_path=None, package_dir=None):
+    def __init__(self, urdf, mesh_path=None, package_dir=None, scale=1.0):
         self.tm = FastUrdfTransformManager()
-        self.tm.load_urdf(urdf, mesh_path=mesh_path, package_dir=package_dir)
+        self.tm.load_urdf(
+            urdf, mesh_path=mesh_path, package_dir=package_dir, scale=scale)
 
     def create_chain(self, joint_names, base_frame, ee_frame, verbose=0):
         """Create kinematic chain.
