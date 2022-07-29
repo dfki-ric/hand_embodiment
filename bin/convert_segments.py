@@ -7,11 +7,9 @@ from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.target_dataset import convert_mocap_to_robot
 from hand_embodiment.timing import timing_report
 from hand_embodiment.command_line import (
-    add_hand_argument, add_configuration_arguments)
-from hand_embodiment.mocap_objects import (
-    InsoleMarkers, PillowMarkers, ElectronicTargetMarkers, ElectronicObjectMarkers,
-    PassportMarkers, PassportClosedMarkers, PassportBoxMarkers,
-    extract_mocap_origin2object)
+    add_hand_argument, add_configuration_arguments,
+    add_frame_transform_arguments)
+from hand_embodiment.mocap_objects import extract_mocap_origin2object_generic
 
 
 def parse_args():
@@ -45,27 +43,7 @@ def parse_args():
     parser.add_argument(
         "--measure-time", action="store_true",
         help="Measure time of record and embodiment mapping.")
-    parser.add_argument(
-        "--insole-hack", action="store_true",
-        help="Insole-relative end-effector coordinates.")
-    parser.add_argument(
-        "--pillow-hack", action="store_true",
-        help="Pillow-relative end-effector coordinates.")
-    parser.add_argument(
-        "--electronic-object-hack", action="store_true",
-        help="Electronic-object-relative end-effector coordinates.")
-    parser.add_argument(
-        "--electronic-target-hack", action="store_true",
-        help="Electronic-target-relative end-effector coordinates.")
-    parser.add_argument(
-        "--passport-hack", action="store_true",
-        help="Passport-relative end-effector coordinates.")
-    parser.add_argument(
-        "--passport-closed-hack", action="store_true",
-        help="Passport-relative end-effector coordinates.")
-    parser.add_argument(
-        "--passport-box-hack", action="store_true",
-        help="Passport-box-relative end-effector coordinates.")
+    add_frame_transform_arguments(parser)
 
     return parser.parse_args()
 
@@ -96,22 +74,7 @@ def main():
         for i in range(dataset.n_segments):
             dataset.select_segment(i)
 
-            if args.insole_hack:
-                mocap_origin2origin = extract_mocap_origin2object(dataset, InsoleMarkers)
-            elif args.pillow_hack:
-                mocap_origin2origin = extract_mocap_origin2object(dataset, PillowMarkers)
-            elif args.electronic_object_hack:
-                mocap_origin2origin = extract_mocap_origin2object(dataset, ElectronicObjectMarkers)
-            elif args.electronic_target_hack:
-                mocap_origin2origin = extract_mocap_origin2object(dataset, ElectronicTargetMarkers)
-            elif args.passport_hack:
-                mocap_origin2origin = extract_mocap_origin2object(dataset, PassportMarkers)
-            elif args.passport_closed_hack:
-                mocap_origin2origin = extract_mocap_origin2object(dataset, PassportClosedMarkers)
-            elif args.passport_box_hack:
-                mocap_origin2origin = extract_mocap_origin2object(dataset, PassportBoxMarkers)
-            else:
-                mocap_origin2origin = None
+            mocap_origin2origin = extract_mocap_origin2object_generic(args, dataset)
 
             output_dataset = convert_mocap_to_robot(
                 dataset, pipeline, mocap_origin2origin=mocap_origin2origin,

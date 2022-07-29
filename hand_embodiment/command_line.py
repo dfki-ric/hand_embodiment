@@ -96,6 +96,37 @@ def add_object_visualization_arguments(parser):
         help="Visualize closed passport.")
 
 
+def add_frame_transform_arguments(parser):
+    """Add arguments to transform into objects frames to command line parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Command line parser
+    """
+    parser.add_argument(
+        "--insole-hack", action="store_true",
+        help="Insole-relative end-effector coordinates.")
+    parser.add_argument(
+        "--pillow-hack", action="store_true",
+        help="Pillow-relative end-effector coordinates.")
+    parser.add_argument(
+        "--electronic-object-hack", action="store_true",
+        help="Electronic-object-relative end-effector coordinates.")
+    parser.add_argument(
+        "--electronic-target-hack", action="store_true",
+        help="Electronic-target-relative end-effector coordinates.")
+    parser.add_argument(
+        "--passport-hack", action="store_true",
+        help="Passport-relative end-effector coordinates.")
+    parser.add_argument(
+        "--passport-closed-hack", action="store_true",
+        help="Passport-relative end-effector coordinates.")
+    parser.add_argument(
+        "--passport-box-hack", action="store_true",
+        help="Passport-box-relative end-effector coordinates.")
+
+
 def add_artist_argument(parser):
     """Add argument for artist selection to command line parser.
 

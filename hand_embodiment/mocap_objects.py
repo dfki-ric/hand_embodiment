@@ -325,6 +325,26 @@ class PassportBoxMarkers:
         return pose
 
 
+def extract_mocap_origin2object_generic(args, dataset):
+    if args.insole_hack:
+        mocap_origin2origin = extract_mocap_origin2object(dataset, InsoleMarkers)
+    elif args.pillow_hack:
+        mocap_origin2origin = extract_mocap_origin2object(dataset, PillowMarkers)
+    elif args.electronic_object_hack:
+        mocap_origin2origin = extract_mocap_origin2object(dataset, ElectronicObjectMarkers)
+    elif args.electronic_target_hack:
+        mocap_origin2origin = extract_mocap_origin2object(dataset, ElectronicTargetMarkers)
+    elif args.passport_hack:
+        mocap_origin2origin = extract_mocap_origin2object(dataset, PassportMarkers)
+    elif args.passport_closed_hack:
+        mocap_origin2origin = extract_mocap_origin2object(dataset, PassportClosedMarkers)
+    elif args.passport_box_hack:
+        mocap_origin2origin = extract_mocap_origin2object(dataset, PassportBoxMarkers)
+    else:
+        mocap_origin2origin = None
+    return mocap_origin2origin
+
+
 def extract_mocap_origin2object(dataset, object_info):
     """Extract transformation from MoCap origin to object.
 
