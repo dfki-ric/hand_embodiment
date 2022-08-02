@@ -26,3 +26,37 @@ The following scripts can be used to investigate a hand configuration:
   appropriate pose of the hand in MANO's base and (2) interactively verify
   that the embodiment mapping finds appropriate solutions to mimic the MANO
   model
+
+Kinematic Diagrams
+------------------
+
+We keep kinematic diagrams of supported target systems here for reference.
+Open images in new tab to examine them closer.
+
+Prensilia Mia Hand
+^^^^^^^^^^^^^^^^^^
+
+.. image:: _static/kinematics/mia.png
+    :width: 50%
+    :align: center
+
+Shadow Dexterous Hand
+^^^^^^^^^^^^^^^^^^^^^
+
+.. image:: _static/kinematics/shadow_hand.png
+    :width: 50%
+    :align: center
+
+Robotiq 2F-140
+^^^^^^^^^^^^^^
+
+.. image:: _static/kinematics/robotiq.png
+    :width: 50%
+    :align: center
+
+Barrett Hand
+^^^^^^^^^^^^
+
+.. image:: _static/kinematics/barrett.png
+    :width: 50%
+    :align: center
