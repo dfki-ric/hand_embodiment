@@ -1,9 +1,14 @@
 """Configure MANO shape parameters.
 
+White spheres represent expected markers on the MANO hand. Gray spheres are
+measured marker positions.
+
 Example call:
 
 python bin/gui_mano_shape.py examples/config/mano/20210610_april.yaml --mocap-filename data/20210610_april/Measurement2.tsv --mocap-config examples/config/markers/20210610_april.yaml --start-idx 3000 --fit-fingers
+python bin/gui_mano_shape.py examples/config/mano/20220718_april.yaml --mocap-filename data/20220718_april/OSAI_test1.txt --mocap-config examples/config/markers/20220718_april.yaml --fit-fingers
 """
+print(__doc__)
 import argparse
 import os
 from functools import partial
@@ -13,9 +18,9 @@ from open3d.visualization import gui
 import pytransform3d.transformations as pt
 
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
-from hand_embodiment.vis_utils import make_coordinate_system
+from hand_embodiment.vis_utils import make_coordinate_system, compute_expected_marker_positions
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
-from hand_embodiment.config import load_mano_config, save_mano_config
+from hand_embodiment.config import load_mano_config, save_mano_config, load_record_mapping_config
 
 
 def parse_args():
@@ -30,6 +35,9 @@ def parse_args():
         "--mocap-config", type=str,
         default="examples/config/markers/20210520_april.yaml",
         help="MoCap configuration file.")
+    parser.add_argument(
+        "--record-mapping-config", type=str, default=None,
+        help="Record mapping configuration file.")
     parser.add_argument(
         "--start-idx", type=int, default=100,
         help="Index of frame that we visualize.")
@@ -121,12 +129,7 @@ class Figure:
         name = str(len(self.geometry_names))
         self.geometry_names.append(name)
         if material is None:
-            try:  # Open3D <= 0.13
-                material = o3d.visualization.rendering.Material()
-                material.shader = "defaultLit"
-            except AttributeError:  # Open3d >= 0.14
-                material = o3d.visualization.rendering.MaterialRecord()
-                material.shader = "defaultLit"
+            material = make_material()
         self.main_scene.add_geometry(name, geometry, material)
 
     def clear_all_geometries(self):
@@ -134,17 +137,17 @@ class Figure:
             self.main_scene.remove_geometry(name)
         self.geometry_names = []
 
-    def add_markers_in_mano(self, marker_points):
-        for p in marker_points:  # TODO refactor
-            marker = o3d.geometry.TriangleMesh.create_sphere(radius=0.006)
-            n_vertices = len(marker.vertices)
-            colors = np.zeros((n_vertices, 3))
-            colors[:] = (0.3, 0.3, 0.3)
-            marker.vertex_colors = o3d.utility.Vector3dVector(colors)
-            marker.translate(p)
-            marker.compute_vertex_normals()
-            marker.compute_triangle_normals()
-            self.add_geometry(marker)
+    def add_markers_in_mano(self, marker_points, color):
+        for p in marker_points:
+            self.add_geometry(self._make_marker_sphere(p, color))
+
+    def _make_marker_sphere(self, p, color):
+        marker = o3d.geometry.TriangleMesh.create_sphere(radius=0.006)
+        marker.paint_uniform_color(color)
+        marker.compute_vertex_normals()
+        marker.compute_triangle_normals()
+        marker.translate(p)
+        return marker
 
     def add_hand_mesh(self, mesh, material):
         return self.main_scene.add_geometry("MANO", mesh, material)
@@ -207,15 +210,18 @@ class OnMano:
         self.dataset = dataset
         self.frame_num = frame_num
 
-
-
     def draw_markers(self):
-        world2mano = pt.invert_transform(self.mbrm.mano2world_)
+        world2mano = np.linalg.inv(self.mbrm.mano2world_)
         markers_in_world = self.dataset.get_markers(self.frame_num)
         markers_in_mano = pt.transform(
             self.mbrm.mano2hand_markers_, pt.transform(
                 world2mano, pt.vectors_to_points(markers_in_world)))[:, :3]
-        self.fig.add_markers_in_mano(markers_in_mano)
+        self.fig.add_markers_in_mano(markers_in_mano, (0.3, 0.3, 0.3))
+        markers = compute_expected_marker_positions(self.mbrm)
+        markers_in_mano = pt.transform(
+            self.mbrm.mano2hand_markers_,
+            pt.vectors_to_points(markers))[:, :3]
+        self.fig.add_markers_in_mano(markers_in_mano, (1, 1, 1))
 
     def redraw_mano(self):
         self.fig.main_scene.remove_geometry("MANO")
@@ -270,7 +276,7 @@ class OnManoChange(OnMano):
         pose[i] = value
         self.mbrm.mano2hand_markers_ = pt.transform_from_exponential_coordinates(pose)
         self.update_mesh()
-        self.redraw_mano()
+        self.redraw_all()
 
     def update_mesh(self):
         self.mbrm.hand_state_.recompute_shape()
@@ -289,21 +295,32 @@ def main():
     else:
         mano2hand_markers, betas = np.eye(4), np.zeros(10)
 
+    if args.record_mapping_config is None:
+        record_mapping_config = None
+    else:
+        record_mapping_config = load_record_mapping_config(
+            args.record_mapping_config)
+
     mbrm = MarkerBasedRecordMapping(
-        left=False, shape_parameters=betas, mano2hand_markers=mano2hand_markers)
+        left=False, shape_parameters=betas, mano2hand_markers=mano2hand_markers,
+        record_mapping_config=record_mapping_config)
 
     fig = Figure("MANO shape", 1920, 1080, config_filename, ax_s=0.2)
     fig.make_mano_widgets(mbrm, dataset, frame_num=args.start_idx, fit_fingers=args.fit_fingers)
     coordinate_system = make_coordinate_system(s=0.2)
+    fig.main_scene.add_geometry(
+        "COORDINATE_SYSTEM", coordinate_system, make_material())
+    fig.show()
+
+
+def make_material():
     try:  # Open3D <= 0.13
         material = o3d.visualization.rendering.Material()
         material.shader = "defaultLit"
     except AttributeError:  # Open3d >= 0.14
         material = o3d.visualization.rendering.MaterialRecord()
         material.shader = "defaultLit"
-    fig.main_scene.add_geometry(
-        "COORDINATE_SYSTEM", coordinate_system, material)
-    fig.show()
+    return material
 
 
 if __name__ == "__main__":

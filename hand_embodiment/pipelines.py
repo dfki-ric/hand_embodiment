@@ -1,5 +1,7 @@
 """Pipelines are high-level interfaces that map human data to robotic hands."""
 import pytransform3d.transformations as pt
+import yaml
+
 from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.config import load_mano_config, load_record_mapping_config
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
@@ -28,10 +30,14 @@ class MoCapToRobot:
 
     measure_time : bool
         Measure computation time for each frame.
+
+    robot_config : str, optional (default: None)
+        Target system configuration.
     """
     def __init__(self, hand, mano_config, use_fingers,
-                 record_mapping_config=None, verbose=0, measure_time=False):
-        self.hand_config_ = TARGET_CONFIG[hand]
+                 record_mapping_config=None, verbose=0, measure_time=False,
+                 robot_config=None):
+        self.hand_config_ = self._hand_config(hand, robot_config)
         mano2hand_markers, betas = load_mano_config(mano_config)
 
         if record_mapping_config is not None:
@@ -50,6 +56,18 @@ class MoCapToRobot:
             mano_finger_kinematics=self.record_mapping_.mano_finger_kinematics_,
             initial_handbase2world=self.record_mapping_.mano2world_,
             verbose=verbose, measure_time=measure_time)
+
+    def _hand_config(self, hand, robot_config):
+        hand_config_ = TARGET_CONFIG[hand]
+        if robot_config is not None:
+            with open(robot_config, "r") as f:
+                hand_config = yaml.safe_load(f)
+                if "handbase2robotbase" in hand_config:
+                    hand_config["handbase2robotbase"] = \
+                        pt.transform_from_exponential_coordinates(
+                            hand_config["handbase2robotbase"])
+                hand_config_.update(hand_config)
+        return hand_config_
 
     @property
     def transform_manager_(self):
@@ -139,8 +157,13 @@ class MoCapToRobot:
         self.estimate_hand(hand_markers, finger_markers)
         return self.estimate_robot(mocap_origin2origin)
 
-    def make_hand_artist(self):
+    def make_hand_artist(self, show_expected_markers=False):
         """Create artist that visualizes internal state of the hand.
+
+        Parameters
+        ----------
+        show_expected_markers : bool, optional (default: False)
+            Show expected marker positions at hand model.
 
         Returns
         -------
@@ -149,7 +172,8 @@ class MoCapToRobot:
         """
         from hand_embodiment.vis_utils import ManoHand
         return ManoHand(
-            self.embodiment_mapping_, show_mesh=True, show_vertices=False)
+            self.record_mapping_, show_mesh=True, show_vertices=False,
+            show_expected_markers=show_expected_markers)
 
     def make_robot_artist(self):
         """Create artist that visualizes state of the target system.

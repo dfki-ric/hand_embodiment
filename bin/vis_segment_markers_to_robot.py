@@ -49,7 +49,8 @@ def main():
 
     pipeline = MoCapToRobot(
         args.hand, args.mano_config, dataset.finger_names,
-        record_mapping_config=args.record_mapping_config, verbose=1)
+        record_mapping_config=args.record_mapping_config, verbose=1,
+        robot_config=args.robot_config)
 
     if args.hand == "mia":
         angle = 1.0 if args.mia_thumb_adducted else -1.0

@@ -239,7 +239,9 @@ configuration with the button in the menu (left top). The MANO configuration
 will later on be used when we recover the state of the hand from the motion
 capture data.
 
-## Motion Capture Glove
+## Motion Capture Setup
+
+### Glove
 
 We used the following labelled marker on the glove to record the datasets used
 in the paper:
@@ -256,9 +258,22 @@ The figure is based on
 [this work](https://commons.wikimedia.org/wiki/File:Scheme_human_hand_bones-en.svg)
 of Mariana Ruiz Villarreal (LadyofHats); retouches by Nyks.
 
+### Tracked Objects
+
 In addition, we attached motion capture markers to objects to track their poses
 and to transfer object manipulation trajectories into an object-relative
-coordinate system.
+coordinate system. The following image shows these objects.
+
+![MoCap objects](doc/source/_static/objects.png)
+
+The marker configuration and the definition of frames based on markers is
+implemented and documented in
+[`hand_embodiment/mocap_objects`](https://github.com/dfki-ric/hand_embodiment/blob/main/hand_embodiment/mocap_objects.py).
+We assume that the z-axis points up for all objects with only two markers.
+Meshes for visualization are available
+[here](https://github.com/dfki-ric/hand_embodiment/tree/main/hand_embodiment/model/objects)
+and transformations between marker frames and the mesh frames can be found in
+[`hand_embodiment/vis_utils`](https://github.com/dfki-ric/hand_embodiment/blob/main/hand_embodiment/vis_utils.py).
 
 ## Segmentation of Motion Capture Data
 

@@ -5,11 +5,11 @@ Forward and inverse kinematics for robotic hands.
 import numpy as np
 import math
 import numba
-from pytransform3d.urdf import UrdfTransformManager
+from pytransform3d import urdf
 from scipy.optimize import minimize
 
 
-class FastUrdfTransformManager(UrdfTransformManager):
+class FastUrdfTransformManager(urdf.UrdfTransformManager):
     """Fast transformation manager that can load URDF files.
 
     This version has efficient numba-accelerated code to update joints.
@@ -17,6 +17,55 @@ class FastUrdfTransformManager(UrdfTransformManager):
     def __init__(self):
         super(FastUrdfTransformManager, self).__init__(check=False)
         self.virtual_joints = {}
+
+    def load_urdf(self, urdf_xml, mesh_path=None, package_dir=None, scale=1.0):
+        """Load URDF file into transformation manager.
+
+        Parameters
+        ----------
+        urdf_xml : str
+            Robot definition in URDF
+
+        mesh_path : str, optional (default: None)
+            Path in which we search for meshes that are defined in the URDF.
+            Meshes will be ignored if it is set to None and no 'package_dir'
+            is given.
+
+        package_dir : str, optional (default: None)
+            Some URDFs start file names with 'package://' to refer to the ROS
+            package in which these files (textures, meshes) are located. This
+            variable defines to which path this prefix will be resolved.
+
+        scale : float, optional (default: 1)
+            Scaling factor.
+        """
+        robot_name, links, joints = urdf.parse_urdf(
+            urdf_xml, mesh_path, package_dir, self.strict_check)
+        self._scale_urdf(links, joints, scale)
+        urdf.initialize_urdf_transform_manager(self, robot_name, links, joints)
+
+    def _scale_urdf(self, links, joints, scale):
+        for link in links:
+            for transform in link.transforms:
+                transform[2][:3, 3] *= scale
+            for visual in link.visuals:
+                self._scale_object(visual, scale)
+            for collision_object in link.collision_objects:
+                self._scale_object(collision_object, scale)
+        for joint in joints:
+            joint.child2parent[:3, 3] *= scale
+
+    def _scale_object(self, visual, scale):
+        if isinstance(visual, urdf.Sphere):
+            visual.radius *= scale
+        elif isinstance(visual, urdf.Cylinder):
+            visual.radius *= scale
+            visual.length *= scale
+        elif isinstance(visual, urdf.Box):
+            visual.size *= scale
+        else:
+            assert isinstance(visual, urdf.Mesh)
+            visual.scale *= scale
 
     def set_joint(self, joint_name, value):
         """Set joint position.
@@ -129,10 +178,14 @@ class Kinematics:
 
     package_dir : str, optional (default: None)
         Path to corresponding ROS package
+
+    scale : float, optional (default: 1)
+        Scaling factor.
     """
-    def __init__(self, urdf, mesh_path=None, package_dir=None):
+    def __init__(self, urdf, mesh_path=None, package_dir=None, scale=1.0):
         self.tm = FastUrdfTransformManager()
-        self.tm.load_urdf(urdf, mesh_path=mesh_path, package_dir=package_dir)
+        self.tm.load_urdf(
+            urdf, mesh_path=mesh_path, package_dir=package_dir, scale=scale)
 
     def create_chain(self, joint_names, base_frame, ee_frame, verbose=0):
         """Create kinematic chain.

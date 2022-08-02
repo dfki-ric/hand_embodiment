@@ -412,6 +412,10 @@ class ManoFingerKinematics:
         }
         return pose_params, finger_opt_vertex_indices
 
+    def has_cached_forward_kinematics(self):
+        """Check if this object has a cached forward kinematics result."""
+        return self.last_forward_result is not None
+
     def forward(self, pose=None, return_cached_result=False):
         """Compute position at the tip of the finger for given joint parameters.
 

@@ -32,7 +32,7 @@ def main():
     hand_config = TARGET_CONFIG[args.hand]
     dataset = RoboticHandDataset.import_from_file(args.dataset, hand_config)
 
-    tm = load_kinematic_model(hand_config).tm
+    tm = load_kinematic_model(hand_config, unscaled_visual_model=True)[0].tm
     tm.add_transform("world", hand_config["base_frame"], np.eye(4))
 
     fig = pv.figure()

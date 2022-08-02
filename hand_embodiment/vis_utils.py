@@ -8,9 +8,9 @@ import pytransform3d.transformations as pt
 import pytransform3d.visualizer as pv
 
 from .mocap_objects import (
-    InsoleMarkers, PillowMarkers, ElectronicTargetMarkers,
-    ElectronicObjectMarkers, PassportMarkers, PassportClosedMarkers,
-    PassportBoxMarkers)
+    InsoleMarkers, PillowMarkers, PillowBigMarkers, OSAICaseMarkers,
+    ElectronicTargetMarkers, ElectronicObjectMarkers, PassportMarkers,
+    PassportClosedMarkers, PassportBoxMarkers)
 
 
 def make_coordinate_system(s, short_tick_length=0.01, long_tick_length=0.05):
@@ -66,12 +66,18 @@ def make_coordinate_system(s, short_tick_length=0.01, long_tick_length=0.05):
     return coordinate_system
 
 
+N_FINGER_MARKERS = 10  # TODO load from config?
+
+
 class ManoHand(pv.Artist):
     """Representation of hand mesh as artist for 3D visualization in Open3D."""
-    def __init__(self, mbrm, show_mesh=True, show_vertices=False):
+    def __init__(self, mbrm, show_mesh=True, show_vertices=False, show_expected_markers=True):
         self.mbrm = mbrm
         self.show_mesh = show_mesh
         self.show_vertices = show_vertices
+        self.show_expected_markers = show_expected_markers
+        self.expected_markers = pv.PointCollection3D(
+            np.zeros((N_FINGER_MARKERS, 3)), s=0.006, c=(1, 1, 1))
 
     def set_data(self):
         """Does nothing.
@@ -94,7 +100,26 @@ class ManoHand(pv.Artist):
             geoms.append(self.mbrm.hand_state_.hand_mesh)
         if self.show_vertices:
             geoms.append(self.mbrm.hand_state_.hand_pointcloud)
+        if self.show_expected_markers:
+            expected_marker_positions = compute_expected_marker_positions(self.mbrm)
+            if self.expected_markers is not None:
+                expected_marker_positions = self.mbrm.mano2world_[:3, 3] + np.dot(
+                    expected_marker_positions, self.mbrm.mano2world_[:3, :3].T)
+                self.expected_markers.set_data(expected_marker_positions)
+                geoms.extend(self.expected_markers.geometries)
         return geoms
+
+
+def compute_expected_marker_positions(mbrm):
+    expected_marker_positions = np.zeros((N_FINGER_MARKERS, 3))
+    i = 0
+    for fn in mbrm.mano_finger_kinematics_:
+        finger_kinematics = mbrm.mano_finger_kinematics_[fn]
+        if finger_kinematics.has_cached_forward_kinematics():
+            positions = finger_kinematics.forward(return_cached_result=True)
+            expected_marker_positions[i:i + len(positions)] = positions
+            i += len(positions)
+    return expected_marker_positions
 
 
 class MoCapObjectMesh(pv.Artist):
@@ -214,8 +239,46 @@ class PillowSmall(MoCapObjectMesh, PillowMarkers):
             show_frame=show_frame)
 
 
+class PillowBig(MoCapObjectMesh, PillowBigMarkers):
+    """Representation of big pillow mesh.
+
+    Parameters
+    ----------
+    show_frame : bool, optional (default: True)
+        Show frame.
+    """
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+        p=np.array([0.047, 0.06, 0.096]))
+
+    def __init__(self, show_frame=True):
+        super(PillowBig, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/pillow_big.stl"),
+            mesh_color=None,
+            show_frame=show_frame)
+
+
+class OSAICase(MoCapObjectMesh, OSAICaseMarkers):
+    """Representation of OSAI case.
+
+    Parameters
+    ----------
+    show_frame : bool, optional (default: True)
+        Show frame.
+    """
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+        p=np.array([0, 0, 0.006]))
+
+    def __init__(self, show_frame=True):
+        super(OSAICase, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/electronic_target.stl"),
+            mesh_color=np.array([0.21, 0.20, 0.46]),
+            show_frame=show_frame)
+
+
 class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers):
-    """Representation of electronic object and target component.
+    """Representation of electronic target component.
 
     Parameters
     ----------
@@ -234,7 +297,7 @@ class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers):
 
 
 class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers):
-    """Representation of electronic object and target component.
+    """Representation of electronic object component.
 
     Parameters
     ----------
@@ -312,6 +375,8 @@ class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
 ARTISTS = {
     "insole": Insole,
     "pillow-small": PillowSmall,
+    "pillow-big": PillowBig,
+    "osai-case": OSAICase,
     "electronic-object": ElectronicObject,
     "electronic-target": ElectronicTarget,
     "passport": Passport,
@@ -331,7 +396,7 @@ class AnimationCallback:
     pipeline : MoCapToRobot
         Pipeline.
 
-    args : TODO result of ArgumentParser.parse_args()
+    args : argparse.Namespace
         Command line arguments
 
     show_robot : bool, optional (default: False)
@@ -345,7 +410,8 @@ class AnimationCallback:
         self.show_mano = (hasattr(args, "hide_mano") and not args.hide_mano
                           or hasattr(args, "show_mano") and args.show_mano)
         if self.show_mano:
-            self.hand = pipeline.make_hand_artist()
+            self.hand = pipeline.make_hand_artist(
+                show_expected_markers=args.show_expected_markers)
             self.hand.add_artist(self.fig)
 
         self.object_meshes = []
@@ -353,6 +419,10 @@ class AnimationCallback:
             self.object_meshes.append(Insole())
         if self.args.pillow:
             self.object_meshes.append(PillowSmall())
+        if self.args.pillow_big:
+            self.object_meshes.append(PillowBig())
+        if self.args.osai_case:
+            self.object_meshes.append(OSAICase())
         if self.args.electronic:
             self.object_meshes.append(ElectronicTarget())
             self.object_meshes.append(ElectronicObject())

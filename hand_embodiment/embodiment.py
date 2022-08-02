@@ -85,8 +85,9 @@ class HandEmbodiment(TimeableMixin):
         for finger_name in use_fingers:
             assert finger_name in self.mano_finger_kinematics
 
-        self.target_kin = load_kinematic_model(target_config)
+        self.target_kin, self.vis_kin = load_kinematic_model(target_config)
         self.target_finger_chains = {}
+        self.vis_finger_chains = {}
         self.joint_angles = {}
         self.base_frame = target_config["base_frame"]
         for finger_name in target_config["ee_frames"].keys():
@@ -98,6 +99,10 @@ class HandEmbodiment(TimeableMixin):
                     target_config["intermediate_frames"][finger_name])
             self.target_finger_chains[finger_name] = \
                 self.target_kin.create_multi_chain(
+                    target_config["joint_names"][finger_name],
+                    self.base_frame, ee_frames)
+            self.vis_finger_chains[finger_name] = \
+                self.vis_kin.create_multi_chain(
                     target_config["joint_names"][finger_name],
                     self.base_frame, ee_frames)
             self.joint_angles[finger_name] = \
@@ -154,6 +159,11 @@ class HandEmbodiment(TimeableMixin):
         if self.verbose:
             print(f"[{type(self).__name__}] Time for optimization: "
                   f"{self.last_timing():.4f} s")
+
+        if self.vis_kin is not self.target_kin:
+            for finger_name in self.finger_names_:
+                self.vis_finger_chains[finger_name].forward(
+                    self.joint_angles[finger_name])
 
         if return_desired_positions:
             return self.joint_angles, desired_positions
@@ -261,10 +271,14 @@ class HandEmbodiment(TimeableMixin):
         self.target_kin.tm.add_transform(
             "world", self.base_frame, world2robotbase)
 
+        if self.vis_kin is not self.target_kin:
+            self.vis_kin.tm.add_transform(
+                "world", self.base_frame, world2robotbase)
+
     @property
     def transform_manager_(self):
         """Get transform manager."""
-        return self.target_kin.tm
+        return self.vis_kin.tm
 
     def finger_forward_kinematics(self, finger_name, joint_angles):
         """Forward kinematics for a finger of the target system.
@@ -276,11 +290,14 @@ class HandEmbodiment(TimeableMixin):
 
         joint_angles : array-like, shape (n_joints,)
             Angles of the finger joints.
+
+        Returns
+        -------
         """
         return self.target_finger_chains[finger_name].forward(joint_angles)
 
 
-def load_kinematic_model(hand_config):
+def load_kinematic_model(hand_config, unscaled_visual_model=True):
     """Load kinematic model of a robotic hand.
 
     Parameters
@@ -288,24 +305,42 @@ def load_kinematic_model(hand_config):
     hand_config : dict
         Configuration of robotic target hand.
 
+    unscaled_visual_model : bool, optional (default: True)
+        Load an unscaled visual model of the hand in addition to the scaled
+        version.
+
     Returns
     -------
     kin : Kinematics
         Forward and inverse kinematics.
+
+    vis_kin : Kinematics
+        Forward and inverse kinematics for visualization.
     """
     model = hand_config["model"]
+    extra_args = {}
+    if "package_dir" in model:
+        extra_args["package_dir"] = model["package_dir"]
+    if "mesh_path" in model:
+        extra_args["mesh_path"] = model["mesh_path"]
+    extra_args["scale"] = hand_config.get("scale", 1.0)
     with open(model["urdf"], "r") as f:
-        extra_args = {}
-        if "package_dir" in model:
-            extra_args["package_dir"] = model["package_dir"]
-        if "mesh_path" in model:
-            extra_args["mesh_path"] = model["mesh_path"]
         kin = Kinematics(urdf=f.read(), **extra_args)
+    if unscaled_visual_model:
+        extra_args.pop("scale")
+        with open(model["urdf"], "r") as f:
+            vis_kin = Kinematics(urdf=f.read(), **extra_args)
+    else:
+        vis_kin = kin
     if "kinematic_model_hook" in model:
         model["kinematic_model_hook"](kin)
+        if unscaled_visual_model:
+            model["kinematic_model_hook"](vis_kin)
     if "virtual_joints_callbacks" in hand_config:
         for joint_name, callback in hand_config["virtual_joints_callbacks"].items():
             kin.tm.add_virtual_joint(joint_name, callback)
+            if unscaled_visual_model:
+                vis_kin.tm.add_virtual_joint(joint_name, callback)
     if "world" in kin.tm.nodes:
         warnings.warn(
             "'world' frame is already in URDF. Removing all connections to it.")
@@ -315,4 +350,6 @@ def load_kinematic_model(hand_config):
                 invalid_connections.append((from_frame, to_frame))
         for from_frame, to_frame in invalid_connections:
             kin.tm.remove_transform(from_frame, to_frame)
-    return kin
+            if unscaled_visual_model:
+                vis_kin.tm.remove_transform(from_frame, to_frame)
+    return kin, vis_kin

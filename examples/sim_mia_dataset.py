@@ -1,4 +1,5 @@
 """Simulate embodied trajectory with Mia hand in PyBullet."""
+import sys
 import time
 import numpy as np
 import pybullet as pb
@@ -9,7 +10,11 @@ from hand_embodiment.target_configurations import TARGET_CONFIG
 
 
 dt = 0.01
-filename = "test/data/mia_segment.csv"
+print(sys.argv)
+if len(sys.argv) > 1:
+    filename = sys.argv[-1]
+else:
+    filename = "test/data/mia_segment.csv"
 
 hand_config = TARGET_CONFIG["mia"]
 
