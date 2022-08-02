@@ -8,10 +8,13 @@ hand_embodiment
    :maxdepth: 2
    :caption: Contents:
 
+   installation
    motion_capture_setup
    kinematics
    contact_surfaces
    object_frames
+   docs
+   tests
 
 
 Indices and tables
