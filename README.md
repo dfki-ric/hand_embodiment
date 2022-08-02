@@ -32,6 +32,11 @@ Johannes Brust, Marco Controzzi:
 **A Modular Approach to the Embodiment of Hand Motions from Human Demonstrations**,
 https://arxiv.org/abs/2203.02778
 
+## Documentation
+
+A detailed documentation is available
+[here](https://dfki-ric.github.io/hand_embodiment/).
+
 ## Examples
 
 Scripts are located at [bin/](bin/).
