@@ -191,7 +191,7 @@ python bin/convert_segments.py shadow flip --mocap-config examples/config/marker
 
 Grasp big pillow:
 ```bash
-python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20211126_april_pillow.yaml --demo-file data/20211126_april_pillow/20211126_r_WK37_big_pillow_set*.json --output 2021_r_WK37_big_pillow_%d.csv --measure-time --interpolate-missing-markers
+python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20211126_april_pillow.yaml --demo-file raw_data/pillow_big/20211126_r_WK37_big_pillow_set*.json --output 2021_r_WK37_big_pillow_%d.csv --measure-time --interpolate-missing-markers --pillow-big-hack
 python bin/convert_segments.py shadow grasp --mocap-config examples/config/markers/20211126_april_pillow.yaml --demo-file data/20211126_april_pillow/20211126_r_WK37_big_pillow_set*.json --output 2021_r_WK37_big_pillow_%d.csv --measure-time --interpolate-missing-markers
 ```
 
