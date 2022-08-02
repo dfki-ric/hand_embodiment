@@ -218,6 +218,19 @@ python bin/convert_segments.py mia grasp_lateral_insole_back --demo-files data/2
 python bin/convert_segments.py mia grasp_lateral_insole_front --demo-files data/20210819_april/*.json data/20211119_april/*.json data/20220328_april/*.json --label-field l2 --mocap-config examples/config/markers/20220328_april.yaml --output 2022_r_WK37_insole_lateral_front_%d.csv --insole-hack --measure-time
 ```
 
+## Visualize Converted Trajectories
+
+<img src="../doc/source/_static/figure_dataset_grasp_insole.png" width="50%" />
+
+<img src="../doc/source/_static/figure_dataset_grasp_pillow.png" width="50%" />
+
+Script: [vis_embodied_trajectories.py](vis_embodied_trajectories.py)
+
+Example call:
+```bash
+python bin/vis_embodied_trajectories.py ../motion_capture_grasp_poses/datasets/insole/*.csv --artist insole
+```
+
 ## Visualize MANO
 
 <img src="../doc/source/_static/script_vis_mano.png" width="50%" />
