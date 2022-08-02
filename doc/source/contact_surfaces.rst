@@ -13,29 +13,32 @@ MANO
     :width: 40%
     :align: center
 
+Robotic Hands
+-------------
+
 Prensilia Mia Hand
-------------------
+^^^^^^^^^^^^^^^^^^
 
 .. image:: _static/contact_surfaces/mia.png
     :width: 40%
     :align: center
 
 Shadow Dexterous Hand
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 .. image:: _static/contact_surfaces/shadow.png
     :width: 35%
     :align: center
 
 Robotiq 2F-140
---------------
+^^^^^^^^^^^^^^
 
 .. image:: _static/contact_surfaces/robotiq.png
     :width: 50%
     :align: center
 
 Barrett Hand
-------------
+^^^^^^^^^^^^
 
 .. image:: _static/contact_surfaces/barrett.png
     :width: 15%

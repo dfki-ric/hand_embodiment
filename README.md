@@ -76,16 +76,12 @@ See [bin/gui_robot_embodiment.py](bin/gui_robot_embodiment.py)
 <tr>
 <td><img src="doc/source/_static/embodiment_interactive_mia_1.png" height="200px" /></td>
 <td><img src="doc/source/_static/embodiment_interactive_mia_2.png" height="200px" /></td>
-</tr>
-<tr>
 <td><img src="doc/source/_static/embodiment_interactive_mia_3.png" height="200px" /></td>
 <td><img src="doc/source/_static/embodiment_interactive_shadow_1.png" height="200px" /></td>
 </tr>
 <tr>
 <td><img src="doc/source/_static/embodiment_interactive_shadow_2.png" height="200px" /></td>
 <td><img src="doc/source/_static/embodiment_interactive_shadow_3.png" height="200px" /></td>
-</tr>
-<tr>
 <td><img src="doc/source/_static/embodiment_interactive_shadow_4.png" height="200px" /></td>
 <td><img src="doc/source/_static/embodiment_interactive_shadow_5.png" height="200px" /></td>
 </tr>
