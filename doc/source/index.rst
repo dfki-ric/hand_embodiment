@@ -10,6 +10,9 @@ hand_embodiment
 
    installation
    motion_capture_setup
+   configuration_mano
+   configuration_robot
+   segmentation
    kinematics
    contact_surfaces
    object_frames
