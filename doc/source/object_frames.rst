@@ -26,9 +26,9 @@ the marker positions.
 Electronic Components
 ---------------------
 
-.. image:: object_frames/eletronic_object.png
+.. image:: object_frames/electronic_object.png
 
-.. image:: object_frames/eletronic_target.png
+.. image:: object_frames/electronic_target.png
 
 OSAI Case
 ---------
@@ -38,7 +38,7 @@ OSAI Case
 Open Passport
 -------------
 
-.. image:: object_frames/passport.png
+.. image:: object_frames/passport_open.png
 
 Closed Passport
 ---------------
