@@ -4,24 +4,7 @@
 hand_embodiment
 ===============
 
-The general idea of this software package is to use the
-`MANO hand model <https://mano.is.tue.mpg.de/>`_ to represent human
-hand configurations and then transfer the state of the MANO
-model to robotic hands. This allows us to quickly change the motion capture
-approach because we have an independent representation of the hand's state.
-Furthermore, we can easily change the target system because we just need to
-configure the mapping from MANO to the target hand.
-
-The currently implemented motion capture approaches are:
-
-* marker-based motion capture with the Qualisys system
-
-The currently implemented target systems are:
-
-* Mia hand from Prensilia
-* Dexterous Hand from Shadow
-* Robotiq 2F-140 gripper
-* BarrettHand
+.. image:: _static/overview.png
 
 This is the implementation of the paper
 
@@ -47,6 +30,25 @@ https://arxiv.org/abs/2203.02778
    tests
    merge_policy
    funding
+
+The general idea of this software package is to use the
+`MANO hand model <https://mano.is.tue.mpg.de/>`_ to represent human
+hand configurations and then transfer the state of the MANO
+model to robotic hands. This allows us to quickly change the motion capture
+approach because we have an independent representation of the hand's state.
+Furthermore, we can easily change the target system because we just need to
+configure the mapping from MANO to the target hand.
+
+The currently implemented motion capture approaches are:
+
+* marker-based motion capture with the Qualisys system
+
+The currently implemented target systems are:
+
+* Mia hand from Prensilia
+* Dexterous Hand from Shadow
+* Robotiq 2F-140 gripper
+* BarrettHand
 
 
 Indices and tables
