@@ -1,6 +1,6 @@
-================
-Contact Surfaces
-================
+===============================
+Contact Surfaces for Evaluation
+===============================
 
 To analyze the similarity between the MANO mesh and robotic target systems,
 we computed the distances between the contact surfaces of the MANO mesh and

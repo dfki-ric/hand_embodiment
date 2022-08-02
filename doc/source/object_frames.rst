@@ -1,6 +1,6 @@
-=============
-Object Frames
-=============
+===================
+MoCap Object Frames
+===================
 
 Grasp trajectories should be expressed in an object-centric coordinate system.
 Hence, we have to define the frame of each grasped object. We do this in

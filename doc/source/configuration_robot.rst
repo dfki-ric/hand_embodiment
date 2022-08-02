@@ -1,6 +1,6 @@
-==============================
-Integrating a New Robotic Hand
-==============================
+====================================
+Configuration for a New Robotic Hand
+====================================
 
 Each target hand needs a configuration. These are typically stored in
 ``hand_embodiment.target_configurations``, but you can define them in your

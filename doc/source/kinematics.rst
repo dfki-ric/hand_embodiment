@@ -1,6 +1,6 @@
-==========
-Kinematics
-==========
+==================
+Kinematic Diagrams
+==================
 
 Kinematic diagrams of robotic hands. Open images in new tab to examine them
 closer.
