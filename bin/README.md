@@ -33,7 +33,7 @@ python bin/vis_markers_to_mano_trajectory.py --demo-file data/20210826_april/202
 
 Grasp big pillow:
 ```bash
-python bin/vis_markers_to_mano_trajectory.py --demo-file data/20211126_april_pillow/20211126_r_WK37_big_pillow_set0.tsv --mocap-config examples/config/markers/20211126_april_pillow.yaml --mano-config examples/config/mano/20211105_april.yaml
+python bin/vis_markers_to_mano_trajectory.py --demo-file data/20211126_april_pillow/20211126_r_WK37_big_pillow_set0.tsv --mocap-config examples/config/markers/20211126_april_pillow.yaml --mano-config examples/config/mano/20211105_april.yaml --pillow-big
 ```
 
 Grasp and assemble electronic components:

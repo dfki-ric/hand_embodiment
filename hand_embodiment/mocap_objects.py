@@ -93,6 +93,57 @@ class PillowMarkers:
         return pose
 
 
+class PillowBigMarkers:
+    """Information about big pillow markers.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        -------PT--------
+        |               |
+        |               |
+        |               |
+        |               |
+        PL-------------PR
+    """
+    default_marker_positions = {
+        "pillow_left": np.array([-0.2005, -0.13675, 0.0]),
+        "pillow_right": np.array([0.1845, -0.12875, 0.0]),
+        "pillow_top": np.array([0.0295, 0.16, 0.0])
+    }
+    marker_names = tuple(default_marker_positions.keys())
+
+    @staticmethod
+    def pose_from_markers(pillow_left, pillow_right, pillow_top):
+        """Compute pose of pillow.
+
+        Parameters
+        ----------
+        pillow_left : array, shape (3,)
+            Position of left marker (PL).
+
+        pillow_right : array, shape (3,)
+            Position of right marker (PR).
+
+        pillow_top : array, shape (3,)
+            Position of top marker (PT).
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the pillow.
+        """
+        x_axis = pr.norm_vector(pillow_right - pillow_left)
+        top_on_x_axis = pillow_left + np.dot(x_axis, pillow_top - pillow_left) * x_axis
+        y_axis = pr.norm_vector(pillow_top - top_on_x_axis)
+        z_axis = pr.norm_vector(np.cross(x_axis, y_axis))
+        x_axis = pr.norm_vector(np.cross(y_axis, z_axis))
+        R = np.column_stack((x_axis, y_axis, z_axis))
+        p = top_on_x_axis + 0.0295 * x_axis + 0.13675 * y_axis
+        return pt.transform_from(R=R, p=p)
+
+
 class OSAICaseMarkers:
     """Information about OSAI case markers.
 
@@ -380,6 +431,8 @@ def extract_mocap_origin2object_generic(args, dataset):
         mocap_origin2origin = extract_mocap_origin2object(dataset, InsoleMarkers)
     elif args.pillow_hack:
         mocap_origin2origin = extract_mocap_origin2object(dataset, PillowMarkers)
+    elif args.pillow_big_hack:
+        mocap_origin2origin = extract_mocap_origin2object(dataset, PillowBigMarkers)
     elif args.osai_case_hack:
         mocap_origin2origin = extract_mocap_origin2object(dataset, OSAICaseMarkers)
     elif args.electronic_object_hack:

@@ -8,9 +8,9 @@ import pytransform3d.transformations as pt
 import pytransform3d.visualizer as pv
 
 from .mocap_objects import (
-    InsoleMarkers, PillowMarkers, OSAICaseMarkers, ElectronicTargetMarkers,
-    ElectronicObjectMarkers, PassportMarkers, PassportClosedMarkers,
-    PassportBoxMarkers)
+    InsoleMarkers, PillowMarkers, PillowBigMarkers, OSAICaseMarkers,
+    ElectronicTargetMarkers, ElectronicObjectMarkers, PassportMarkers,
+    PassportClosedMarkers, PassportBoxMarkers)
 
 
 def make_coordinate_system(s, short_tick_length=0.01, long_tick_length=0.05):
@@ -239,6 +239,25 @@ class PillowSmall(MoCapObjectMesh, PillowMarkers):
             show_frame=show_frame)
 
 
+class PillowBig(MoCapObjectMesh, PillowBigMarkers):
+    """Representation of big pillow mesh.
+
+    Parameters
+    ----------
+    show_frame : bool, optional (default: True)
+        Show frame.
+    """
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+        p=np.array([0.0, 0.0, 0.051]))
+
+    def __init__(self, show_frame=True):
+        super(PillowBig, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/pillow_big.stl"),
+            mesh_color=None,
+            show_frame=show_frame)
+
+
 class OSAICase(MoCapObjectMesh, OSAICaseMarkers):
     """Representation of OSAI case.
 
@@ -356,6 +375,7 @@ class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
 ARTISTS = {
     "insole": Insole,
     "pillow-small": PillowSmall,
+    "pillow-big": PillowBig,
     "osai-case": OSAICase,
     "electronic-object": ElectronicObject,
     "electronic-target": ElectronicTarget,
@@ -399,6 +419,8 @@ class AnimationCallback:
             self.object_meshes.append(Insole())
         if self.args.pillow:
             self.object_meshes.append(PillowSmall())
+        if self.args.pillow_big:
+            self.object_meshes.append(PillowBig())
         if self.args.osai_case:
             self.object_meshes.append(OSAICase())
         if self.args.electronic:

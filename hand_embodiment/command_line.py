@@ -85,7 +85,9 @@ def add_object_visualization_arguments(parser):
     parser.add_argument(
         "--insole", action="store_true", help="Visualize insole mesh.")
     parser.add_argument(
-        "--pillow", action="store_true", help="Visualize pillow.")
+        "--pillow", action="store_true", help="Visualize small pillow.")
+    parser.add_argument(
+        "--pillow-big", action="store_true", help="Visualize big pillow.")
     parser.add_argument(
         "--osai-case", action="store_true", help="Visualize OSAI case.")
     parser.add_argument(
@@ -111,6 +113,9 @@ def add_frame_transform_arguments(parser):
         help="Insole-relative end-effector coordinates.")
     parser.add_argument(
         "--pillow-hack", action="store_true",
+        help="Pillow-relative end-effector coordinates.")
+    parser.add_argument(
+        "--pillow-big-hack", action="store_true",
         help="Pillow-relative end-effector coordinates.")
     parser.add_argument(
         "--osai-case-hack", action="store_true",
