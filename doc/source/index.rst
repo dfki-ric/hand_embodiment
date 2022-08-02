@@ -18,6 +18,8 @@ hand_embodiment
    object_frames
    docs
    tests
+   merge_policy
+   funding
 
 
 Indices and tables

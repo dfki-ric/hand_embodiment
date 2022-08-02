@@ -100,13 +100,6 @@ or
 python bin/vis_markers_to_robot.py mia --demo-file test/data/recording.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --pillow --mia-thumb-adducted --show-mano
 ```
 
-## Merge Policy
-
-If you want to contribute to this repository, open a pull request on GitHub
-with your suggested changes. Pushing to the main branch is forbidden. Note
-that there might be no active maintenance and no support since this software
-is only intended as an implementation supporting the corresponding paper.
-
 ## License
 
 While this source code is released under BSD-3-clause license, it also contains
