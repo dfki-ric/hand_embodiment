@@ -20,7 +20,7 @@ import pytransform3d.transformations as pt
 from hand_embodiment.record_markers import MarkerBasedRecordMapping
 from hand_embodiment.vis_utils import make_coordinate_system, compute_expected_marker_positions
 from hand_embodiment.mocap_dataset import HandMotionCaptureDataset
-from hand_embodiment.config import load_mano_config, save_mano_config
+from hand_embodiment.config import load_mano_config, save_mano_config, load_record_mapping_config
 
 
 def parse_args():
@@ -35,6 +35,9 @@ def parse_args():
         "--mocap-config", type=str,
         default="examples/config/markers/20210520_april.yaml",
         help="MoCap configuration file.")
+    parser.add_argument(
+        "--record-mapping-config", type=str, default=None,
+        help="Record mapping configuration file.")
     parser.add_argument(
         "--start-idx", type=int, default=100,
         help="Index of frame that we visualize.")
@@ -292,8 +295,15 @@ def main():
     else:
         mano2hand_markers, betas = np.eye(4), np.zeros(10)
 
+    if args.record_mapping_config is None:
+        record_mapping_config = None
+    else:
+        record_mapping_config = load_record_mapping_config(
+            args.record_mapping_config)
+
     mbrm = MarkerBasedRecordMapping(
-        left=False, shape_parameters=betas, mano2hand_markers=mano2hand_markers)
+        left=False, shape_parameters=betas, mano2hand_markers=mano2hand_markers,
+        record_mapping_config=record_mapping_config)
 
     fig = Figure("MANO shape", 1920, 1080, config_filename, ax_s=0.2)
     fig.make_mano_widgets(mbrm, dataset, frame_num=args.start_idx, fit_fingers=args.fit_fingers)
