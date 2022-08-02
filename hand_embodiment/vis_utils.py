@@ -249,7 +249,7 @@ class PillowBig(MoCapObjectMesh, PillowBigMarkers):
     """
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
-        p=np.array([0.0, 0.0, 0.051]))
+        p=np.array([0.047, 0.06, 0.096]))
 
     def __init__(self, show_frame=True):
         super(PillowBig, self).__init__(

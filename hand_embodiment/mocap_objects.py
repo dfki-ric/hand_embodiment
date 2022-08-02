@@ -108,9 +108,9 @@ class PillowBigMarkers:
         PL-------------PR
     """
     default_marker_positions = {
-        "pillow_left": np.array([-0.2005, -0.13675, 0.0]),
-        "pillow_right": np.array([0.1845, -0.12875, 0.0]),
-        "pillow_top": np.array([0.0295, 0.16, 0.0])
+        "pillow_left": np.array([0.0, 0.0, 0.0]),
+        "pillow_right": np.array([0.385, 0.008, 0.0]),
+        "pillow_top": np.array([0.183, 0.295, 0.0])
     }
     marker_names = tuple(default_marker_positions.keys())
 
@@ -140,8 +140,7 @@ class PillowBigMarkers:
         z_axis = pr.norm_vector(np.cross(x_axis, y_axis))
         x_axis = pr.norm_vector(np.cross(y_axis, z_axis))
         R = np.column_stack((x_axis, y_axis, z_axis))
-        p = top_on_x_axis + 0.0295 * x_axis + 0.13675 * y_axis
-        return pt.transform_from(R=R, p=p)
+        return pt.transform_from(R=R, p=pillow_left)
 
 
 class OSAICaseMarkers:
