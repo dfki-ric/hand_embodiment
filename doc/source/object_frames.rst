@@ -26,41 +26,41 @@ the marker positions.
 Electronic Components
 ---------------------
 
-.. image:: object_frames/electronic_object.png
+.. image:: _static/object_frames/electronic_object.png
 
-.. image:: object_frames/electronic_target.png
+.. image:: _static/object_frames/electronic_target.png
 
 OSAI Case
 ---------
 
-.. image:: object_frames/osai_case.png
+.. image:: _static/object_frames/osai_case.png
 
 Open Passport
 -------------
 
-.. image:: object_frames/passport_open.png
+.. image:: _static/object_frames/passport_open.png
 
 Closed Passport
 ---------------
 
-.. image:: object_frames/passport_closed.png
+.. image:: _static/object_frames/passport_closed.png
 
 Passport Box
 ------------
 
-.. image:: object_frames/passport_box.png
+.. image:: _static/object_frames/passport_box.png
 
 Insole
 ------
 
-.. image:: object_frames/insole.png
+.. image:: _static/object_frames/insole.png
 
 Small Pillow
 ------------
 
-.. image:: object_frames/pillow_small.png
+.. image:: _static/object_frames/pillow_small.png
 
 Big Pillow
 ----------
 
-.. image:: object_frames/pillow_big.png
+.. image:: _static/object_frames/pillow_big.png

@@ -2,12 +2,31 @@
 Contact Surfaces
 ================
 
-.. image:: contact_surfaces/mano.png
+To analyze the similarity between the MANO mesh and robotic target systems,
+we computed the distances between the contact surfaces of the MANO mesh and
+the robotic hands. These are marked in red.
 
-.. image:: contact_surfaces/mia.png
+MANO
+----
 
-.. image:: contact_surfaces/shadow.png
+.. image:: _static/contact_surfaces/mano.png
 
-.. image:: contact_surfaces/robotiq.png
+Prensilia Mia Hand
+------------------
 
-.. image:: contact_surfaces/barrett.png
+.. image:: _static/contact_surfaces/mia.png
+
+Shadow Dexterous Hand
+---------------------
+
+.. image:: _static/contact_surfaces/shadow.png
+
+Robotiq 2F-140
+--------------
+
+.. image:: _static/contact_surfaces/robotiq.png
+
+Barrett Hand
+------------
+
+.. image:: _static/contact_surfaces/barrett.png

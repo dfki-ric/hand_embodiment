@@ -9,6 +9,8 @@ hand_embodiment
    :caption: Contents:
 
    kinematics
+   contact_surfaces
+   object_frames
 
 
 Indices and tables
