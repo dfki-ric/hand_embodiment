@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Configuration for a New Robotic Hand &#8212; hand_embodiment 0.4.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="MoCap Object Frames" href="object_frames.html" />
+    <link rel="prev" title="Configuration for a New Subject" href="configuration_mano.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="configuration-for-a-new-robotic-hand">
+<h1>Configuration for a New Robotic Hand<a class="headerlink" href="#configuration-for-a-new-robotic-hand" title="Permalink to this heading">¶</a></h1>
+<p>Each target hand needs a configuration. These are typically stored in
+<code class="docutils literal notranslate"><span class="pre">hand_embodiment.target_configurations</span></code>, but you can define them in your
+own python script or module.</p>
+<p>A configuration includes information about the kinematic setup of the hand:</p>
+<ul class="simple">
+<li><p>name of finger tip frames</p></li>
+<li><p>joints per finger</p></li>
+<li><p>base frame of the hand</p></li>
+<li><p>pose of base frame with respect to MANO base frame</p></li>
+<li><p>path to URDF</p></li>
+<li><p>virtual joints (e. g. coupling of joints)</p></li>
+</ul>
+<p>The following scripts can be used to investigate a hand configuration:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">bin/kinematics_diagram.py</span></code> - generates a kinematic diagram (graph) of the
+hand</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bin/vis_extended_hand_model.py</span></code> - visualizes finger tip positions in the
+visual model of the hand, if you have to define additional finger tips this
+is a good tool to verify the result</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bin/gui_robot_embodiment.py</span></code> - with this tool you can (1) find an
+appropriate pose of the hand in MANO’s base and (2) interactively verify
+that the embodiment mapping finds appropriate solutions to mimic the MANO
+model</p></li>
+</ul>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">hand_embodiment</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="motion_capture_setup.html">Motion Capture Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_mano.html">Configuration for a New Subject</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration for a New Robotic Hand</a></li>
+<li class="toctree-l1"><a class="reference internal" href="object_frames.html">MoCap Object Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="embodiment.html">Embodiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmentation.html">Segmentation of Motion Capture Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kinematics.html">Kinematic Diagrams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact_surfaces.html">Contact Surfaces for Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Unit Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="merge_policy.html">Merge Policy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="funding.html">Funding</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="configuration_mano.html" title="previous chapter">Configuration for a New Subject</a></li>
+      <li>Next: <a href="object_frames.html" title="next chapter">MoCap Object Frames</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;Alexander Fabisch, DFKI GmbH, Robotics Innovation Center.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/configuration_robot.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

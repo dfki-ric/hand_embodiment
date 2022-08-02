@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Motion Capture Setup &#8212; hand_embodiment 0.4.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Kinematics" href="kinematics.html" />
+    <link rel="prev" title="hand_embodiment" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="motion-capture-setup">
+<h1>Motion Capture Setup<a class="headerlink" href="#motion-capture-setup" title="Permalink to this heading">¶</a></h1>
+<div class="section" id="glove">
+<h2>Glove<a class="headerlink" href="#glove" title="Permalink to this heading">¶</a></h2>
+<p>We used the following labelled marker on the glove to record the datasets used
+in the paper:</p>
+<ul class="simple">
+<li><p>Hand pose: <code class="docutils literal notranslate"><span class="pre">hand_top</span></code>, <code class="docutils literal notranslate"><span class="pre">hand_left</span></code>, <code class="docutils literal notranslate"><span class="pre">hand_right</span></code></p></li>
+<li><p>Per finger (thumb, index, middle, ring, little): <code class="docutils literal notranslate"><span class="pre">[finger]_middle</span></code>,
+<code class="docutils literal notranslate"><span class="pre">[finger]_tip</span></code></p></li>
+</ul>
+<p>The following shows the configuration of our glove for the right hand:</p>
+<blockquote>
+<div><img alt="_images/glove.png" src="_images/glove.png" />
+</div></blockquote>
+<p>The figure is based on
+<a class="reference external" href="https://commons.wikimedia.org/wiki/File:Scheme_human_hand_bones-en.svg">this work</a>
+of Mariana Ruiz Villarreal (LadyofHats); retouches by Nyks.</p>
+</div>
+<div class="section" id="tracked-objects">
+<h2>Tracked Objects<a class="headerlink" href="#tracked-objects" title="Permalink to this heading">¶</a></h2>
+<p>In addition, we attached motion capture markers to objects to track their poses
+and to transfer object manipulation trajectories into an object-relative
+coordinate system. The following image shows these objects.</p>
+<blockquote>
+<div><img alt="_images/objects.png" src="_images/objects.png" />
+</div></blockquote>
+<p>The marker configuration and the definition of frames based on markers is
+implemented and documented in
+<a class="reference external" href="https://github.com/dfki-ric/hand_embodiment/blob/main/hand_embodiment/mocap_objects.py">hand_embodiment/mocap_objects</a>.
+We assume that the z-axis points up for all objects with only two markers.
+Meshes for visualization are available
+<a class="reference external" href="https://github.com/dfki-ric/hand_embodiment/tree/main/hand_embodiment/model/objects">here</a>
+and transformations between marker frames and the mesh frames can be found in
+<a class="reference external" href="https://github.com/dfki-ric/hand_embodiment/blob/main/hand_embodiment/vis_utils.py">hand_embodiment/vis_utils</a>.</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">hand_embodiment</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Motion Capture Setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#glove">Glove</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tracked-objects">Tracked Objects</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kinematics.html">Kinematics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact_surfaces.html">Contact Surfaces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="object_frames.html">Object Frames</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">hand_embodiment</a></li>
+      <li>Next: <a href="kinematics.html" title="next chapter">Kinematics</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;Alexander Fabisch, DFKI GmbH, Robotics Innovation Center.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/motion_capture_setup.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

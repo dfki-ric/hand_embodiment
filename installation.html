@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Installation &#8212; hand_embodiment 0.4.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Motion Capture Setup" href="motion_capture_setup.html" />
+    <link rel="prev" title="hand_embodiment" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h1>
+<div class="section" id="install-hand-embodiment">
+<h2>Install Hand Embodiment<a class="headerlink" href="#install-hand-embodiment" title="Permalink to this heading">¶</a></h2>
+<p>This software is implemented in Python. If you do not have a working Python
+environment so far, we recommend to install it with
+<a class="reference external" href="https://www.anaconda.com/">Anaconda</a>. Then you can follow these
+instructions:</p>
+<p><strong>Clone repository:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/dfki-ric/hand_embodiment.git
+</pre></div>
+</div>
+<p><strong>Prepare MANO model:</strong></p>
+<ol class="arabic simple">
+<li><p>Download MANO model from <a class="reference external" href="https://mano.is.tue.mpg.de/">here</a> and unzip it
+to <code class="docutils literal notranslate"><span class="pre">hand_embodiment/hand_embodiment/model/mano</span></code>.</p></li>
+<li><p>Go to <code class="docutils literal notranslate"><span class="pre">hand_embodiment/hand_embodiment/model/mano</span></code>.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> hand_embodiment/hand_embodiment/model/mano
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>For this preparation step, please install following dependencies.</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">numpy</span> <span class="n">scipy</span> <span class="n">chumpy</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">prepare_mano.py</span></code>, you will get the converted MANO model that
+is compatible with this project.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python prepare_mano.py  <span class="c1"># convert model to JSON</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="5">
+<li><p>Go back to the main folder.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> ../../../
+</pre></div>
+</div>
+<p><strong>Install hand_embodiment from main directory:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install -e .
+</pre></div>
+</div>
+<p>The Python version used to produce the results in the paper was 3.8. Exact
+versions of the dependencies are listed in
+requirements.txt (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">requirements.txt</span></code>).
+Alternatively, you can create a conda environment from
+environment.yml:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda env create -f environment.yml
+conda activate hand_embodiment
+pip install -e .
+pytest test/  <span class="c1"># verify installation</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="optional-dependency">
+<h2>Optional Dependency<a class="headerlink" href="#optional-dependency" title="Permalink to this heading">¶</a></h2>
+<p>The library <a class="reference external" href="https://git.hb.dfki.de/dfki-interaction/mocap">mocap</a> is only
+available for members of the DFKI RIC. It is used to load segmented motion
+capture data in some example scripts since metadata like segment borders are
+stored in a custom format based on JSON.</p>
+</div>
+<div class="section" id="data">
+<h2>Data<a class="headerlink" href="#data" title="Permalink to this heading">¶</a></h2>
+<p>Some examples need motion capture data. Ask me about it. Unfortunately,
+we cannot release the data publicly.</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">hand_embodiment</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#install-hand-embodiment">Install Hand Embodiment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optional-dependency">Optional Dependency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data">Data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="motion_capture_setup.html">Motion Capture Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kinematics.html">Kinematics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact_surfaces.html">Contact Surfaces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="object_frames.html">Object Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Unit Tests</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">hand_embodiment</a></li>
+      <li>Next: <a href="motion_capture_setup.html" title="next chapter">Motion Capture Setup</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;Alexander Fabisch, DFKI GmbH, Robotics Innovation Center.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/installation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

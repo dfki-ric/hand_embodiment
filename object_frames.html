@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MoCap Object Frames &#8212; hand_embodiment 0.4.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Embodiment" href="embodiment.html" />
+    <link rel="prev" title="Integrating a New Robotic Hand" href="configuration_robot.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="mocap-object-frames">
+<h1>MoCap Object Frames<a class="headerlink" href="#mocap-object-frames" title="Permalink to this heading">¶</a></h1>
+<p>Grasp trajectories should be expressed in an object-centric coordinate system.
+Hence, we have to define the frame of each grasped object. We do this in
+the module <code class="docutils literal notranslate"><span class="pre">hand_embodiment.mocap_objects</span></code>.</p>
+<p>Each MoCap object has a set of markers associated with it. Placement on the
+object is indicated in a docstring of the corresponding class (in a top view).
+For each object we define default marker positions in the object coordinate
+system and a function to reconstruct the pose of the object from actual marker
+positions. The pose of the object is the pose of the marker frame in the MoCap
+world frame.</p>
+<p>Furthermore, for visualization we need meshes and their relation to the
+marker frame. These are defined in <code class="docutils literal notranslate"><span class="pre">hand_embodiment.vis_utils</span></code>. Each
+object visualization class contains the transformation <code class="docutils literal notranslate"><span class="pre">markers2mesh</span></code> as
+an attribute. Furthermore, it loads the mesh in its constructor along with
+the correct color.</p>
+<p>Here are the currently supported objects. In each object you see the mesh,
+the markers used to track the object’s pose and the frame defined based on
+the marker positions.</p>
+<div class="section" id="electronic-components">
+<h2>Electronic Components<a class="headerlink" href="#electronic-components" title="Permalink to this heading">¶</a></h2>
+<img alt="_images/electronic_object.png" src="_images/electronic_object.png" />
+<img alt="_images/electronic_target.png" src="_images/electronic_target.png" />
+</div>
+<div class="section" id="osai-case">
+<h2>OSAI Case<a class="headerlink" href="#osai-case" title="Permalink to this heading">¶</a></h2>
+<img alt="_images/osai_case.png" src="_images/osai_case.png" />
+</div>
+<div class="section" id="open-passport">
+<h2>Open Passport<a class="headerlink" href="#open-passport" title="Permalink to this heading">¶</a></h2>
+<img alt="_images/passport_open.png" src="_images/passport_open.png" />
+</div>
+<div class="section" id="closed-passport">
+<h2>Closed Passport<a class="headerlink" href="#closed-passport" title="Permalink to this heading">¶</a></h2>
+<img alt="_images/passport_closed.png" src="_images/passport_closed.png" />
+</div>
+<div class="section" id="passport-box">
+<h2>Passport Box<a class="headerlink" href="#passport-box" title="Permalink to this heading">¶</a></h2>
+<img alt="_images/passport_box.png" src="_images/passport_box.png" />
+</div>
+<div class="section" id="insole">
+<h2>Insole<a class="headerlink" href="#insole" title="Permalink to this heading">¶</a></h2>
+<img alt="_images/insole.png" src="_images/insole.png" />
+</div>
+<div class="section" id="small-pillow">
+<h2>Small Pillow<a class="headerlink" href="#small-pillow" title="Permalink to this heading">¶</a></h2>
+<img alt="_images/pillow_small.png" src="_images/pillow_small.png" />
+</div>
+<div class="section" id="big-pillow">
+<h2>Big Pillow<a class="headerlink" href="#big-pillow" title="Permalink to this heading">¶</a></h2>
+<img alt="_images/pillow_big.png" src="_images/pillow_big.png" />
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">hand_embodiment</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="motion_capture_setup.html">Motion Capture Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_mano.html">Configuration for a New Subject</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_robot.html">Integrating a New Robotic Hand</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">MoCap Object Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="embodiment.html">Embodiment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="segmentation.html">Segmentation of Motion Capture Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kinematics.html">Kinematic Diagrams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact_surfaces.html">Contact Surfaces for Evaluation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Unit Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="merge_policy.html">Merge Policy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="funding.html">Funding</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="configuration_robot.html" title="previous chapter">Integrating a New Robotic Hand</a></li>
+      <li>Next: <a href="embodiment.html" title="next chapter">Embodiment</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;Alexander Fabisch, DFKI GmbH, Robotics Innovation Center.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/object_frames.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
