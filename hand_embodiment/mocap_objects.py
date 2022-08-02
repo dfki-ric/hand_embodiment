@@ -93,6 +93,56 @@ class PillowMarkers:
         return pose
 
 
+class OSAICaseMarkers:
+    """Information about OSAI case markers.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        OSAI_3-----------------
+        |                     |
+        |                     |
+        |                     |
+        |                     |
+        OSAI_1-----------OSAI_2
+    """
+    default_marker_positions = {
+        "OSAI_1": np.array([-0.031, -0.028, 0.0]),
+        "OSAI_2": np.array([0.031, -0.028, 0.0]),
+        "OSAI_3": np.array([-0.031, 0.028, 0.0])
+    }
+    marker_names = tuple(default_marker_positions.keys())
+
+    @staticmethod
+    def pose_from_markers(OSAI_1, OSAI_2, OSAI_3):
+        """Compute pose of OSAI case.
+
+        Parameters
+        ----------
+        OSAI_1 : array, shape (3,)
+            Position first marker.
+
+        OSAI_2 : array, shape (3,)
+            Position of second marker.
+
+        OSAI_3 : array, shape (3,)
+            Position of third marker.
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the electronic target.
+        """
+        x_axis = pr.norm_vector(OSAI_2 - OSAI_1)
+        y_axis = pr.norm_vector(OSAI_3 - OSAI_1)
+        z_axis = pr.norm_vector(np.cross(x_axis, y_axis))
+        y_axis = pr.norm_vector(np.cross(z_axis, x_axis))
+        R = np.column_stack((x_axis, y_axis, z_axis))
+        center = OSAI_1 + 0.031 * x_axis + 0.028 * y_axis
+        return pt.transform_from(R=R, p=center)
+
+
 class ElectronicTargetMarkers:
     """Information about electronic target markers.
 
@@ -330,6 +380,8 @@ def extract_mocap_origin2object_generic(args, dataset):
         mocap_origin2origin = extract_mocap_origin2object(dataset, InsoleMarkers)
     elif args.pillow_hack:
         mocap_origin2origin = extract_mocap_origin2object(dataset, PillowMarkers)
+    elif args.osai_case_hack:
+        mocap_origin2origin = extract_mocap_origin2object(dataset, OSAICaseMarkers)
     elif args.electronic_object_hack:
         mocap_origin2origin = extract_mocap_origin2object(dataset, ElectronicObjectMarkers)
     elif args.electronic_target_hack:

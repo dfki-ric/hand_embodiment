@@ -8,7 +8,7 @@ import pytransform3d.transformations as pt
 import pytransform3d.visualizer as pv
 
 from .mocap_objects import (
-    InsoleMarkers, PillowMarkers, ElectronicTargetMarkers,
+    InsoleMarkers, PillowMarkers, OSAICaseMarkers, ElectronicTargetMarkers,
     ElectronicObjectMarkers, PassportMarkers, PassportClosedMarkers,
     PassportBoxMarkers)
 
@@ -239,8 +239,27 @@ class PillowSmall(MoCapObjectMesh, PillowMarkers):
             show_frame=show_frame)
 
 
+class OSAICase(MoCapObjectMesh, OSAICaseMarkers):
+    """Representation of OSAI case.
+
+    Parameters
+    ----------
+    show_frame : bool, optional (default: True)
+        Show frame.
+    """
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+        p=np.array([0, 0, 0.006]))
+
+    def __init__(self, show_frame=True):
+        super(OSAICase, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/electronic_target.stl"),
+            mesh_color=np.array([0.21, 0.20, 0.46]),
+            show_frame=show_frame)
+
+
 class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers):
-    """Representation of electronic object and target component.
+    """Representation of electronic target component.
 
     Parameters
     ----------
@@ -259,7 +278,7 @@ class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers):
 
 
 class ElectronicObject(MoCapObjectMesh, ElectronicObjectMarkers):
-    """Representation of electronic object and target component.
+    """Representation of electronic object component.
 
     Parameters
     ----------
@@ -337,6 +356,7 @@ class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
 ARTISTS = {
     "insole": Insole,
     "pillow-small": PillowSmall,
+    "osai-case": OSAICase,
     "electronic-object": ElectronicObject,
     "electronic-target": ElectronicTarget,
     "passport": Passport,
@@ -379,6 +399,8 @@ class AnimationCallback:
             self.object_meshes.append(Insole())
         if self.args.pillow:
             self.object_meshes.append(PillowSmall())
+        if self.args.osai_case:
+            self.object_meshes.append(OSAICase())
         if self.args.electronic:
             self.object_meshes.append(ElectronicTarget())
             self.object_meshes.append(ElectronicObject())

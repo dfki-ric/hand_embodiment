@@ -87,6 +87,8 @@ def add_object_visualization_arguments(parser):
     parser.add_argument(
         "--pillow", action="store_true", help="Visualize pillow.")
     parser.add_argument(
+        "--osai-case", action="store_true", help="Visualize OSAI case.")
+    parser.add_argument(
         "--electronic", action="store_true",
         help="Visualize electronic components.")
     parser.add_argument(
@@ -110,6 +112,9 @@ def add_frame_transform_arguments(parser):
     parser.add_argument(
         "--pillow-hack", action="store_true",
         help="Pillow-relative end-effector coordinates.")
+    parser.add_argument(
+        "--osai-case-hack", action="store_true",
+        help="OSAI-case-relative end-effector coordinates.")
     parser.add_argument(
         "--electronic-object-hack", action="store_true",
         help="Electronic-object-relative end-effector coordinates.")
