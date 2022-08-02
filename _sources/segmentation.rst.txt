@@ -33,6 +33,8 @@ segment motion capture data and annotate segments manually. The following
 image shows the GUI.
 
 .. image:: _static/annotation.png
+    :width: 50%
+    :align: center
 
 At the bottom, the velocity profiles of index tip and hand top markers are
 visible. Segments with the label `close` are marked with green background

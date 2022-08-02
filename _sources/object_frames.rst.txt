@@ -23,44 +23,47 @@ Here are the currently supported objects. In each object you see the mesh,
 the markers used to track the object's pose and the frame defined based on
 the marker positions.
 
+Available Objects
+-----------------
+
 Electronic Components
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 .. image:: _static/object_frames/electronic_object.png
 
 .. image:: _static/object_frames/electronic_target.png
 
 OSAI Case
----------
+^^^^^^^^^
 
 .. image:: _static/object_frames/osai_case.png
 
 Open Passport
--------------
+^^^^^^^^^^^^^
 
 .. image:: _static/object_frames/passport_open.png
 
 Closed Passport
----------------
+^^^^^^^^^^^^^^^
 
 .. image:: _static/object_frames/passport_closed.png
 
 Passport Box
-------------
+^^^^^^^^^^^^
 
 .. image:: _static/object_frames/passport_box.png
 
 Insole
-------
+^^^^^^
 
 .. image:: _static/object_frames/insole.png
 
 Small Pillow
-------------
+^^^^^^^^^^^^
 
 .. image:: _static/object_frames/pillow_small.png
 
 Big Pillow
-----------
+^^^^^^^^^^
 
 .. image:: _static/object_frames/pillow_big.png

@@ -35,15 +35,137 @@
             
   <div class="section" id="embodiment">
 <h1>Embodiment<a class="headerlink" href="#embodiment" title="Permalink to this heading">¶</a></h1>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#visualizations" id="id1">Visualizations</a></p>
+<ul>
+<li><p><a class="reference internal" href="#record-mapping" id="id2">Record Mapping</a></p></li>
+<li><p><a class="reference internal" href="#record-and-embodiment-mapping" id="id3">Record and Embodiment Mapping</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#interactive-embodiment-mapping" id="id4">Interactive Embodiment Mapping</a></p></li>
+<li><p><a class="reference internal" href="#file-conversion" id="id5">File Conversion</a></p>
+<ul>
+<li><p><a class="reference internal" href="#visualize-converted-files" id="id6">Visualize Converted Files</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="visualizations">
+<h2><a class="toc-backref" href="#id1">Visualizations</a><a class="headerlink" href="#visualizations" title="Permalink to this heading">¶</a></h2>
+<p>There are several scripts that visualize aspects of the record and embodiment
+mapping.</p>
+<div class="section" id="record-mapping">
+<h3><a class="toc-backref" href="#id2">Record Mapping</a><a class="headerlink" href="#record-mapping" title="Permalink to this heading">¶</a></h3>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">bin/vis_markers_to_mano_trajectory.py</span></code></p>
+<p>Example calls:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python bin/vis_markers_to_mano_trajectory.py --demo-file data/Qualisys_pnp/20151005_r_AV82_PickAndPlace_BesMan_labeled_02.tsv --mocap-config examples/config/markers/20151005_besman.yaml --mano-config examples/config/mano/20151005_besman.yaml
+python bin/vis_markers_to_mano_trajectory.py --demo-file data/QualisysAprilTest/april_test_005.tsv
+python bin/vis_markers_to_mano_trajectory.py --demo-file data/20210610_april/Measurement2.tsv --mocap-config examples/config/markers/20210610_april.yaml --mano-config examples/config/mano/20210610_april.yaml
+python bin/vis_markers_to_mano_trajectory.py --demo-file data/20210616_april/Measurement16.tsv --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210610_april.yaml --insole
+python bin/vis_markers_to_mano_trajectory.py --demo-file data/20210701_april/Measurement30.tsv --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210610_april.yaml --insole
+</pre></div>
+</div>
+<p>Examples:</p>
+<table>
+<tr>
+<td><img src="_static/figure_record_1.png" height="100px" /></td>
+<td><img src="_static/figure_record_2.png" height="100px" /></td>
+<td><img src="_static/figure_record_3.png" height="100px" /></td>
+<td><img src="_static/figure_record_4.png" height="100px" /></td>
+</tr>
+<tr>
+<td><img src="_static/figure_record_5.png" height="100px" /></td>
+<td><img src="_static/figure_record_6.png" height="100px" /></td>
+<td><img src="_static/figure_record_7.png" height="100px" /></td>
+<td><img src="_static/figure_record_8.png" height="100px" /></td>
+</tr>
+<tr>
+<td><img src="_static/figure_record_9.png" height="100px" /></td>
+<td><img src="_static/figure_record_10.png" height="100px" /></td>
+</tr>
+</table></div>
+<div class="section" id="record-and-embodiment-mapping">
+<h3><a class="toc-backref" href="#id3">Record and Embodiment Mapping</a><a class="headerlink" href="#record-and-embodiment-mapping" title="Permalink to this heading">¶</a></h3>
+<a class="reference internal image-reference" href="_images/script_vis_embodiment_mapping.png"><img alt="_images/script_vis_embodiment_mapping.png" class="align-center" src="_images/script_vis_embodiment_mapping.png" style="width: 50%;" /></a>
+<div class="section" id="trajectory">
+<h4>Trajectory<a class="headerlink" href="#trajectory" title="Permalink to this heading">¶</a></h4>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">bin/vis_markers_to_robot.py</span></code></p>
+<p>Example calls:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python bin/vis_markers_to_robot.py shadow --demo-file test/data/recording.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --pillow --show-mano
+python bin/vis_markers_to_robot.py mia --demo-file test/data/recording.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --pillow --mia-thumb-adducted --show-mano
+python bin/vis_markers_to_robot.py mia --demo-file data/Qualisys_pnp/20151005_r_AV82_PickAndPlace_BesMan_labeled_02.tsv --mocap-config examples/config/markers/20151005_besman.yaml --mano-config examples/config/mano/20151005_besman.yaml
+python bin/vis_markers_to_robot.py mia --demo-file data/QualisysAprilTest/april_test_005.tsv
+python bin/vis_markers_to_robot.py mia --demo-file data/20210610_april/Measurement2.tsv --mocap-config examples/config/markers/20210610_april.yaml --mano-config examples/config/mano/20210610_april.yaml --mia-thumb-adducted
+python bin/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210616_april.yaml --show-mano --demo-file data/20210616_april/Measurement24.tsv --mia-thumb-adducted
+python bin/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210616_april.yaml --demo-file data/20210701_april/Measurement30.tsv --insole --mia-thumb-adducted
+python bin/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20210616_april.yaml --demo-file data/20210819_april/20210819_r_WK37_insole_set0.tsv --insole --show-mano --mia-thumb-adducted
+python bin/vis_markers_to_robot.py shadow --mocap-config examples/config/markers/20211105_april.yaml --mano-config examples/config/mano/20210616_april.yaml --demo-file data/20210819_april/20210819_r_WK37_insole_set0.tsv --insole --show-mano
+python bin/vis_markers_to_robot.py mia --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.tsv --record-mapping-config examples/config/record_mapping/20211105_april.yaml --show-mano --mia-thumb-adducted --pillow
+python bin/vis_markers_to_robot.py shadow --mocap-config examples/config/markers/20211105_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --demo-file data/20211105_april/20211105_r_WK37_electronic_set0.tsv --show-mano --electronic
+python bin/vis_markers_to_robot.py shadow --mocap-config examples/config/markers/20211112_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --demo-file data/20211112_april/20211112_r_WK37_passport_set0.tsv --show-mano --passport
+</pre></div>
+</div>
+</div>
+<div class="section" id="segment">
+<h4>Segment<a class="headerlink" href="#segment" title="Permalink to this heading">¶</a></h4>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">bin/vis_segment_markers_to_robot.py</span></code></p>
+<p>Example calls:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python bin/vis_segment_markers_to_robot.py mia close --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement24.json --segment <span class="m">0</span>
+python bin/vis_segment_markers_to_robot.py mia close --mocap-config examples/config/markers/20210616_april.yaml --mano-config examples/config/mano/20210701_april.yaml --mia-thumb-adducted --demo-file data/20210701_april/Measurement30.json --segment <span class="m">0</span> --insole
+python bin/vis_segment_markers_to_robot.py mia close --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20210701_april.yaml --mia-thumb-adducted --demo-file data/20210819_april/20210819_r_WK37_insole_set0.json --segment <span class="m">0</span> --insole
+python bin/vis_segment_markers_to_robot.py mia close --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210701_april.yaml --mia-thumb-adducted --demo-file data/20210826_april/20210826_r_WK37_small_pillow_set0.json --segment <span class="m">0</span> --pillow
+python bin/vis_segment_markers_to_robot.py shadow flip --mocap-config examples/config/markers/20211112_april.yaml --mano-config examples/config/mano/20211105_april.yaml --demo-file data/20211112_april/20211112_r_WK37_passport_set0.json --passport --show-mano --segment <span class="m">0</span>
+python bin/vis_segment_markers_to_robot.py mia close --mocap-config examples/config/markers/20211119_april.yaml --mano-config examples/config/mano/20211105_april.yaml --mia-thumb-adducted --demo-file data/20211119_april/20211119_r_WK37_insole_set0.json --segment <span class="m">0</span> --insole
+python bin/vis_segment_markers_to_robot.py mia insert --mocap-config examples/config/markers/20211217_april.yaml --mano-config examples/config/mano/20211105_april.yaml --mia-thumb-adducted --show-mano --demo-file data/20211217_april/20211217_r_WK37_passport_box_set0.json --segment <span class="m">0</span> --passport-closed
+python bin/vis_segment_markers_to_robot.py mia close --mocap-config examples/config/markers/20220328_april.yaml --mano-config examples/config/mano/20211105_april.yaml --show-mano --demo-file data/20220328_april/20220328_r_WK37_insole_lateral_front_set0.json --segment <span class="m">0</span> --insole
+python bin/vis_segment_markers_to_robot.py mia close --mocap-config examples/config/markers/20220328_april.yaml --mano-config examples/config/mano/20211105_april.yaml --show-mano --demo-file data/20220328_april/20220328_r_WK37_insole_pinch_front_set0.json --segment <span class="m">0</span> --insole --mia-thumb-adducted
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="interactive-embodiment-mapping">
+<h2><a class="toc-backref" href="#id4">Interactive Embodiment Mapping</a><a class="headerlink" href="#interactive-embodiment-mapping" title="Permalink to this heading">¶</a></h2>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">bin/gui_robot_embodiment.py</span></code></p>
+<table>
+<tr>
+<td><img src="_static/embodiment_interactive_mia_1.png" height="200px" /></td>
+<td><img src="_static/embodiment_interactive_mia_2.png" height="200px" /></td>
+<td><img src="_static/embodiment_interactive_mia_3.png" height="200px" /></td>
+<td><img src="_static/embodiment_interactive_shadow_1.png" height="200px" /></td>
+</tr>
+<tr>
+<td><img src="_static/embodiment_interactive_shadow_2.png" height="200px" /></td>
+<td><img src="_static/embodiment_interactive_shadow_3.png" height="200px" /></td>
+<td><img src="_static/embodiment_interactive_shadow_4.png" height="200px" /></td>
+<td><img src="_static/embodiment_interactive_shadow_5.png" height="200px" /></td>
+</tr>
+</table></div>
+<div class="section" id="file-conversion">
+<h2><a class="toc-backref" href="#id5">File Conversion</a><a class="headerlink" href="#file-conversion" title="Permalink to this heading">¶</a></h2>
 <p>In order to convert a motion capture file to a trajectory that can be
 executed by a robotic hand, you have to run the script
 <code class="docutils literal notranslate"><span class="pre">bin/convert_hand_trajectory.py</span></code>. All scripts can be executed with the
 option <code class="docutils literal notranslate"><span class="pre">-h</span></code> to see available options.</p>
+<p>Example calls:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python bin/convert_hand_trajectory.py mia data/QualisysAprilTest/april_test_009.tsv --mia-thumb-adducted --output trajectory_009.csv
+python bin/convert_hand_trajectory.py mia data/20220718_april/OSAI_test2.txt --mia-thumb-adducted  --mocap-config examples/config/markers/20220718_april.yaml --mano-config examples/config/mano/20220718_april.yaml --robot-config examples/config/robot/20220718_april_mia.yaml --output OSAI_test2.csv
+</pre></div>
+</div>
+<div class="section" id="visualize-converted-files">
+<h3><a class="toc-backref" href="#id6">Visualize Converted Files</a><a class="headerlink" href="#visualize-converted-files" title="Permalink to this heading">¶</a></h3>
 <p>The script produces CSV files. You can visualize resulting trajectories
 with <code class="docutils literal notranslate"><span class="pre">bin/vis_embodied_trajectories.py</span></code>. Here are two examples of
 visualizations created with this script:</p>
-<img alt="_images/figure_dataset_grasp_insole.png" src="_images/figure_dataset_grasp_insole.png" />
-<img alt="_images/figure_dataset_grasp_pillow.png" src="_images/figure_dataset_grasp_pillow.png" />
+<a class="reference internal image-reference" href="_images/figure_dataset_grasp_insole.png"><img alt="_images/figure_dataset_grasp_insole.png" class="align-center" src="_images/figure_dataset_grasp_insole.png" style="width: 50%;" /></a>
+<a class="reference internal image-reference" href="_images/figure_dataset_grasp_pillow.png"><img alt="_images/figure_dataset_grasp_pillow.png" class="align-center" src="_images/figure_dataset_grasp_pillow.png" style="width: 50%;" /></a>
+<p>Example call:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python bin/vis_embodied_trajectories.py ../motion_capture_grasp_poses/datasets/insole/*.csv --artist insole
+</pre></div>
+</div>
+</div>
+</div>
 </div>
 
 
@@ -72,7 +194,6 @@ visualizations created with this script:</p>
 <li class="toctree-l1"><a class="reference internal" href="object_frames.html">MoCap Object Frames</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Embodiment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="segmentation.html">Segmentation of Motion Capture Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="kinematics.html">Kinematic Diagrams</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contact_surfaces.html">Contact Surfaces for Evaluation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="docs.html">Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">Unit Tests</a></li>

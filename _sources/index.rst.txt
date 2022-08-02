@@ -24,7 +24,6 @@ https://arxiv.org/abs/2203.02778
    object_frames
    embodiment
    segmentation
-   kinematics
    contact_surfaces
    docs
    tests
