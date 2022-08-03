@@ -28,7 +28,7 @@ def add_playback_control_arguments(parser):
     parser.add_argument(
         "--start-idx", type=int, default=None, help="Start index.")
     parser.add_argument(
-        "--end-idx", type=int, default=None, help="Start index.")
+        "--end-idx", type=int, default=None, help="End index.")
     parser.add_argument(
         "--skip-frames", type=int, default=1,
         help="Skip this number of frames between animated frames.")
