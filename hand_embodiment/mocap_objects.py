@@ -425,28 +425,43 @@ class PassportBoxMarkers:
         return pose
 
 
+MOCAP_OBJECTS = {
+    "insole": InsoleMarkers,
+    "pillow": PillowMarkers,
+    "pillow-small": PillowMarkers,
+    "pillow-big": PillowBigMarkers,
+    "osai-case": OSAICaseMarkers,
+    "electronic-object": ElectronicObjectMarkers,
+    "electronic-target": ElectronicTargetMarkers,
+    "passport": PassportMarkers,
+    "passport-closed": PassportClosedMarkers,
+    "passport-box": PassportBoxMarkers
+}
+
+
 def extract_mocap_origin2object_generic(args, dataset):
-    if args.insole_hack:
-        mocap_origin2origin = extract_mocap_origin2object(dataset, InsoleMarkers)
-    elif args.pillow_hack:
-        mocap_origin2origin = extract_mocap_origin2object(dataset, PillowMarkers)
-    elif args.pillow_big_hack:
-        mocap_origin2origin = extract_mocap_origin2object(dataset, PillowBigMarkers)
-    elif args.osai_case_hack:
-        mocap_origin2origin = extract_mocap_origin2object(dataset, OSAICaseMarkers)
-    elif args.electronic_object_hack:
-        mocap_origin2origin = extract_mocap_origin2object(dataset, ElectronicObjectMarkers)
-    elif args.electronic_target_hack:
-        mocap_origin2origin = extract_mocap_origin2object(dataset, ElectronicTargetMarkers)
-    elif args.passport_hack:
-        mocap_origin2origin = extract_mocap_origin2object(dataset, PassportMarkers)
-    elif args.passport_closed_hack:
-        mocap_origin2origin = extract_mocap_origin2object(dataset, PassportClosedMarkers)
-    elif args.passport_box_hack:
-        mocap_origin2origin = extract_mocap_origin2object(dataset, PassportBoxMarkers)
+    deprecated_names = [
+        "insole_hack", "pillow_hack", "pillow_big_hack",
+        "osai_case_hack", "electronic_object_hack", "electronic_target_hack",
+        "passport_hack", "passport_closed_hack", "passport_box_hack"]
+    deprecated_artist_arguments(args, deprecated_names)
+    if args.base_frame is not None:
+        mocap_origin2origin = extract_mocap_origin2object(
+            dataset, MOCAP_OBJECTS[args.base_frame])
     else:
         mocap_origin2origin = None
     return mocap_origin2origin
+
+
+def deprecated_artist_arguments(args, names):
+    for name in names:
+        if getattr(args, name):
+            object_name = name[:-5]
+            object_name = object_name.replace("_", "-")
+            raise ValueError(
+                f"Deprecated command line argument: '--{name}'. Please use "
+                f"the new style of indicating object base frames: "
+                f"'--base-frame {object_name}'")
 
 
 def extract_mocap_origin2object(dataset, object_info):

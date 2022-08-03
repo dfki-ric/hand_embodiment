@@ -1,6 +1,5 @@
 """Convert MoCap segments to a robotic hand: record and embodiment mapping."""
 import argparse
-import warnings
 
 from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot

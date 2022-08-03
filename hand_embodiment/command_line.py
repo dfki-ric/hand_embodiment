@@ -1,6 +1,7 @@
 """Common options for command line scripts."""
 from .target_configurations import TARGET_CONFIG
 from .vis_utils import ARTISTS
+from .mocap_objects import MOCAP_OBJECTS
 
 
 def add_hand_argument(parser):
@@ -108,6 +109,13 @@ def add_frame_transform_arguments(parser):
     parser : argparse.ArgumentParser
         Command line parser
     """
+    parser.add_argument(
+        "--base-frame", type=str, default=None,
+        choices=list(MOCAP_OBJECTS.keys()),
+        help="Compute object-relative end-effector coordinates with respect "
+             "to this object.")
+
+    # deprecated arguments
     parser.add_argument(
         "--insole-hack", action="store_true",
         help="Insole-relative end-effector coordinates.")
