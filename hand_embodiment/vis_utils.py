@@ -415,22 +415,12 @@ class AnimationCallback:
             self.hand.add_artist(self.fig)
 
         self.object_meshes = []
-        if self.args.insole:
-            self.object_meshes.append(Insole())
-        if self.args.pillow:
-            self.object_meshes.append(PillowSmall())
-        if self.args.pillow_big:
-            self.object_meshes.append(PillowBig())
-        if self.args.osai_case:
-            self.object_meshes.append(OSAICase())
-        if self.args.electronic:
-            self.object_meshes.append(ElectronicTarget())
-            self.object_meshes.append(ElectronicObject())
-        if self.args.passport:
-            self.object_meshes.append(Passport())
-        if self.args.passport_closed:
-            self.object_meshes.append(PassportClosed())
-            self.object_meshes.append(PassportBox())
+        deprecated_names = [
+            "insole", "pillow", "pillow-big", "osai-case", "electronic",
+            "passport", "passport-closed"]
+        deprecated_artist_arguments(args, deprecated_names)
+        for artist in self.args.visual_objects:
+            self.object_meshes.append(ARTISTS[artist]())
         for object_mesh in self.object_meshes:
             object_mesh.add_artist(self.fig)
 
@@ -486,3 +476,12 @@ class AnimationCallback:
             artists.append(self.robot)
 
         return artists
+
+
+def deprecated_artist_arguments(args, names):
+    for name in names:
+        if hasattr(args, name) and getattr(args, name):
+            raise ValueError(
+                f"Deprecated command line argument: '--{name}'. Please use "
+                f"the new style of indicating object base frames: "
+                f"'--visual-objects object1 object2 ...'")

@@ -84,6 +84,12 @@ def add_object_visualization_arguments(parser):
         Command line parser
     """
     parser.add_argument(
+        "--visual-objects", type=str, nargs="*",
+        choices=list(ARTISTS.keys()),
+        help="Names of objects that should be visualized.")
+
+    # deprecated arguments
+    parser.add_argument(
         "--insole", action="store_true", help="Visualize insole mesh.")
     parser.add_argument(
         "--pillow", action="store_true", help="Visualize small pillow.")
