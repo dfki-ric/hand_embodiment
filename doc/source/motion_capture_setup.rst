@@ -5,7 +5,7 @@ Motion Capture Setup
 Glove
 -----
 
-We used the following labelled marker on the glove to record the datasets used
+We used the following labelled markers on the glove to record the datasets used
 in the paper:
 
 * Hand pose: ``hand_top``, ``hand_left``, ``hand_right``
