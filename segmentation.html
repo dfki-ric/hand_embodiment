@@ -4,7 +4,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
     <title>Segmentation of Motion Capture Data &#8212; hand_embodiment 0.4.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
@@ -33,13 +34,13 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="segmentation-of-motion-capture-data">
+  <section id="segmentation-of-motion-capture-data">
 <h1>Segmentation of Motion Capture Data<a class="headerlink" href="#segmentation-of-motion-capture-data" title="Permalink to this heading">¶</a></h1>
 <p>Motion capture recordings typically contain a sequence of multiple movements,
 often multiple demonstrations of the same movement. In order to use individual
 behavioral building blocks subsequently, these recordings have to be segmented.
 This can be done manually or automatically.</p>
-<div class="section" id="automatic-segmentation">
+<section id="automatic-segmentation">
 <h2>Automatic Segmentation<a class="headerlink" href="#automatic-segmentation" title="Permalink to this heading">¶</a></h2>
 <p>Automatic segmentation is based on velocity-based multiple changepoint
 inference (vMCI,
@@ -54,8 +55,8 @@ Qualisys motion capture file in TSV format. A corresponding metadata file in
 JSON format will be created. Segments are not labeled yet because this has to
 be done manually with the same tool with which we can also perform manual
 segmentation.</p>
-</div>
-<div class="section" id="manual-segmentation-and-annotation">
+</section>
+<section id="manual-segmentation-and-annotation">
 <h2>Manual Segmentation and Annotation<a class="headerlink" href="#manual-segmentation-and-annotation" title="Permalink to this heading">¶</a></h2>
 <p>The trajectory labeling GUI
 (<a class="reference external" href="https://git.hb.dfki.de/dfki-interaction/trajectory_labeling">https://git.hb.dfki.de/dfki-interaction/trajectory_labeling</a>) can be used to
@@ -67,8 +68,8 @@ visible. Segments with the label <cite>close</cite> are marked with green backgr
 color. On the left side, there is a list of annotated segments. In the middle
 we can see a 3D view of markers and on the right side we see the segment and
 annotation editor.</p>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -138,7 +139,7 @@ annotation editor.</p>
       &copy;Alexander Fabisch, DFKI GmbH, Robotics Innovation Center.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.0.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.1.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
