@@ -6,9 +6,9 @@ set -eu
 head=$(git rev-parse HEAD)
 
 git clone -b gh-pages "https://dfki-ric:$GH_PASSWORD@github.com/$GITHUB_REPOSITORY.git" gh-pages
-cp -R doc/build/html/* gh-pages/
 cd gh-pages
 git rm -r *
+cp -R ../doc/build/html/* .
 git add *
 touch .nojekyll
 git add .nojekyll
