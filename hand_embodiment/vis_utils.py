@@ -419,8 +419,9 @@ class AnimationCallback:
             "insole", "pillow", "pillow-big", "osai-case", "electronic",
             "passport", "passport-closed"]
         deprecated_artist_arguments(args, deprecated_names)
-        for artist in self.args.visual_objects:
-            self.object_meshes.append(ARTISTS[artist]())
+        if args.visual_objects is not None:
+            for artist in self.args.visual_objects:
+                self.object_meshes.append(ARTISTS[artist]())
         for object_mesh in self.object_meshes:
             object_mesh.add_artist(self.fig)
 
