@@ -333,7 +333,8 @@ def load_kinematic_model(hand_config, unscaled_visual_model=True):
     else:
         vis_kin = kin
     if "kinematic_model_hook" in model:
-        model["kinematic_model_hook"](kin)
+        kinematic_model_hook_args = hand_config.get("kinematic_model_hook_args", {})
+        model["kinematic_model_hook"](kin, **kinematic_model_hook_args)
         if unscaled_visual_model:
             model["kinematic_model_hook"](vis_kin)
     if "virtual_joints_callbacks" in hand_config:

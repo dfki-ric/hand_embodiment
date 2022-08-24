@@ -60,7 +60,9 @@ from pkg_resources import resource_filename
 #         ("little", "j_little_fle"),
 #     ],
 #     # function will be executed after embodiment mapping to modify the result
-#     "post_embodiment_hook": ...
+#     "post_embodiment_hook": ...,
+#     # additional arguments for the kinematic model hook
+#     "kinematic_model_hook_args": ...
 # }
 
 
@@ -68,7 +70,7 @@ from pkg_resources import resource_filename
 # Mia hand
 ###############################################################################
 
-def kinematic_model_hook_mia(kin):
+def kinematic_model_hook_mia(kin, **kwargs):
     """Extends kinematic model to include links for embodiment mapping."""
     # adjust index finger limit
     joint_info = kin.tm._joints["j_index_fle"]
@@ -76,76 +78,25 @@ def kinematic_model_hook_mia(kin):
                   (0.0, joint_info[4][1]), joint_info[5])
     kin.tm._joints["j_index_fle"] = joint_info
 
-    kin.tm.add_transform(
-        "thumb_tip", "thumb_fle",
-        np.array([
-            [1, 0, 0, 0.03],
-            [0, 1, 0, 0.07],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]]))
-    kin.tm.add_transform(
-        "thumb_middle", "thumb_fle",
-        np.array([
-            [1, 0, 0, 0.03],
-            [0, 1, 0, 0.015],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]]))
-    kin.tm.add_transform(
-        "index_tip", "index_fle",
-        np.array([
-            [1, 0, 0, -0.015],
-            [0, 1, 0, 0.09],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]]))
-    kin.tm.add_transform(
-        "index_middle", "index_fle",
-        np.array([
-            [1, 0, 0, 0.02],
-            [0, 1, 0, 0.015],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]]))
-    kin.tm.add_transform(
-        "middle_tip", "middle_fle",
-        np.array([
-            [1, 0, 0, -0.015],
-            [0, 1, 0, 0.09],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]]))
-    kin.tm.add_transform(
-        "middle_middle", "middle_fle",
-        np.array([
-            [1, 0, 0, 0.02],
-            [0, 1, 0, 0.015],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]]))
-    kin.tm.add_transform(
-        "ring_tip", "ring_fle",
-        np.array([
-            [1, 0, 0, -0.012],
-            [0, 1, 0, 0.083],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]]))
-    kin.tm.add_transform(
-        "ring_middle", "ring_fle",
-        np.array([
-            [1, 0, 0, 0.017],
-            [0, 1, 0, 0.015],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]]))
-    kin.tm.add_transform(
-        "little_tip", "little_fle",
-        np.array([
-            [1, 0, 0, -0.01],
-            [0, 1, 0, 0.068],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]]))
-    kin.tm.add_transform(
-        "little_middle", "little_fle",
-        np.array([
-            [1, 0, 0, 0.015],
-            [0, 1, 0, 0.015],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]]))
+    default_offsets = {
+        ("thumb_tip", "thumb_fle"): [0.03, 0.07, 0.0],
+        ("thumb_middle", "thumb_fle"): [0.03, 0.015, 0.0],
+        ("index_tip", "index_fle"): [-0.015, 0.09, 0.0],
+        ("index_middle", "index_fle"): [0.02, 0.015, 0.0],
+        ("middle_tip", "middle_fle"): [-0.015, 0.09, 0.0],
+        ("middle_middle", "middle_fle"): [0.02, 0.015, 0.0],
+        ("ring_tip", "ring_fle"): [-0.012, 0.083, 0.0],
+        ("ring_middle", "ring_fle"): [0.017, 0.015, 0.0],
+        ("little_tip", "little_fle"): [-0.01, 0.068, 0.0],
+        ("little_middle", "little_fle"): [0.015, 0.015, 0.0],
+    }
+
+    for key in default_offsets:
+        new_frame, existing_frame = key
+        position = kwargs.get(f"{new_frame}_to_{existing_frame}", default_offsets[key])
+        new_frame2existing_frame = np.eye(4)
+        new_frame2existing_frame[:3, 3] = position
+        kin.tm.add_transform(new_frame, existing_frame, new_frame2existing_frame)
 
 
 class MiaVirtualThumbJoint:
@@ -227,7 +178,7 @@ MIA_CONFIG = {
 # Shadow dexterous hand
 ###############################################################################
 
-def kinematic_model_hook_shadow(kin):
+def kinematic_model_hook_shadow(kin, **kwargs):
     """Extends kinematic model to include links for embodiment mapping."""
     kin.tm.add_transform(
         "thumb_tip", "rh_thtip",
@@ -380,7 +331,7 @@ SHADOW_HAND_CONFIG = {
 ###############################################################################
 
 
-def kinematic_model_hook_robotiq(kin):
+def kinematic_model_hook_robotiq(kin, **kwargs):
     """Extends kinematic model to include links for embodiment mapping."""
     kin.tm.add_transform(
         "left_finger_tip", "left_inner_finger_pad",
@@ -496,7 +447,7 @@ class OffsetJoint:
         return {self.joint_name: value + self.offset}
 
 
-def kinematic_model_hook_barrett(kin):
+def kinematic_model_hook_barrett(kin, **kwargs):
     """Extends kinematic model to include links for embodiment mapping."""
     kin.tm.add_transform(
         "finger_1_tip", "finger_1_dist_link",

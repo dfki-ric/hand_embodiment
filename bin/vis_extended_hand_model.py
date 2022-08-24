@@ -4,7 +4,8 @@ import warnings
 import numpy as np
 import open3d as o3d
 import pytransform3d.rotations as pr
-from pytransform3d import urdf, visualizer as pv
+import yaml
+from pytransform3d import urdf, visualizer as pv, transformations as pt
 from hand_embodiment.embodiment import load_kinematic_model
 from hand_embodiment.target_configurations import TARGET_CONFIG
 from hand_embodiment.command_line import add_hand_argument
@@ -197,6 +198,9 @@ def main():
     parser.add_argument(
         "--highlight-stored-vertices", action="store_true",
         help="Highlight vertices used for similarity metric computation.")
+    parser.add_argument(
+        "--robot-config", type=str, default=None,
+        help="Target system configuration file.")
     args = parser.parse_args()
 
     highlight_in_directions, highlight_visuals = _configure_highlights(args)
@@ -204,6 +208,15 @@ def main():
     fig = pv.figure()
 
     hand_config = TARGET_CONFIG[args.hand]
+    # TODO move to function
+    if args.robot_config is not None:
+        with open(args.robot_config, "r") as f:
+            hand_config_update = yaml.safe_load(f)
+            if "handbase2robotbase" in hand_config_update:
+                hand_config_update["handbase2robotbase"] = \
+                    pt.transform_from_exponential_coordinates(
+                        hand_config_update["handbase2robotbase"])
+            hand_config.update(hand_config_update)
     kin = load_kinematic_model(hand_config, unscaled_visual_model=False)[0]
 
     if not args.hide_tips:
