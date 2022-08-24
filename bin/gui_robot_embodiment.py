@@ -20,6 +20,26 @@ from hand_embodiment.config import load_mano_config
 from hand_embodiment.command_line import add_hand_argument
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    add_hand_argument(parser)
+    parser.add_argument(
+        "--hide-mano", action="store_true", help="Don't show MANO mesh")
+    parser.add_argument(
+        "--scaled-robot", action="store_true",
+        help="Show robot hand in scaled size used to transfer the motion. "
+             "Will be displayed in real size otherwise.")
+    parser.add_argument(
+        "--mano-config", type=str,
+        default="examples/config/april_test_mano.yaml",
+        help="MANO configuration file.")
+    parser.add_argument(
+        "--robot-config", type=str, default=None,
+        help="Target system configuration file.")
+
+    return parser.parse_args()
+
+
 class Figure:
     def __init__(self, window_name, robot_config, width, height, ax_s=1.0):
         self.window_name = window_name
@@ -86,8 +106,11 @@ class Figure:
         self.pose = pose
 
     def save_robot_parameters(self):
+        with open(self.robot_config, "r") as f:
+            robot_config = yaml.safe_load(f)
+        robot_config["handbase2robotbase"] = self.pose.tolist()
         with open(self.robot_config, "w") as f:
-            yaml.dump({"handbase2robotbase": self.pose.tolist()}, f)
+            yaml.dump(robot_config, f)
 
     def show(self):
         gui.Application.instance.run()
@@ -303,22 +326,6 @@ class OnManoPoseSlider(OnMano):
             pt.transform_from_exponential_coordinates(self.pose))
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    add_hand_argument(parser)
-    parser.add_argument(
-        "--hide-mano", action="store_true", help="Don't show MANO mesh")
-    parser.add_argument(
-        "--mano-config", type=str,
-        default="examples/config/april_test_mano.yaml",
-        help="MANO configuration file.")
-    parser.add_argument(
-        "--robot-config", type=str, default=None,
-        help="Target system configuration file.")
-
-    return parser.parse_args()
-
-
 def main():
     args = parse_args()
 
@@ -332,59 +339,46 @@ def main():
                         hand_config_update["handbase2robotbase"])
             hand_config.update(hand_config_update)
 
-    if args.hand == "mia":
-        mano_pose = np.array([
-            0, 0, 0,
-            -0.068, 0, 0.068,
-            0, 0.068, 0.068,
-            0, 0, 0.615,
-            0, 0.137, 0.068,
-            0, 0, 0.137,
-            0, 0, 0.683,
-            0, 0.205, -0.137,
-            0, 0.068, 0.205,
-            0, 0, 0.205,
-            0, 0.137, -0.137,
-            0, -0.068, 0.273,
-            0, 0, 0.478,
-            0.615, 0.068, 0.273,
-            0, 0, 0,
-            0, 0, 0
-        ])
-    else:
-        mano_pose = np.zeros(48)
-
     hand_state = HandState(left=False)
-    # TODO refactor
-    _, shape_parameters = load_mano_config(args.mano_config)
-    hand_state.betas[:] = shape_parameters
-    hand_state.pose_parameters["J"], \
-        hand_state.pose_parameters["v_template"] = \
-        apply_shape_parameters(betas=shape_parameters,
-                               **hand_state.shape_parameters)
-    fig = Figure(args.hand, args.robot_config, 1920, 1080, ax_s=0.2)
-    if not args.hide_mano:
-        fig.add_hand_mesh(hand_state.hand_mesh, hand_state.material)
+    load_shape_parameters(args.mano_config, hand_state)
+
     emb = HandEmbodiment(
         hand_state, hand_config,
         use_fingers=hand_config["ee_frames"].keys())
 
+    fig = Figure(args.hand, args.robot_config, 1920, 1080, ax_s=0.2)
+    if not args.hide_mano:
+        fig.add_hand_mesh(hand_state.hand_mesh, hand_state.material)
+
+    if args.scaled_robot:
+        tm = emb.target_kin.tm
+    else:
+        tm = emb.vis_kin.tm
     whitelist = [
-        node for node in emb.transform_manager_.nodes
+        node for node in tm.nodes
         if not (node.startswith("visual:") or
                 node.startswith("collision:") or
                 node.startswith("inertial_frame:"))]
     graph = pv.Graph(
-        emb.transform_manager_, "world", show_frames=True,
-        show_connections=False, show_visuals=True, show_collision_objects=True,
-        show_name=False, s=0.02, whitelist=whitelist)
+        tm, "world", show_frames=True, show_connections=False,
+        show_visuals=True, show_collision_objects=True, show_name=False,
+        s=0.02, whitelist=whitelist)
     graph.add_artist(fig)
 
-    make_mia_widgets(fig, graph, emb.transform_manager_)
-    make_mano_widgets(fig, hand_state, graph, emb.transform_manager_, emb,
-                      not args.hide_mano, hand_config, mano_pose)
+    make_mia_widgets(fig, graph, tm)
+    make_mano_widgets(fig, hand_state, graph, tm, emb, not args.hide_mano,
+                      hand_config, np.zeros(48))
 
     fig.show()
+
+
+def load_shape_parameters(mano_config, hand_state):
+    _, shape_parameters = load_mano_config(mano_config)
+    hand_state.betas[:] = shape_parameters
+    hand_state.pose_parameters["J"], \
+    hand_state.pose_parameters["v_template"] = \
+        apply_shape_parameters(betas=shape_parameters,
+                               **hand_state.shape_parameters)
 
 
 if __name__ == "__main__":
