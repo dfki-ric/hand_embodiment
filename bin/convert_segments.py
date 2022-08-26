@@ -55,6 +55,7 @@ def main():
         label_field=args.label_field)
     pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names,
                             record_mapping_config=args.record_mapping_config,
+                            robot_config=args.robot_config,
                             measure_time=args.measure_time)
 
     total_segment_idx = 0
