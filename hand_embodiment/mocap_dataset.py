@@ -277,6 +277,11 @@ class MotionCaptureDatasetBase:
             assert fn in self.config["finger_marker_names"]
             for mn in self.config["finger_marker_names"][fn]:
                 markers.append(mn)
+        for marker in markers:
+            try:
+                cols = match_columns(trajectory, [marker], keep_time=False)
+            except ValueError:
+                raise Exception(f"Missing marker: '{marker}'.")
 
         markers += self.config["additional_markers"]
         for marker in markers:
@@ -301,7 +306,9 @@ class MotionCaptureDatasetBase:
         for marker_name in hand_marker_names:
             hand_column_names = match_columns(
                 trajectory, [marker_name], keep_time=False)
-            assert len(hand_column_names) == 3, hand_column_names
+            if len(hand_column_names) != 3:
+                raise Exception(f"Could not find all columns of marker "
+                                f"'{marker_name}'. Found {hand_column_names}.")
             hand_marker_trajectory = array_from_dataframe(
                 trajectory, hand_column_names)
             hand_trajectories.append(hand_marker_trajectory)
