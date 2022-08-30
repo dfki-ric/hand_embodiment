@@ -217,11 +217,12 @@ class OnMano:
             self.mbrm.mano2hand_markers_, pt.transform(
                 world2mano, pt.vectors_to_points(markers_in_world)))[:, :3]
         self.fig.add_markers_in_mano(markers_in_mano, (0.3, 0.3, 0.3))
-        markers = compute_expected_marker_positions(self.mbrm)
+        markers, n_markers = compute_expected_marker_positions(self.mbrm)
         markers_in_mano = pt.transform(
             self.mbrm.mano2hand_markers_,
             pt.vectors_to_points(markers))[:, :3]
-        self.fig.add_markers_in_mano(markers_in_mano, (1, 1, 1))
+        if n_markers > 0:
+            self.fig.add_markers_in_mano(markers_in_mano, (1, 1, 1))
 
     def redraw_mano(self):
         self.fig.main_scene.remove_geometry("MANO")

@@ -101,7 +101,7 @@ class ManoHand(pv.Artist):
         if self.show_vertices:
             geoms.append(self.mbrm.hand_state_.hand_pointcloud)
         if self.show_expected_markers:
-            expected_marker_positions = compute_expected_marker_positions(self.mbrm)
+            expected_marker_positions, _ = compute_expected_marker_positions(self.mbrm)
             if self.expected_markers is not None:
                 expected_marker_positions = self.mbrm.mano2world_[:3, 3] + np.dot(
                     expected_marker_positions, self.mbrm.mano2world_[:3, :3].T)
@@ -111,15 +111,15 @@ class ManoHand(pv.Artist):
 
 
 def compute_expected_marker_positions(mbrm):
-    expected_marker_positions = np.zeros((N_FINGER_MARKERS, 3))
-    i = 0
+    expected_marker_positions = np.empty((N_FINGER_MARKERS, 3))
+    idx = 0
     for fn in mbrm.mano_finger_kinematics_:
         finger_kinematics = mbrm.mano_finger_kinematics_[fn]
         if finger_kinematics.has_cached_forward_kinematics():
             positions = finger_kinematics.forward(return_cached_result=True)
-            expected_marker_positions[i:i + len(positions)] = positions
-            i += len(positions)
-    return expected_marker_positions
+            expected_marker_positions[idx:idx + len(positions)] = positions
+            idx += len(positions)
+    return expected_marker_positions, idx
 
 
 class MoCapObjectMesh(pv.Artist):
