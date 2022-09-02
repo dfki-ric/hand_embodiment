@@ -14,6 +14,9 @@ approach because we have an independent representation of the hand's state.
 Furthermore, we can easily change the target system because we just need to
 configure the mapping from MANO to the target hand.
 
+<img src="doc/source/_static/animation_record_mapping.gif" height="200px" />
+<img src="doc/source/_static/animation_embodiment_mapping.gif" height="200px" />
+
 The currently implemented motion capture approaches are:
 * marker-based motion capture with the Qualisys system
 
