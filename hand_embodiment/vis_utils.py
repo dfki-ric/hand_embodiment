@@ -9,8 +9,8 @@ import pytransform3d.visualizer as pv
 
 from .mocap_objects import (
     InsoleMarkers, PillowMarkers, PillowBigMarkers, OSAICaseMarkers,
-    ElectronicTargetMarkers, ElectronicObjectMarkers, PassportMarkers,
-    PassportClosedMarkers, PassportBoxMarkers)
+    OSAICaseSmallMarkers, ElectronicTargetMarkers, ElectronicObjectMarkers,
+    PassportMarkers, PassportClosedMarkers, PassportBoxMarkers)
 
 
 def make_coordinate_system(s, short_tick_length=0.01, long_tick_length=0.05):
@@ -277,6 +277,25 @@ class OSAICase(MoCapObjectMesh, OSAICaseMarkers):
             show_frame=show_frame)
 
 
+class OSAICaseSmall(MoCapObjectMesh, OSAICaseSmallMarkers):
+    """Representation of OSAI case.
+
+    Parameters
+    ----------
+    show_frame : bool, optional (default: True)
+        Show frame.
+    """
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+        p=np.array([0.0, 0.0, 0.023]))
+
+    def __init__(self, show_frame=True):
+        super(OSAICaseSmall, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/osai_case_small.stl"),
+            mesh_color=np.array([0.21, 0.20, 0.46]),
+            show_frame=show_frame)
+
+
 class ElectronicTarget(MoCapObjectMesh, ElectronicTargetMarkers):
     """Representation of electronic target component.
 
@@ -377,6 +396,7 @@ ARTISTS = {
     "pillow-small": PillowSmall,
     "pillow-big": PillowBig,
     "osai-case": OSAICase,
+    "osai-case-small": OSAICaseSmall,
     "electronic-object": ElectronicObject,
     "electronic-target": ElectronicTarget,
     "passport": Passport,

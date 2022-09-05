@@ -193,6 +193,56 @@ class OSAICaseMarkers:
         return pt.transform_from(R=R, p=center)
 
 
+class OSAICaseSmallMarkers:
+    """Information about small OSAI case markers.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        OSAI_3----------------------
+        |                          |
+        |                          |
+        |                          |
+        |                          |
+        OSAI_1----------------OSAI_2
+    """
+    default_marker_positions = {
+        "OSAI_1": np.array([-0.029 + 0.006, -0.017 + 0.006, 0.0]),
+        "OSAI_2": np.array([0.029 - 0.007, -0.017 + 0.007, 0.0]),
+        "OSAI_3": np.array([-0.029 + 0.006, 0.017 - 0.007, 0.0])
+    }
+    marker_names = tuple(default_marker_positions.keys())
+
+    @staticmethod
+    def pose_from_markers(OSAI_1, OSAI_2, OSAI_3):
+        """Compute pose of OSAI case.
+
+        Parameters
+        ----------
+        OSAI_1 : array, shape (3,)
+            Position first marker.
+
+        OSAI_2 : array, shape (3,)
+            Position of second marker.
+
+        OSAI_3 : array, shape (3,)
+            Position of third marker.
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the electronic target.
+        """
+        x_axis = pr.norm_vector(OSAI_2 - OSAI_1)
+        y_axis = pr.norm_vector(OSAI_3 - OSAI_1)
+        z_axis = pr.norm_vector(np.cross(x_axis, y_axis))
+        y_axis = pr.norm_vector(np.cross(z_axis, x_axis))
+        R = np.column_stack((x_axis, y_axis, z_axis))
+        center = OSAI_1 + 0.023 * x_axis + 0.011 * y_axis
+        return pt.transform_from(R=R, p=center)
+
+
 class ElectronicTargetMarkers:
     """Information about electronic target markers.
 
@@ -431,6 +481,7 @@ MOCAP_OBJECTS = {
     "pillow-small": PillowMarkers,
     "pillow-big": PillowBigMarkers,
     "osai-case": OSAICaseMarkers,
+    "osai-case-small": OSAICaseSmallMarkers,
     "electronic-object": ElectronicObjectMarkers,
     "electronic-target": ElectronicTargetMarkers,
     "passport": PassportMarkers,
