@@ -38,6 +38,11 @@ OSAI Case
 
 .. image:: _static/object_frames/osai_case.png
 
+Small OSAI Case
+^^^^^^^^^^^^^^^
+
+.. image:: _static/object_frames/osai_case_small.png
+
 Open Passport
 ^^^^^^^^^^^^^
 
