@@ -306,6 +306,10 @@ def main():
         left=False, shape_parameters=betas, mano2hand_markers=mano2hand_markers,
         record_mapping_config=record_mapping_config)
 
+    for fn in mbrm.mano_finger_kinematics_:
+        finger_kinematics = mbrm.mano_finger_kinematics_[fn]
+        finger_kinematics.forward(np.zeros(9))
+
     fig = Figure("MANO shape", 1920, 1080, config_filename, ax_s=0.2)
     fig.make_mano_widgets(mbrm, dataset, frame_num=args.start_idx, fit_fingers=args.fit_fingers)
     coordinate_system = make_coordinate_system(s=0.2)
