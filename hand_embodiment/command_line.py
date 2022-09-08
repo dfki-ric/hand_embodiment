@@ -120,6 +120,9 @@ def add_frame_transform_arguments(parser):
         choices=list(MOCAP_OBJECTS.keys()),
         help="Compute object-relative end-effector coordinates with respect "
              "to this object.")
+    parser.add_argument(
+        "--constant-base-frame", action="store_true",
+        help="Measure pose of the base frame once and keep it constant.")
 
     # deprecated arguments
     parser.add_argument(

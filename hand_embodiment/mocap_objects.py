@@ -499,6 +499,8 @@ def extract_mocap_origin2object_generic(args, dataset):
     if args.base_frame is not None:
         mocap_origin2origin = extract_mocap_origin2object(
             dataset, MOCAP_OBJECTS[args.base_frame])
+        if args.constant_base_frame:
+            mocap_origin2origin = mocap_origin2origin[0]
     else:
         mocap_origin2origin = None
     return mocap_origin2origin
