@@ -26,6 +26,9 @@ def read_qualisys_tsv(filename, unit="m", verbose=0):
     df : DataFrame
         Raw data streams from source file
     """
+    if not filename.endswith(".tsv"):
+        warnings.warn(f"Filename '{filename}' does not end with '.tsv'. "
+                      f"Is this correct?")
     n_kv, n_meta = _header_sizes(filename)
     meta = pd.read_csv(
         filename, sep="\t", names=["Key", "Value"], header=None, nrows=7)
@@ -40,6 +43,9 @@ def read_qualisys_tsv(filename, unit="m", verbose=0):
 
     df = pd.read_csv(
         filename, sep="\t", skiprows=n_meta, na_values=["null"])
+    if len(df.columns) < 3:
+        raise ValueError(f"Less then 3 columns in dataframe. Please check if "
+                         f"your input file is correct. Result:\n{repr(df)}")
 
     if unit == "m":
         # Get rid of "Time" and "Frame"
