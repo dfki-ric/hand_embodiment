@@ -39,7 +39,7 @@ def parse_args():
         "--record-mapping-config", type=str, default=None,
         help="Record mapping configuration file.")
     parser.add_argument(
-        "--start-idx", type=int, default=100,
+        "--start-idx", type=int, default=0,
         help="Index of frame that we visualize.")
     parser.add_argument(
         "--fit-fingers", action="store_true",
