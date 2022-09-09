@@ -43,6 +43,54 @@ class InsoleMarkers:
         return pt.transform_from(R=R, p=insole_back)
 
 
+class ProtectorMarkers:
+    """Information about protector markers.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        PL---PR
+        |
+        |
+        |
+        PB
+    """
+    default_marker_positions = {
+        "protector_left": np.array([0.09, 0.0, 0.0]),
+        "protector_right": np.array([0.073, -0.0205, 0.0]),
+        "protector_bottom": np.array([0.0, 0.0, 0.0])
+    }
+    marker_names = tuple(default_marker_positions.keys())
+
+    @staticmethod
+    def pose_from_markers(protector_left, protector_right, protector_bottom):
+        """Compute pose of insole.
+
+        Parameters
+        ----------
+        protector_left : array, shape (3,)
+            Position of protector left marker (PL).
+
+        protector_right : array, shape (3,)
+            Position of protector right marker (PR).
+
+        protector_bottom : array, shape (3,)
+            Position of protector bottom marker (PB).
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the insole.
+        """
+        x_axis = pr.norm_vector(protector_left - protector_bottom)
+        side = protector_left - protector_right
+        y_axis = pr.norm_vector(side - pr.vector_projection(side, x_axis))
+        z_axis = pr.perpendicular_to_vectors(x_axis, y_axis)
+        R = np.column_stack((x_axis, y_axis, z_axis))
+        return pt.transform_from(R=R, p=protector_bottom)
+
+
 class PillowMarkers:
     """Information about small pillow markers.
 
@@ -477,6 +525,7 @@ class PassportBoxMarkers:
 
 MOCAP_OBJECTS = {
     "insole": InsoleMarkers,
+    "protector": ProtectorMarkers,
     "pillow": PillowMarkers,
     "pillow-small": PillowMarkers,
     "pillow-big": PillowBigMarkers,
