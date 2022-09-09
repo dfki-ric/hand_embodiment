@@ -50,13 +50,15 @@ class ProtectorMarkers:
 
     .. code-block:: text
 
-          PL
-          /
-        PB-----------PR
+        PL---PR
+        |
+        |
+        |
+        PB
     """
     default_marker_positions = {
-        "protector_left": np.array([0.009, 0.022, 0.0]),
-        "protector_right": np.array([0.09, 0.0, 0.0]),
+        "protector_left": np.array([0.09, 0.0, 0.0]),
+        "protector_right": np.array([0.073, -0.0205, 0.0]),
         "protector_bottom": np.array([0.0, 0.0, 0.0])
     }
     marker_names = tuple(default_marker_positions.keys())
@@ -81,8 +83,8 @@ class ProtectorMarkers:
         pose : array, shape (4, 4)
             Pose of the insole.
         """
-        x_axis = pr.norm_vector(protector_right - protector_bottom)
-        side = protector_left - protector_bottom
+        x_axis = pr.norm_vector(protector_left - protector_bottom)
+        side = protector_left - protector_right
         y_axis = pr.norm_vector(side - pr.vector_projection(side, x_axis))
         z_axis = pr.perpendicular_to_vectors(x_axis, y_axis)
         R = np.column_stack((x_axis, y_axis, z_axis))
