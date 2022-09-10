@@ -1,9 +1,12 @@
 """Motion capture dataset and preprocessing tools."""
+import json
+import os
 import re
 import warnings
 import yaml
 import numpy as np
 import pandas as pd
+from scipy import interp
 from scipy.signal import medfilt
 
 
@@ -443,6 +446,169 @@ class HandMotionCaptureDataset(MotionCaptureDatasetBase):
             self.config.get("additional_markers", ()), trajectory)
 
 
+def load_metadata(metadata):
+    """Load motion capture data.
+
+    Parameters
+    ----------
+    metadata : str
+        Location of metadata file
+    """
+    return Record(metadata)
+
+
+class Record:
+    """Motion capture record.
+
+    Parameters
+    ----------
+    metadata : str
+        Location of metadata file
+
+    verbose : int, optional (default: 0)
+        Verbosity level
+    """
+    def __init__(self, metadata, verbose=0):
+        self.metadata = metadata
+        self.qualisys_filename = None
+        self.verbose = verbose
+
+        self._load_data()
+
+    def _load_data(self):
+        self._load_metadata()
+
+        success = self._try_to_load_data_from_metadata()
+        assert success
+
+        self._try_to_add_time_stream()
+
+    def _load_metadata(self):
+        if self.metadata is None:
+            self.metadata_content = {}
+        else:
+            with open(self.metadata, "r") as f:
+                self.metadata_content = json.load(f)
+
+    def _try_to_load_data_from_metadata(self):
+        if not self.metadata_content:
+            return False
+
+        platform_type = self.metadata_content["platform_type"]
+        filename = self.metadata_content["record_filename"]
+        filename = os.path.expanduser(filename)
+        if platform_type == ".tsv":
+            assert self.qualisys_filename is None or \
+                   self.qualisys_filename == filename
+            self.df = read_qualisys_tsv(filename, verbose=self.verbose)
+        else:
+            raise NotImplementedError(
+                "No parser for platform type '%s' found."
+                % self.metadata_content["platform_type"])
+
+        return True
+
+    def _try_to_add_time_stream(self):
+        if "Time" not in self.df and "frequency" in self.metadata_content:
+            dt = 1.0 / float(self.metadata_content["frequency"])
+            time = np.arange(0.0, len(self.df) * dt, dt)
+            self.df["Time"] = time
+
+    def get_segments_as_dataframes(
+            self, label, streams, label_field="label",
+            start_field="start_index", end_field="end_index"):
+        """Get segments as pandas DataFrames.
+
+        Parameters
+        ----------
+        label : str
+            Label of the segments that should be plotted
+
+        streams : list of str
+            Regular expressions that will be used to find matching streams in
+            the columns of 'trajectory'
+
+        label_field : str, optional (default: 'label')
+            Field in the metadata file that contains the label of a segment.
+            Could also be 'l1' or 'l2'.
+
+        start_field : str, optional (default: 'start_index')
+            Field in the metadata file that contains the start index of a
+            segment. Could also be 'start_frame'.
+
+        end_field : str, optional (default: 'end_index')
+            Field in the metadata file that contains the end index of a
+            segment. Could also be 'end_frame'.
+
+        Returns
+        -------
+        trajectories : list of DataFrame
+            A list of segments from the original time series
+        """
+        dataframes = []
+        for segment in self.metadata_content["segments"]:
+            if segment[label_field] == label:
+                start_index = int(segment[start_field])
+                end_index = int(segment[end_field])
+                segment = extract_segment(
+                    self.df, streams, start_index, end_index, keep_time=True)
+                dataframes.append(segment)
+        if len(dataframes) == 0:
+            raise ValueError("Found no segment with label '%s'" % label)
+        return dataframes
+
+    def get_segment_names(self, label_field="label"):
+        """Get names of available segments.
+
+        Parameters
+        ----------
+        label_field : str, optional (default: 'label')
+            Field in the metadata file that contains the label of a segment.
+            Could also be 'l1' or 'l2'.
+
+        Returns
+        -------
+        segment_names : list of str
+            A list of segment labels
+        """
+        segment_names = []
+        for segment in self.metadata_content["segments"]:
+            segment_names.append(segment[label_field])
+        return segment_names
+
+
+def extract_segment(trajectory, streams, start_index, end_index,
+                    keep_time=True):
+    """Extract segment of given streams.
+
+    Parameters
+    ----------
+    trajectory : DataFrame
+        A collection of time series data
+
+    streams : list of str
+        Regular expressions that will be used to find matching streams in
+        the columns of 'trajectory'
+
+    start_index : int
+        Index at which the segment starts
+
+    end_index : int
+        Index at which the segment ends
+
+    keep_time : bool, optional (default: True)
+        Keep the column with the name 'Time'
+
+    Returns
+    -------
+    segment : DataFrame
+        Extracted segment. A collection of time series data with streams
+        'streams'.
+    """
+    columns = match_columns(trajectory, streams, keep_time)
+    return trajectory[columns].iloc[start_index:end_index]
+
+
 class SegmentedHandMotionCaptureDataset(MotionCaptureDatasetBase):
     """Segmented hand motion capture dataset.
 
@@ -483,8 +649,7 @@ class SegmentedHandMotionCaptureDataset(MotionCaptureDatasetBase):
         self.interpolate_missing_markers = interpolate_missing_markers
         self.label_field = label_field
 
-        import mocap
-        record = mocap.load(metadata=filename)
+        record = load_metadata(metadata=filename)
         streams = [f"{mn} .*" for mn in self.marker_names]
 
         label_number = int(label_field[-1])
