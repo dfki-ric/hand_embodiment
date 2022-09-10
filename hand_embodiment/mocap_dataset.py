@@ -304,6 +304,7 @@ class SegmentedHandMotionCaptureDataset(MotionCaptureDatasetBase):
         trajectory = self.segments[self.selected_segment]
         if self.interpolate_missing_markers:
             trajectory = interpolate_nan(trajectory)
+            trajectory = median_filter(trajectory, 3)
         trajectory = self._scale(trajectory)
 
         self.n_steps = len(trajectory)
