@@ -634,11 +634,7 @@ def median_filter(X, window_size):
     X : array, shape (n_steps, n_dims) or DataFrame
         Filtered trajectory
     """
-    if isinstance(X, pd.DataFrame):
-        return X.rolling(window_size).median()
-    else:
-        return np.column_stack(
-            [medfilt(X[:, d], window_size) for d in range(X.shape[1])])
+    return X.rolling(window_size).median()
 
 
 def interpolate_nan(X):
@@ -658,20 +654,7 @@ def interpolate_nan(X):
     X : array, shape (n_steps, n_dims) or DataFrame
         Trajectory without NaN
     """
-    if isinstance(X, pd.DataFrame):
-        return X.interpolate(method="linear", limit_direction="both")
-    else:
-        nans = np.logical_or(np.isnan(X), X == 0.0)
-
-        if np.all(nans):
-            raise ValueError("Only NaN")
-
-        for d in range(X.shape[1]):
-            def x(y):
-                return y.nonzero()[0]
-            X[nans[:, d], d] = interp(x(nans[:, d]), x(~nans[:, d]),
-                                      X[~nans[:, d], d])
-        return X
+    return X.interpolate(method="linear", limit_direction="both")
 
 
 def extract_segment(trajectory, streams, start_index, end_index,
