@@ -6,8 +6,6 @@ import warnings
 import yaml
 import numpy as np
 import pandas as pd
-from scipy import interp
-from scipy.signal import medfilt
 
 
 class MotionCaptureDatasetBase:
