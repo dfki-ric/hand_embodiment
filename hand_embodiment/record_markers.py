@@ -233,26 +233,7 @@ class MarkerBasedRecordMapping(TimeableMixin):
             hand_markers, finger_markers)
 
         self.start_measurement()
-
-        for finger_name in available_fingers:
-            fe = self.mano_finger_kinematics_[finger_name]
-            finger_pose = fe.inverse(self.markers_in_mano_[finger_name])
-            self.hand_state_.pose[fe.finger_pose_param_indices] = finger_pose
-
-        """# joblib parallelization, not faster because of overhead for data transfer
-        import joblib
-        def estimate_finger_pose(finger_estimator, measurement):
-            finger_pose = finger_estimator.estimate(measurement)
-            return finger_estimator.finger_pose_param_indices, finger_pose
-
-        results = joblib.Parallel(n_jobs=-1)(
-            joblib.delayed(estimate_finger_pose)(self.finger_estimators[finger_name],
-                                                 self.finger_markers_in_mano[finger_name])
-            for finger_name in self.finger_estimators.keys())
-        for pose_indices, pose in results:
-            self.hand_state.pose[pose_indices] = pose
-        #"""
-
+        self.estimate_fingers(available_fingers, self.markers_in_mano_)
         self.stop_measurement()
         if self.verbose:
             print(f"[{type(self).__name__}] Time for optimization: "
@@ -293,6 +274,13 @@ class MarkerBasedRecordMapping(TimeableMixin):
             self.markers_in_mano_[finger_name] = np.dot(
                 pt.vectors_to_points(markers_in_world), world2mano.T)[:, :3]
         return available_fingers
+
+    def estimate_fingers(self, fingers, markers_in_mano):
+        """Estimate fingers from MANO-relative marker positions."""
+        for finger_name in fingers:
+            fe = self.mano_finger_kinematics_[finger_name]
+            finger_pose = fe.inverse(markers_in_mano[finger_name])
+            self.hand_state_.pose[fe.finger_pose_param_indices] = finger_pose
 
 
 def estimate_hand_pose(hand_top, hand_left, hand_right):
