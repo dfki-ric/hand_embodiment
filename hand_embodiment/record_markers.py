@@ -169,6 +169,9 @@ class MarkerBasedRecordMapping(TimeableMixin):
 
     mano2world_ : array-like, shape (4, 4)
         MANO base pose in world frame.
+
+    markers_in_mano_ : dict
+        Positions of markers on fingers with respect to MANO frame.
     """
     def __init__(
             self, left=False, mano2hand_markers=None, shape_parameters=None,
@@ -207,7 +210,7 @@ class MarkerBasedRecordMapping(TimeableMixin):
         self.current_hand_markers2world = np.eye(4)
         self.mano2world_ = pt.concat(
             self.mano2hand_markers_, self.current_hand_markers2world)
-        self.markers_in_mano = {
+        self.markers_in_mano_ = {
             finger_name: None for finger_name in self.mano_finger_kinematics_}
 
     def reset(self):
@@ -226,30 +229,14 @@ class MarkerBasedRecordMapping(TimeableMixin):
         finger_markers : dict (str to array-like)
             Positions of markers on fingers.
         """
-        current_hand_markers2world = estimate_hand_pose(*hand_markers)
-        if np.any(np.isnan(current_hand_markers2world)):
-            warnings.warn(
-                "[MarkerBasedRecordMapping] Cannot estimate hand pose. "
-                "Detected NaN.")
-        else:
-            self.current_hand_markers2world = current_hand_markers2world
-        self.mano2world_ = pt.concat(
-            self.mano2hand_markers_, self.current_hand_markers2world)
-
-        available_fingers = self.finger_names_.intersection(
-            finger_markers.keys())
-
-        world2mano = pt.invert_transform(self.mano2world_, check=False)
-        for finger_name in available_fingers:
-            markers_in_world = np.atleast_2d(finger_markers[finger_name])
-            self.markers_in_mano[finger_name] = np.dot(
-                pt.vectors_to_points(markers_in_world), world2mano.T)[:, :3]
+        available_fingers = self.make_finger_markers_relative(
+            hand_markers, finger_markers)
 
         self.start_measurement()
 
         for finger_name in available_fingers:
             fe = self.mano_finger_kinematics_[finger_name]
-            finger_pose = fe.inverse(self.markers_in_mano[finger_name])
+            finger_pose = fe.inverse(self.markers_in_mano_[finger_name])
             self.hand_state_.pose[fe.finger_pose_param_indices] = finger_pose
 
         """# joblib parallelization, not faster because of overhead for data transfer
@@ -272,6 +259,40 @@ class MarkerBasedRecordMapping(TimeableMixin):
                   f"{self.last_timing():.4f} s")
 
         self.hand_state_.recompute_mesh(self.mano2world_)
+
+    def make_finger_markers_relative(self, hand_markers, finger_markers):
+        """Estimate hand state from positions of hand markers and finger markers.
+
+        Parameters
+        ----------
+        hand_markers : list
+            Markers on hand in order 'hand_top', 'hand_left', 'hand_right'.
+
+        finger_markers : dict (str to array-like)
+            Positions of markers on fingers.
+
+        Returns
+        -------
+        available_fingers : set
+            Names of fingers that can be updated from markers.
+        """
+        current_hand_markers2world = estimate_hand_pose(*hand_markers)
+        if np.any(np.isnan(current_hand_markers2world)):
+            warnings.warn(
+                "[MarkerBasedRecordMapping] Cannot estimate hand pose. "
+                "Detected NaN.")
+        else:
+            self.current_hand_markers2world = current_hand_markers2world
+        self.mano2world_ = pt.concat(
+            self.mano2hand_markers_, self.current_hand_markers2world)
+        available_fingers = self.finger_names_.intersection(
+            finger_markers.keys())
+        world2mano = pt.invert_transform(self.mano2world_, check=False)
+        for finger_name in available_fingers:
+            markers_in_world = np.atleast_2d(finger_markers[finger_name])
+            self.markers_in_mano_[finger_name] = np.dot(
+                pt.vectors_to_points(markers_in_world), world2mano.T)[:, :3]
+        return available_fingers
 
 
 def estimate_hand_pose(hand_top, hand_left, hand_right):
