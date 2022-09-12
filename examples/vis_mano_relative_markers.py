@@ -1,8 +1,8 @@
-"""Make fingers markers in MoCap segments relative to MANO mesh.
+"""Visualize relative marker positions and estimated hand pose from it.
 
 Example call:
 
-    python bin/convert_segments_relative_marker_positions.py close --demo-files raw_data/insole/*.json --mocap-config examples/config/markers/20220328_april.yaml
+    python examples/vis_mano_relative_markers.py sample3.txt --mocap-config examples/config/markers/20220328_april.yaml --mano-config examples/config/mano/20210701_april.yaml
 """
 import argparse
 
