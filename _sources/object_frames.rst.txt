@@ -63,6 +63,11 @@ Insole
 
 .. image:: _static/object_frames/insole.png
 
+Protector
+^^^^^^^^^
+
+.. image:: _static/object_frames/protector.png
+
 Small Pillow
 ^^^^^^^^^^^^
 
