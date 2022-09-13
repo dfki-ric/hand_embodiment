@@ -278,7 +278,7 @@ class PillowBig(MoCapObjectMesh, PillowBigMarkers):
             show_frame=show_frame)
 
 
-class OSAICase(MoCapObjectMesh, OSAICaseMarkers):
+class OsaiCase(MoCapObjectMesh, OSAICaseMarkers):
     """Representation of OSAI case.
 
     Parameters
@@ -291,13 +291,13 @@ class OSAICase(MoCapObjectMesh, OSAICaseMarkers):
         p=np.array([0, 0, 0.006]))
 
     def __init__(self, show_frame=True):
-        super(OSAICase, self).__init__(
+        super(OsaiCase, self).__init__(
             mesh_filename=resource_filename("hand_embodiment", "model/objects/electronic_target.stl"),
             mesh_color=np.array([0.21, 0.20, 0.46]),
             show_frame=show_frame)
 
 
-class OSAICaseSmall(MoCapObjectMesh, OSAICaseSmallMarkers):
+class OsaiCaseSmall(MoCapObjectMesh, OSAICaseSmallMarkers):
     """Representation of OSAI case.
 
     Parameters
@@ -310,7 +310,7 @@ class OSAICaseSmall(MoCapObjectMesh, OSAICaseSmallMarkers):
         p=np.array([0.0, 0.0, 0.023]))
 
     def __init__(self, show_frame=True):
-        super(OSAICaseSmall, self).__init__(
+        super(OsaiCaseSmall, self).__init__(
             mesh_filename=resource_filename("hand_embodiment", "model/objects/osai_case_small.stl"),
             mesh_color=np.array([0.21, 0.20, 0.46]),
             show_frame=show_frame)
@@ -416,8 +416,8 @@ ARTISTS = {
     "protector": Protector,
     "pillow-small": PillowSmall,
     "pillow-big": PillowBig,
-    "osai-case": OSAICase,
-    "osai-case-small": OSAICaseSmall,
+    "osai-case": OsaiCase,
+    "osai-case-small": OsaiCaseSmall,
     "electronic-object": ElectronicObject,
     "electronic-target": ElectronicTarget,
     "passport": Passport,
