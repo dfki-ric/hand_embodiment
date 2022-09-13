@@ -64,16 +64,8 @@ environment.yml:
     pip install -e .
     pytest test/  # verify installation
 
-Optional Dependency
--------------------
-
-The library `mocap <https://git.hb.dfki.de/dfki-interaction/mocap>`_ is only
-available for members of the DFKI RIC. It is used to load segmented motion
-capture data in some example scripts since metadata like segment borders are
-stored in a custom format based on JSON.
-
 Data
 ----
 
 Some examples need motion capture data. Ask me about it. Unfortunately,
-we cannot release the data publicly.
+we cannot release the data publicly yet.
