@@ -131,10 +131,19 @@ class RoboticHandDataset:
                 for joint in finger_to_joints[finger]:
                     finger_joint_angles[t][finger].append(row[joint])
 
+        all_joint_names = []
+        for joint_names in finger_to_joints.values():
+            all_joint_names.extend(joint_names)
+        additional_joint_names = set(df.columns) - set(all_joint_names)
+        additional_finger_joint_angles = dict()
+        for joint_name in additional_joint_names:
+            additional_finger_joint_angles[joint_name] = df[joint_name][0]
+
         result = RoboticHandDataset(finger_names)
         result.ee_poses = ee_poses
         result.finger_joint_angles = finger_joint_angles
         result.n_samples = len(df)
+        result.additional_finger_joint_angles = additional_finger_joint_angles
         return result
 
     @property

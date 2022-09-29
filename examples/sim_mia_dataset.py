@@ -50,7 +50,8 @@ while pb.isConnected():
     target_positions = [
         finger_joint_angles["index"][0], finger_joint_angles["middle"][0],
         finger_joint_angles["middle"][0], finger_joint_angles["middle"][0],
-        finger_joint_angles["thumb"][0], 0.0]
+        finger_joint_angles["thumb"][0],
+        dataset.additional_finger_joint_angles["j_thumb_opp"]]
     pb.setJointMotorControlArray(
         hand, hand_joint_indices,
         pb.POSITION_CONTROL,
