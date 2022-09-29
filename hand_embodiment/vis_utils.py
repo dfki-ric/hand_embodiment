@@ -8,10 +8,10 @@ import pytransform3d.transformations as pt
 import pytransform3d.visualizer as pv
 
 from .mocap_objects import (
-    InsoleMarkers, ProtectorMarkers, PillowMarkers, PillowBigMarkers,
-    OSAICaseMarkers, OSAICaseSmallMarkers, ElectronicTargetMarkers,
-    ElectronicObjectMarkers, PassportMarkers, PassportClosedMarkers,
-    PassportBoxMarkers)
+    InsoleMarkers, ProtectorMarkers, ProtectorInvertedMarkers, PillowMarkers,
+    PillowBigMarkers, OSAICaseMarkers, OSAICaseSmallMarkers,
+    ElectronicTargetMarkers, ElectronicObjectMarkers, PassportMarkers,
+    PassportClosedMarkers, PassportBoxMarkers)
 
 
 def make_coordinate_system(s, short_tick_length=0.01, long_tick_length=0.05):
@@ -231,10 +231,29 @@ class Protector(MoCapObjectMesh, ProtectorMarkers):
     """
     markers2mesh = pt.transform_from(
         R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
-        p=np.array([0.0, 0.0, 0.014]))#[0.008, 0.029, 0.014]))
+        p=np.array([0.0, 0.0, 0.014]))
 
     def __init__(self, show_frame=True):
         super(Protector, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/protector.stl"),
+            mesh_color=np.array([0.5, 0.5, 0.5]),
+            show_frame=show_frame)
+
+
+class ProtectorInverted(MoCapObjectMesh, ProtectorInvertedMarkers):
+    """Representation of inverted protector mesh.
+
+    Parameters
+    ----------
+    show_frame : bool, optional (default: True)
+        Show frame.
+    """
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+        p=np.array([0.0, 0.0, 0.014]))
+
+    def __init__(self, show_frame=True):
+        super(ProtectorInverted, self).__init__(
             mesh_filename=resource_filename("hand_embodiment", "model/objects/protector.stl"),
             mesh_color=np.array([0.5, 0.5, 0.5]),
             show_frame=show_frame)
@@ -414,6 +433,7 @@ class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
 ARTISTS = {
     "insole": Insole,
     "protector": Protector,
+    "protector-inverted": ProtectorInverted,
     "pillow-small": PillowSmall,
     "pillow-big": PillowBig,
     "osai-case": OsaiCase,
