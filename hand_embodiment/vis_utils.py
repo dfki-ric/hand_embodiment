@@ -257,6 +257,12 @@ class ProtectorInverted(MoCapObjectMesh, ProtectorInvertedMarkers):
             mesh_filename=resource_filename("hand_embodiment", "model/objects/protector.stl"),
             mesh_color=np.array([0.5, 0.5, 0.5]),
             show_frame=show_frame)
+        vertices = np.asarray(self.mesh.vertices)
+        vertices[:, 1] *= -1.0
+        triangles = np.asarray(self.mesh.triangles)[:, ::-1]
+        import open3d as o3d
+        self.mesh.vertices = o3d.utility.Vector3dVector(vertices)
+        self.mesh.triangles = o3d.utility.Vector3iVector(triangles)
 
 
 class PillowSmall(MoCapObjectMesh, PillowMarkers):

@@ -105,9 +105,9 @@ class ProtectorInvertedMarkers:
         PL---PR
     """
     default_marker_positions = {
-        "protector_top": np.array([0.073, 0.0, 0.0]),
-        "protector_left": np.array([0.017, 0.0, 0.0]),
-        "protector_right": np.array([0.0, -0.0205, 0.0])
+        "protector_left": np.array([0.09, 0.0, 0.0]),
+        "protector_right": np.array([0.073, -0.0205, 0.0]),
+        "protector_top": np.array([0.0, 0.0, 0.0])
     }
     marker_names = tuple(default_marker_positions.keys())
 
@@ -131,12 +131,12 @@ class ProtectorInvertedMarkers:
         pose : array, shape (4, 4)
             Pose of the insole.
         """
-        x_axis = pr.norm_vector(protector_top - protector_left)
-        side = protector_left - protector_right
+        x_axis = pr.norm_vector(protector_left - protector_top)
+        side = protector_right - protector_left
         y_axis = pr.norm_vector(side - pr.vector_projection(side, x_axis))
         z_axis = pr.perpendicular_to_vectors(x_axis, y_axis)
         R = np.column_stack((x_axis, y_axis, z_axis))
-        return pt.transform_from(R=R, p=protector_left)
+        return pt.transform_from(R=R, p=protector_top)
 
 
 class PillowMarkers:
