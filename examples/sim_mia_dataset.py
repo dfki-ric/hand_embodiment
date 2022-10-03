@@ -59,29 +59,8 @@ def main():
 
     while pb.isConnected():
         for filename in args.trajectory_files:
-            objects = []
-            for artist in args.visual_objects:
-                visual = ARTISTS[artist]()
-                visual_uid = pb.createVisualShape(
-                    pb.GEOM_MESH, fileName=visual.mesh_filename, meshScale=1.0,
-                    rgbaColor=np.r_[visual.mesh_color, 1.0])
-                assert visual_uid != -1
-                if args.collisions:
-                    collision_uid = pb.createCollisionShape(
-                        pb.GEOM_MESH, fileName=visual.mesh_filename, meshScale=1.0)
-                else:
-                    collision_uid = pb.createCollisionShape(
-                        pb.GEOM_BOX, halfExtents=[0.001] * 3)
-                mesh2markers = pt.invert_transform(visual.markers2mesh)
-                pos = mesh2markers[:3, 3]
-                orn = pr.quaternion_xyzw_from_wxyz(
-                    pr.quaternion_from_matrix(mesh2markers[:3, :3]))
-                obj = pb.createMultiBody(
-                    1e-5, collision_uid, visual_uid, basePosition=pos,
-                    baseOrientation=orn)
-                objects.append(obj)
-
             dataset = RoboticHandDataset.import_from_file(filename, hand_config)
+
             for t in range(dataset.n_steps):
                 finger_joint_angles = dataset.get_finger_joint_angles(t)
                 target_positions = [
@@ -102,6 +81,31 @@ def main():
                     link2world_pos, link2world_orn, inertial2link_pos, inertial2link_orn)
                 pb.resetBasePositionAndOrientation(
                     hand, inertial2world_pos, inertial2world_orn)
+
+                if t == 0:
+                    objects = []
+                    for artist in args.visual_objects:
+                        visual = ARTISTS[artist]()
+                        visual_uid = pb.createVisualShape(
+                            pb.GEOM_MESH, fileName=visual.mesh_filename,
+                            meshScale=1.0,
+                            rgbaColor=np.r_[visual.mesh_color, 1.0])
+                        assert visual_uid != -1
+                        if args.collisions:
+                            collision_uid = pb.createCollisionShape(
+                                pb.GEOM_MESH, fileName=visual.mesh_filename,
+                                meshScale=1.0)
+                        else:
+                            collision_uid = pb.createCollisionShape(
+                                pb.GEOM_BOX, halfExtents=[0.001] * 3)
+                        mesh2markers = pt.invert_transform(visual.markers2mesh)
+                        pos = mesh2markers[:3, 3]
+                        orn = pr.quaternion_xyzw_from_wxyz(
+                            pr.quaternion_from_matrix(mesh2markers[:3, :3]))
+                        obj = pb.createMultiBody(
+                            1e-5, collision_uid, visual_uid, basePosition=pos,
+                            baseOrientation=orn)
+                        objects.append(obj)
 
                 pb.stepSimulation()
 
