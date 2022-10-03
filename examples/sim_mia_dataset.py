@@ -25,6 +25,9 @@ def parse_args():
         "trajectory_files", nargs="*", type=str,
         default=["test/data/mia_segment.csv"],
         help="Trajectories that should be used.")
+    parser.add_argument(
+        "--collisions", action="store_true",
+        help="Use mesh for collision detection.")
     add_object_visualization_arguments(parser)
     return parser.parse_args()
 
@@ -51,27 +54,35 @@ def main():
         [0, 0, 0], [0, 0, 0, 1], useFixedBase=1,
         flags=pb.URDF_USE_SELF_COLLISION | pb.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT)
 
-    for artist in args.visual_objects:
-        visual = ARTISTS[artist]()
-        visual_uid = pb.createVisualShape(
-            pb.GEOM_MESH, fileName=visual.mesh_filename, meshScale=1.0,
-            rgbaColor=np.r_[visual.mesh_color, 1.0])
-        assert visual_uid != -1
-        collision_uid = pb.createCollisionShape(
-            pb.GEOM_BOX, halfExtents=[0.001] * 3)
-        mesh2markers = pt.invert_transform(visual.markers2mesh)
-        pos = mesh2markers[:3, 3]
-        orn = pr.quaternion_xyzw_from_wxyz(pr.quaternion_from_matrix(mesh2markers[:3, :3]))
-        pb.createMultiBody(1e-5, collision_uid, visual_uid, basePosition=pos, baseOrientation=orn)
-
     hand_joint_indices = [index_id, mrl_id, ring_id, little_id, thumb_fle_id, thumb_opp_id]
     inertial2link_pos, inertial2link_orn = pb.getDynamicsInfo(hand, -1)[3:5]
 
     while pb.isConnected():
         for filename in args.trajectory_files:
+            objects = []
+            for artist in args.visual_objects:
+                visual = ARTISTS[artist]()
+                visual_uid = pb.createVisualShape(
+                    pb.GEOM_MESH, fileName=visual.mesh_filename, meshScale=1.0,
+                    rgbaColor=np.r_[visual.mesh_color, 1.0])
+                assert visual_uid != -1
+                if args.collisions:
+                    collision_uid = pb.createCollisionShape(
+                        pb.GEOM_MESH, fileName=visual.mesh_filename, meshScale=1.0)
+                else:
+                    collision_uid = pb.createCollisionShape(
+                        pb.GEOM_BOX, halfExtents=[0.001] * 3)
+                mesh2markers = pt.invert_transform(visual.markers2mesh)
+                pos = mesh2markers[:3, 3]
+                orn = pr.quaternion_xyzw_from_wxyz(
+                    pr.quaternion_from_matrix(mesh2markers[:3, :3]))
+                obj = pb.createMultiBody(
+                    1e-5, collision_uid, visual_uid, basePosition=pos,
+                    baseOrientation=orn)
+                objects.append(obj)
+
             dataset = RoboticHandDataset.import_from_file(filename, hand_config)
-            t = 0
-            while t < dataset.n_steps:
+            for t in range(dataset.n_steps):
                 finger_joint_angles = dataset.get_finger_joint_angles(t)
                 target_positions = [
                     finger_joint_angles["index"][0], finger_joint_angles["middle"][0],
@@ -95,7 +106,9 @@ def main():
                 pb.stepSimulation()
 
                 time.sleep(dt)
-                t += 1
+
+            for obj in objects:
+                pb.removeBody(obj)
 
 
 if __name__ == "__main__":
