@@ -7,7 +7,16 @@ import pytransform3d.rotations as pr
 import pytransform3d.transformations as pt
 from hand_embodiment.target_dataset import RoboticHandDataset
 from hand_embodiment.target_configurations import TARGET_CONFIG
-from hand_embodiment.command_line import add_artist_argument
+from hand_embodiment.command_line import add_object_visualization_arguments
+from hand_embodiment.vis_utils import ARTISTS
+
+
+index_id = 1
+little_id = 3
+mrl_id = 4
+ring_id = 6
+thumb_opp_id = 7
+thumb_fle_id = 9
 
 
 def parse_args():
@@ -16,7 +25,7 @@ def parse_args():
         "trajectory_files", nargs="*", type=str,
         default=["test/data/mia_segment.csv"],
         help="Trajectories that should be used.")
-    add_artist_argument(parser)
+    add_object_visualization_arguments(parser)
     return parser.parse_args()
 
 
@@ -42,12 +51,19 @@ def main():
         [0, 0, 0], [0, 0, 0, 1], useFixedBase=1,
         flags=pb.URDF_USE_SELF_COLLISION | pb.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT)
 
-    index_id = 1
-    little_id = 3
-    mrl_id = 4
-    ring_id = 6
-    thumb_opp_id = 7
-    thumb_fle_id = 9
+    for artist in args.visual_objects:
+        visual = ARTISTS[artist]()
+        visual_uid = pb.createVisualShape(
+            pb.GEOM_MESH, fileName=visual.mesh_filename, meshScale=1.0,
+            rgbaColor=np.r_[visual.mesh_color, 1.0])
+        assert visual_uid != -1
+        collision_uid = pb.createCollisionShape(
+            pb.GEOM_BOX, halfExtents=[0.001] * 3)
+        mesh2markers = pt.invert_transform(visual.markers2mesh)
+        pos = mesh2markers[:3, 3]
+        orn = pr.quaternion_xyzw_from_wxyz(pr.quaternion_from_matrix(mesh2markers[:3, :3]))
+        pb.createMultiBody(1e-5, collision_uid, visual_uid, basePosition=pos, baseOrientation=orn)
+
     hand_joint_indices = [index_id, mrl_id, ring_id, little_id, thumb_fle_id, thumb_opp_id]
     inertial2link_pos, inertial2link_orn = pb.getDynamicsInfo(hand, -1)[3:5]
 
