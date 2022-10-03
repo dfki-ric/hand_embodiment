@@ -43,7 +43,7 @@ def main():
     pb.configureDebugVisualizer(pb.COV_ENABLE_GUI, 0)
     pb.configureDebugVisualizer(pb.COV_ENABLE_SHADOWS, 0)
     pb.configureDebugVisualizer(pb.COV_ENABLE_MOUSE_PICKING, 0)
-    pb.resetDebugVisualizerCamera(0.5, 90, 20, [0, 0, 0])
+    pb.resetDebugVisualizerCamera(0.3, 0, 0, [0, 0, 0])
     pb.resetSimulation(pb.RESET_USE_DEFORMABLE_WORLD)
     pb.setTimeStep(dt)
     pb.setGravity(0, 0, 0)
