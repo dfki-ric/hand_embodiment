@@ -34,6 +34,12 @@ Johannes Brust, Marco Controzzi:
 **A Modular Approach to the Embodiment of Hand Motions from Human Demonstrations**,
 https://arxiv.org/abs/2203.02778
 
+## Data
+
+The dataset is available at Zenodo:
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7130208.svg)](https://doi.org/10.5281/zenodo.7130208)
+
 ## Documentation
 
 A detailed documentation is available
