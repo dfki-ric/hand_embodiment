@@ -40,6 +40,16 @@ The dataset is available at Zenodo:
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7130208.svg)](https://doi.org/10.5281/zenodo.7130208)
 
+We recommend to use [zenodo_get](https://gitlab.com/dvolgyes/zenodo_get) to
+download the data:
+
+```bash
+pip install zenodo-get
+mkdir -p some/folder/in/which/the/data/is/located
+cd some/folder/in/which/the/data/is/located
+zenodo_get 7130208
+```
+
 ## Documentation
 
 A detailed documentation is available
