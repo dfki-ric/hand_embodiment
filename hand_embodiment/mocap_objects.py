@@ -286,7 +286,7 @@ class PillowSssaMarkers:
         z_axis = np.cross(x_axis, y_axis)
         x_axis = np.cross(y_axis, z_axis)
         return pt.transform_from(
-            R=np.column_stack((x_axis, y_axis, z_axis)),
+            R=pr.norm_matrix(np.column_stack((x_axis, y_axis, z_axis))),
             p=PEMU_1
         )
 
