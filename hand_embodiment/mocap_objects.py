@@ -239,6 +239,58 @@ class PillowBigMarkers:
         return pt.transform_from(R=R, p=pillow_left)
 
 
+class PillowSssaMarkers:
+    """Information about small pillow markers.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        -----------------
+        |       x3      |
+        |               |
+        | x2    x1      |
+        |               |
+        |               |
+        -----------------
+    """
+    default_marker_positions = {
+        "PEMU_1": np.array([0.0, 0.0, 0.0]),
+        "PEMU_2": np.array([0.0, 0.05, 0.0]),
+        "PEMU_3": np.array([0.05, 0.0, 0.0])
+    }
+    marker_names = tuple(default_marker_positions.keys())
+
+    @staticmethod
+    def pose_from_markers(PEMU_1, PEMU_2, PEMU_3):
+        """Compute pose of pillow.
+
+        Parameters
+        ----------
+        PEMU_1 : array, shape (3,)
+            Center of the pillow.
+
+        PEMU_2 : array, shape (3,)
+            Positive along the y-axis.
+
+        PEMU_3 : array, shape (3,)
+            Positive along the x-axis.
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the pillow.
+        """
+        x_axis = pr.norm_vector(PEMU_2 - PEMU_1)
+        y_axis = pr.norm_vector(PEMU_3 - PEMU_1)
+        z_axis = np.cross(x_axis, y_axis)
+        x_axis = np.cross(y_axis, z_axis)
+        return pt.transform_from(
+            R=np.column_stack((x_axis, y_axis, z_axis)),
+            p=PEMU_1
+        )
+
+
 class OSAICaseMarkers:
     """Information about OSAI case markers.
 
@@ -578,6 +630,7 @@ MOCAP_OBJECTS = {
     "pillow": PillowMarkers,
     "pillow-small": PillowMarkers,
     "pillow-big": PillowBigMarkers,
+    "pillow-sssa": PillowSssaMarkers,
     "osai-case": OSAICaseMarkers,
     "osai-case-small": OSAICaseSmallMarkers,
     "electronic-object": ElectronicObjectMarkers,

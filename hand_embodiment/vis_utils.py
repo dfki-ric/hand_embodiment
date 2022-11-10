@@ -9,7 +9,7 @@ import pytransform3d.visualizer as pv
 
 from .mocap_objects import (
     InsoleMarkers, ProtectorMarkers, ProtectorInvertedMarkers, PillowMarkers,
-    PillowBigMarkers, OSAICaseMarkers, OSAICaseSmallMarkers,
+    PillowBigMarkers, PillowSssaMarkers, OSAICaseMarkers, OSAICaseSmallMarkers,
     ElectronicTargetMarkers, ElectronicObjectMarkers, PassportMarkers,
     PassportClosedMarkers, PassportBoxMarkers)
 
@@ -303,6 +303,25 @@ class PillowBig(MoCapObjectMesh, PillowBigMarkers):
             show_frame=show_frame)
 
 
+class PillowSssa(MoCapObjectMesh, PillowSssaMarkers):
+    """Representation of small pillow mesh.
+
+    Parameters
+    ----------
+    show_frame : bool, optional (default: True)
+        Show frame.
+    """
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+        p=np.array([0.0, 0.0, 0.0]))
+
+    def __init__(self, show_frame=True):
+        super(PillowSssa, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/pillow_small.stl"),
+            mesh_color=None,
+            show_frame=show_frame)
+
+
 class OsaiCase(MoCapObjectMesh, OSAICaseMarkers):
     """Representation of OSAI case.
 
@@ -442,6 +461,7 @@ ARTISTS = {
     "protector-inverted": ProtectorInverted,
     "pillow-small": PillowSmall,
     "pillow-big": PillowBig,
+    "pillow-sssa": PillowSssa,
     "osai-case": OsaiCase,
     "osai-case-small": OsaiCaseSmall,
     "electronic-object": ElectronicObject,
