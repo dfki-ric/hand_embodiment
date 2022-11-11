@@ -1,0 +1,49 @@
+handbase2robotbase:
+- -1.1390000581741333
+- 1.0089999437332153
+- -1.6610000133514404
+- -0.12399999797344208
+- 0.1120000034570694
+- 0.0430000014603138
+kinematic_model_hook_args:
+  index_middle_to_index_fle:
+  - 0.01
+  - 0.035
+  - 0.0
+  index_tip_to_index_fle:
+  - -0.01
+  - 0.08
+  - 0.0
+  little_middle_to_little_fle:
+  - 0.005
+  - 0.035
+  - 0.0
+  little_tip_to_little_fle:
+  - -0.015
+  - 0.062
+  - 0.0
+  middle_middle_to_middle_fle:
+  - 0.01
+  - 0.035
+  - 0.0
+  middle_tip_to_middle_fle:
+  - -0.02
+  - 0.084
+  - 0.0
+  ring_middle_to_ring_fle:
+  - 0.007
+  - 0.035
+  - 0.0
+  ring_tip_to_ring_fle:
+  - -0.017
+  - 0.078
+  - 0.0
+  thumb_middle_to_thumb_fle:
+  - 0.03
+  - 0.02
+  - 0.0
+  thumb_tip_to_thumb_fle:
+  - 0.024
+  - 0.07
+  - 0.0
+scale: 0.9
