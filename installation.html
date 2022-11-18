@@ -93,8 +93,16 @@ pytest test/  <span class="c1"># verify installation</span>
 </section>
 <section id="data">
 <h2>Data<a class="headerlink" href="#data" title="Permalink to this heading">¶</a></h2>
-<p>Some examples need motion capture data. Ask me about it. Unfortunately,
-we cannot release the data publicly yet.</p>
+<p>The dataset is available at Zenodo:</p>
+<a class="reference external image-reference" href="https://doi.org/10.5281/zenodo.7130208"><img alt="https://zenodo.org/badge/DOI/10.5281/zenodo.7130208.svg" src="https://zenodo.org/badge/DOI/10.5281/zenodo.7130208.svg" /></a>
+<p>We recommend to use <a class="reference external" href="https://gitlab.com/dvolgyes/zenodo_get">zenodo_get</a> to
+download the data:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install zenodo-get
+mkdir -p some/folder/in/which/the/data/is/located
+<span class="nb">cd</span> some/folder/in/which/the/data/is/located
+zenodo_get <span class="m">7130208</span>
+</pre></div>
+</div>
 </section>
 </section>
 
