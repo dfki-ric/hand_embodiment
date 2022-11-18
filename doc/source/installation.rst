@@ -67,5 +67,17 @@ environment.yml:
 Data
 ----
 
-Some examples need motion capture data. Ask me about it. Unfortunately,
-we cannot release the data publicly yet.
+The dataset is available at Zenodo:
+
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.7130208.svg
+   :target: https://doi.org/10.5281/zenodo.7130208
+
+We recommend to use `zenodo_get <https://gitlab.com/dvolgyes/zenodo_get>`_ to
+download the data:
+
+.. code-block:: bash
+
+    pip install zenodo-get
+    mkdir -p some/folder/in/which/the/data/is/located
+    cd some/folder/in/which/the/data/is/located
+    zenodo_get 7130208
