@@ -8,8 +8,9 @@ import pytransform3d.transformations as pt
 import pytransform3d.visualizer as pv
 
 from .mocap_objects import (
-    InsoleMarkers, ProtectorMarkers, ProtectorInvertedMarkers, PillowMarkers,
-    PillowBigMarkers, PillowSssaMarkers, OSAICaseMarkers, OSAICaseSmallMarkers,
+    InsoleMarkers, InsoleBagMarkers, ProtectorMarkers,
+    ProtectorInvertedMarkers, PillowMarkers, PillowBigMarkers,
+    PillowSssaMarkers, OSAICaseMarkers, OSAICaseSmallMarkers,
     ElectronicTargetMarkers, ElectronicObjectMarkers, PassportMarkers,
     PassportClosedMarkers, PassportBoxMarkers)
 
@@ -218,6 +219,25 @@ class Insole(MoCapObjectMesh, InsoleMarkers):
         super(Insole, self).__init__(
             mesh_filename=resource_filename("hand_embodiment", "model/objects/insole.stl"),
             mesh_color=np.array([0.37, 0.28, 0.26]),
+            show_frame=show_frame)
+
+
+class InsoleBag(MoCapObjectMesh, InsoleBagMarkers):
+    """Representation of insole bag mesh.
+
+    Parameters
+    ----------
+    show_frame : bool, optional (default: True)
+        Show frame.
+    """
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, -5.0])),
+        p=np.array([0.0, 0.0, 0.0]))
+
+    def __init__(self, show_frame=True):
+        super(InsoleBag, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/insolebag.stl"),
+            mesh_color=np.array([0.5, 0.5, 0.5]),
             show_frame=show_frame)
 
 
@@ -457,6 +477,7 @@ class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
 
 ARTISTS = {
     "insole": Insole,
+    "insolebag": InsoleBag,
     "protector": Protector,
     "protector-inverted": ProtectorInverted,
     "pillow-small": PillowSmall,

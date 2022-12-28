@@ -43,6 +43,58 @@ class InsoleMarkers:
         return pt.transform_from(R=R, p=insole_back)
 
 
+class InsoleBagMarkers:
+    """Information about insole bag markers.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        ----------
+        |        |
+        |        |
+        |       BX
+        |        |
+        |        |
+        |        |
+        BY------BO
+    """
+    default_marker_positions = {
+        "bag_origin": np.array([0.0, 0.0, 0.0]),
+        "bag_x": np.array([0.156, -0.006, 0.0]),
+        "bag_y": np.array([0.002, 0.1, 0.0])
+    }
+    marker_names = tuple(default_marker_positions.keys())
+
+    @staticmethod
+    def pose_from_markers(bag_origin, bag_x, bag_y):
+        """Compute pose of bag.
+
+        Parameters
+        ----------
+        bag_origin : array, shape (3,)
+            Position of the bag.
+
+        bag_x : array, shape (3,)
+            Defines direction of the x-axis.
+
+        bag_y : array, shape (3,)
+            Defines direction of the y-axis.
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the bag.
+        """
+        x_axis = pr.norm_vector(bag_x - bag_origin)
+        y_axis = pr.norm_vector(bag_y - bag_origin)
+        z_axis = np.cross(x_axis, y_axis)
+        y_axis = pr.norm_vector(pr.perpendicular_to_vectors(z_axis, x_axis))
+        z_axis = pr.norm_vector(pr.perpendicular_to_vectors(x_axis, y_axis))
+        R = np.column_stack((x_axis, y_axis, z_axis))
+        return pt.transform_from(R=R, p=bag_origin)
+
+
 class ProtectorMarkers:
     """Information about protector markers.
 
@@ -625,6 +677,7 @@ class PassportBoxMarkers:
 
 MOCAP_OBJECTS = {
     "insole": InsoleMarkers,
+    "insolebag": InsoleBagMarkers,
     "protector": ProtectorMarkers,
     "protector-inverted": ProtectorInvertedMarkers,
     "pillow": PillowMarkers,
