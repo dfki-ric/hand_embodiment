@@ -51,12 +51,11 @@ def animation_callback(step, markers, mbrm, hand, emb, robot):
     if show_robot:
         robot.set_data()
         artists.append(robot)
-
     return artists
 
 
-hand = "shadow_hand"
-show_mano = False
+hand = "mia"
+show_mano = True
 show_robot = True
 
 
@@ -68,8 +67,10 @@ else:
     raise Exception(f"Unknown hand: '{hand}'")
 
 
+#mano2hand_markers, betas = load_mano_config(
+#    "examples/config/april_test_mano.yaml")
 mano2hand_markers, betas = load_mano_config(
-    "examples/config/april_test_mano.yaml")
+    "examples/config/mano/20220815_april_trha.yaml")
 mbrm = MarkerBasedRecordMapping(
     left=False, mano2hand_markers=mano2hand_markers,
     shape_parameters=betas, verbose=1)
@@ -86,7 +87,23 @@ robot = pv.Graph(
 
 fig = pv.figure()
 fig.plot_transform(s=0.5)
-markers = fig.scatter(fig, np.zeros((13, 3)), s=0.006)
+marker_color = [
+[0, 0, 1],
+[0, 0, 0],
+[0, 0, 0],
+[0, 0, 0],
+[0, 0, 0],
+[0, 0, 0],
+[0, 0, 0],
+[0, 0, 0],
+[0, 0, 0],
+[0, 0, 0],
+[0, 0, 0],
+[0, 0, 0],
+[0, 0, 0],
+]
+
+markers = fig.scatter(np.zeros((13, 3)), s=0.006, c=marker_color)
 if show_mano:
     hand.add_artist(fig)
 if show_robot:
