@@ -208,6 +208,7 @@ def main(args):
     else:
         whitelist = None
     print(whitelist)
+    whitelist = ["palm"]
     graph = pv.Graph(
         tm, hand_config["base_frame"], show_frames=True,
         show_connections=False, show_visuals=True, show_collision_objects=True,
