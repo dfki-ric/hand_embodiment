@@ -23,11 +23,11 @@ from ur_policy_control import kinematics
 from ur_policy_control.commands.move_to_pose import MoveToJointAngles
 from ur_policy_control.transformations import pos_rvec_from_transform
 
-use_simulation = False
-
+use_simulation = True
+calc_finger_interval = 100
 
 class OnPacket:
-    def __init__(self, verbose=1):
+    def __init__(self, verbose=False):
         self.verbose = verbose
 
         # label order from AIM model
@@ -59,7 +59,7 @@ class OnPacket:
 
         self.pipeline = MoCapToRobot(args.hand, args.mano_config, finger_names,
                                      record_mapping_config=args.record_mapping_config,
-                                     verbose=1, measure_time=args.measure_time,
+                                     verbose=self.verbose, measure_time=args.measure_time,
                                      robot_config=args.robot_config)
         self.mocap_origin2origin = None
 
@@ -86,7 +86,7 @@ class OnPacket:
         #  When urpolcity control is the root the normal mano path doesn't work.
         parser.add_argument(
             "--mano-config", type=str,
-            default="../../hand_embodiment/examples/config/mano/20210520_april.yaml",
+            default="../hand_embodiment/examples/config/mano/20210520_april.yaml",
             help="MANO configuration file.")
         parser.add_argument(
             "--record-mapping-config", type=str, default=None,
@@ -110,34 +110,46 @@ class OnPacket:
         add_animation_arguments(parser)
         return parser.parse_args()
 
+
+    finger_step_counter = 0
     def __call__(self, packet):
         """Callback function that is called everytime a data packet arrives from QTM."""
         print("Framenumber: {}".format(packet.framenumber))
 
+        calc_hand = True
+
         header, markers = packet.get_3d_markers()
-        print("Component info: {}".format(header))
+        if self.verbose:
+            print("Component info: {}".format(header))
+
         result = {}
         for i, label, marker in zip(range(len(markers)), self.labels, markers):
             if self.verbose:
                 print(f"{marker.x:.1f} {marker.y:.1f} {marker.z:.1f} - {label}")
             result[label] = (marker.x / 1000.0, marker.y / 1000.0, marker.z / 1000.0)
-        self.robot.set_finger_angles([0.3, 0.3, 0.3])
-        self.robot.servo_j(self.robot.get_current_joint_angles())
 
-        self.hand_pose_markers = np.array([result["hand_top"], result["hand_left"], result["hand_right"]])
-        self.finger_markers = {"thumb": np.array([result["thumb_tip"], result["thumb_middle"]]),
-                               "index": np.array([result["index_tip"], result["index_middle"]]),
-                               "middle": np.array([result["middle_tip"], result["middle_tip"]]),
-                               "ring": np.array([result["ring_tip"], result["ring_middle"]]),
-                               "little": np.array([result["little_tip"], result["little_middle"]])}
+        if calc_hand:
+            self.hand_pose_markers = np.array([result["hand_top"], result["hand_left"], result["hand_right"]])
+            self.finger_markers = {"thumb": np.array([result["thumb_tip"], result["thumb_middle"]]),
+                                   "index": np.array([result["index_tip"], result["index_middle"]]),
+                                   "middle": np.array([result["middle_tip"], result["middle_tip"]]),
+                                   "ring": np.array([result["ring_tip"], result["ring_middle"]]),
+                                   "little": np.array([result["little_tip"], result["little_middle"]])}
 
-        palm_t_to_qualisys, joint_angles = self.pipeline.estimate(self.hand_pose_markers, self.finger_markers)
-        joint_angles = [joint_angles["index"][0], joint_angles["middle"][0], joint_angles["thumb"][0]]
+            self.pipeline.estimate_hand(self.hand_pose_markers, self.finger_markers)
 
-        ## Needed to flip the frame of the hand
+            joint_angles = self.pipeline.estimate_joints()
+            joint_angles = [joint_angles["index"][0], joint_angles["middle"][0], joint_angles["thumb"][0]]
+
+            self.robot.set_finger_angles(joint_angles)
+
+        palm_t_to_qualisys = self.pipeline.estimate_end_effector()
+
+        # Needed to flip the frame of the hand
         scale_matrix = np.identity(4)
         scale_matrix[2, 2] *= -1
         scale_matrix[1, 1] *= -1
+        # scale_matrix *= 0.5
 
         if self.mocap_origin2origin is None:
             self.mocap_origin2origin = palm_t_to_qualisys.dot(scale_matrix)
@@ -160,7 +172,7 @@ class OnPacket:
         ee_t_to_base = self.robot_kinematics.translate_palm_pose_to_ee_pose(palm_t_to_base)
 
         self.robot.servo_l(pos_rvec_from_transform(ee_t_to_base))
-        self.robot.set_finger_angles(joint_angles)
+
 
         if use_simulation:
             self.robot._step_simulation()
@@ -184,7 +196,7 @@ async def setup(ip, frequency=None):
     # 'skeleton:global'
 
     await connection.stream_frames(
-        frames=frames, components=components, on_packet=OnPacket())
+        frames=frames, components=components, on_packet=OnPacket(False))
 
 
 if __name__ == "__main__":

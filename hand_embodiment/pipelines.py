@@ -105,8 +105,8 @@ class MoCapToRobot:
         assert len(hand_markers) == 3, hand_markers
         self.record_mapping_.estimate(hand_markers, finger_markers)
 
-    def estimate_robot(self, mocap_origin2origin=None):
-        """Estimate end-effector pose and joint angles of target system from MANO.
+    def estimate_end_effector(self, mocap_origin2origin=None):
+        """Estimate end-effector pose of target system from MANO.
 
         Parameters
         ----------
@@ -117,7 +117,20 @@ class MoCapToRobot:
         -------
         ee_pose : array, shape (4, 4)
             Pose of the end effector.
+        """
 
+        ee2mocap_origin = self.transform_manager_.get_transform(
+            self.hand_config_["base_frame"], "world")
+
+        if mocap_origin2origin is not None:
+            ee2mocap_origin = pt.concat(ee2mocap_origin, mocap_origin2origin)
+        return ee2mocap_origin
+
+    def estimate_joints(self):
+        """Estimate joint angles of target system from MANO.
+
+        Returns
+        -------
         joint_angles : dict
             Maps finger names to corresponding joint angles in the order that
             is given in the target configuration.
@@ -125,11 +138,9 @@ class MoCapToRobot:
         joint_angles = self.embodiment_mapping_.solve(
             self.record_mapping_.mano2world_,
             use_cached_forward_kinematics=True)
-        ee2mocap_origin = self.transform_manager_.get_transform(
-            self.hand_config_["base_frame"], "world")
-        if mocap_origin2origin is not None:
-            ee2mocap_origin = pt.concat(ee2mocap_origin, mocap_origin2origin)
-        return ee2mocap_origin, joint_angles
+        return joint_angles
+
+
 
     def estimate(self, hand_markers, finger_markers, mocap_origin2origin=None):
         """Estimate state of target system from MoCap markers.
@@ -155,7 +166,7 @@ class MoCapToRobot:
             is given in the target configuration.
         """
         self.estimate_hand(hand_markers, finger_markers)
-        return self.estimate_robot(mocap_origin2origin)
+        return self.estimate_end_effector(mocap_origin2origin), self.estimate_joints(mocap_origin2origin)
 
     def make_hand_artist(self, show_expected_markers=False):
         """Create artist that visualizes internal state of the hand.
