@@ -26,10 +26,9 @@ from ur_policy_control.commands.move_to_pose import MoveToJointAngles
 from ur_policy_control.transformations import pos_rvec_from_transform
 
 use_simulation = False
-use_hand = False
-calc_finger_interval = 1000
-
-
+use_hand = True
+calc_finger_interval = 50
+position_delta_scale = 0.2
 
 class OnPacket:
     def __init__(self, verbose=False):
@@ -94,7 +93,7 @@ class OnPacket:
         #  When urpolcity control is the root the normal mano path doesn't work.
         parser.add_argument(
             "--mano-config", type=str,
-            default="../hand_embodiment/examples/config/mano/20210520_april.yaml",
+            default="../hand_embodiment/examples/config/mano/20221110_april.yaml",
             help="MANO configuration file.")
         parser.add_argument(
             "--record-mapping-config", type=str, default=None,
@@ -162,7 +161,6 @@ class OnPacket:
         scale_matrix = np.identity(4)
         scale_matrix[2, 2] *= -1
         scale_matrix[1, 1] *= -1
-        #scale_matrix *= 0.2
 
         if self.mocap_origin2origin is None:
             self.mocap_origin2origin = palm_t_to_qualisys.dot(scale_matrix)
@@ -180,6 +178,7 @@ class OnPacket:
 
         palm_t_to_0 = self.mocap_origin2origin.dot(palm_t_to_qualisys)
         palm_t_to_0 = palm_t_to_0.dot(scale_matrix)
+        palm_t_to_0[:3, 3] *= position_delta_scale
 
         palm_t_to_base = pt.concat(palm_t_to_0, self.palm_0_to_base, False, False)
         ee_t_to_base = self.robot_kinematics.translate_palm_pose_to_ee_pose(palm_t_to_base)
