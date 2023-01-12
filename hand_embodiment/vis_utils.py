@@ -551,7 +551,7 @@ class AnimationCallback:
             artists.append(object_mesh)
 
         if self.show_mano or self.show_robot:
-            pipeline.estimate_hand(
+            pipeline.estimate_robot(
                 dataset.get_hand_markers(t), dataset.get_finger_markers(t))
 
         if self.show_mano:

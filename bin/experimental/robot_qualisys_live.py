@@ -3,6 +3,8 @@
 # python -m pip install qtm
 
 import asyncio
+import time
+
 from time import sleep
 
 import numpy as np
@@ -23,8 +25,11 @@ from ur_policy_control import kinematics
 from ur_policy_control.commands.move_to_pose import MoveToJointAngles
 from ur_policy_control.transformations import pos_rvec_from_transform
 
-use_simulation = True
-calc_finger_interval = 100
+use_simulation = False
+use_hand = False
+calc_finger_interval = 1000
+
+
 
 class OnPacket:
     def __init__(self, verbose=False):
@@ -47,7 +52,7 @@ class OnPacket:
             "index_middle",
         ]
         if not use_simulation:
-            self.robot = robot_controller.RobotController("192.168.1.103", use_arm=True, use_hand=False)
+            self.robot = robot_controller.RobotController("192.168.1.103", use_arm=True, use_hand=use_hand)
         else:
             self.robot = robot_controller_mockup.RobotControllerMockup("192.168.1.103",
                                                                        robot=constants.Robot.MiaHandOnUR10)
@@ -75,6 +80,9 @@ class OnPacket:
 
         self.visual_frame = None
         self.palm_0_to_base = None
+
+        self.finger_step_counter = 0
+        self.last_finger_calc = time.time()
 
     def parse_args(self):
         parser = argparse.ArgumentParser()
@@ -110,13 +118,12 @@ class OnPacket:
         add_animation_arguments(parser)
         return parser.parse_args()
 
-
-    finger_step_counter = 0
     def __call__(self, packet):
         """Callback function that is called everytime a data packet arrives from QTM."""
-        print("Framenumber: {}".format(packet.framenumber))
+        if self.verbose:
+            print("Framenumber: {}".format(packet.framenumber))
 
-        calc_hand = True
+        calc_fingers = use_hand and self.finger_step_counter % calc_finger_interval == 0
 
         header, markers = packet.get_3d_markers()
         if self.verbose:
@@ -128,28 +135,34 @@ class OnPacket:
                 print(f"{marker.x:.1f} {marker.y:.1f} {marker.z:.1f} - {label}")
             result[label] = (marker.x / 1000.0, marker.y / 1000.0, marker.z / 1000.0)
 
-        if calc_hand:
-            self.hand_pose_markers = np.array([result["hand_top"], result["hand_left"], result["hand_right"]])
+        self.hand_pose_markers = np.array([result["hand_top"], result["hand_left"], result["hand_right"]])
+        if calc_fingers:
+            now = time.time()
+            rate = int(calc_finger_interval / (now - self.last_finger_calc))
+            print(f"Calc Fingers Frame: {packet.framenumber} Rate: {rate}Hz")
+            self.last_finger_calc = now
+
             self.finger_markers = {"thumb": np.array([result["thumb_tip"], result["thumb_middle"]]),
                                    "index": np.array([result["index_tip"], result["index_middle"]]),
                                    "middle": np.array([result["middle_tip"], result["middle_tip"]]),
                                    "ring": np.array([result["ring_tip"], result["ring_middle"]]),
                                    "little": np.array([result["little_tip"], result["little_middle"]])}
 
-            self.pipeline.estimate_hand(self.hand_pose_markers, self.finger_markers)
+            self.pipeline.estimate_robot(self.hand_pose_markers, self.finger_markers)
 
             joint_angles = self.pipeline.estimate_joints()
             joint_angles = [joint_angles["index"][0], joint_angles["middle"][0], joint_angles["thumb"][0]]
 
             self.robot.set_finger_angles(joint_angles)
+            print(joint_angles)
 
-        palm_t_to_qualisys = self.pipeline.estimate_end_effector()
+        palm_t_to_qualisys = self.pipeline.estimate_end_effector(self.hand_pose_markers)
 
         # Needed to flip the frame of the hand
         scale_matrix = np.identity(4)
         scale_matrix[2, 2] *= -1
         scale_matrix[1, 1] *= -1
-        # scale_matrix *= 0.5
+        #scale_matrix *= 0.2
 
         if self.mocap_origin2origin is None:
             self.mocap_origin2origin = palm_t_to_qualisys.dot(scale_matrix)
@@ -172,7 +185,6 @@ class OnPacket:
         ee_t_to_base = self.robot_kinematics.translate_palm_pose_to_ee_pose(palm_t_to_base)
 
         self.robot.servo_l(pos_rvec_from_transform(ee_t_to_base))
-
 
         if use_simulation:
             self.robot._step_simulation()
