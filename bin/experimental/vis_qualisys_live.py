@@ -15,9 +15,6 @@ class OnPacket:
 
         # label order from AIM model
         self.labels = [
-            "hand_top",
-            "hand_left",
-            "hand_right",
             "thumb_tip",
             "thumb_middle",
             "little_tip",
@@ -28,6 +25,24 @@ class OnPacket:
             "middle_tip",
             "index_tip",
             "index_middle",
+            "hand_top",
+            "hand_right",
+            "hand_left",
+        ]
+        self.labels = [
+            "thumb_middle",
+            "thumb_tip",
+            "index_tip",
+            "index_middle",
+            "middle_middle",
+            "middle_tip",
+            "ring_tip",
+            "ring_middle",
+            "little_tip",
+            "little_middle",
+            "hand_top",
+            "hand_right",
+            "hand_left",
         ]
 
     def __call__(self, packet):
@@ -68,6 +83,6 @@ async def setup(ip, frequency=None):
 
 if __name__ == "__main__":
     import sys
-    ip = sys.argv[-1]
+    ip = "10.250.6.39"
     asyncio.ensure_future(setup(ip, frequency=20))
     asyncio.get_event_loop().run_forever()
