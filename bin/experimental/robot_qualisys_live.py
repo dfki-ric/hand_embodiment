@@ -147,7 +147,7 @@ class OnPacket:
                                    "ring": np.array([result["ring_tip"], result["ring_middle"]]),
                                    "little": np.array([result["little_tip"], result["little_middle"]])}
 
-            self.pipeline.estimate_robot(self.hand_pose_markers, self.finger_markers)
+            self.pipeline.estimate_hand(self.hand_pose_markers, self.finger_markers)
 
             joint_angles = self.pipeline.estimate_joints()
             joint_angles = [joint_angles["index"][0], joint_angles["middle"][0], joint_angles["thumb"][0]]

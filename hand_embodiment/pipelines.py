@@ -91,7 +91,7 @@ class MoCapToRobot:
         """
         self.transform_manager_.set_joint(joint_name, angle)
 
-    def estimate_robot(self, hand_markers, finger_markers):
+    def estimate_hand(self, hand_markers, finger_markers):
         """Estimate MANO pose and joint angles.
 
         Parameters
@@ -167,7 +167,7 @@ class MoCapToRobot:
             Maps finger names to corresponding joint angles in the order that
             is given in the target configuration.
         """
-        self.estimate_robot(hand_markers, finger_markers)
+        self.estimate_hand(hand_markers, finger_markers)
         return self.estimate_end_effector(mocap_origin2origin), self.estimate_joints(mocap_origin2origin)
 
     def make_hand_artist(self, show_expected_markers=False):
