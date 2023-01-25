@@ -34,6 +34,7 @@ class MoCapToRobot:
     robot_config : str, optional (default: None)
         Target system configuration.
     """
+
     def __init__(self, hand, mano_config, use_fingers,
                  record_mapping_config=None, verbose=0, measure_time=False,
                  robot_config=None):
@@ -124,6 +125,9 @@ class MoCapToRobot:
 
         Parameters
         ----------
+        hand_markers : list
+            Markers on hand in order 'hand_top', 'hand_left', 'hand_right'.
+
         mocap_origin2origin : array, shape (4, 4)
             Transform that will be applied to end-effector pose.
 
@@ -134,7 +138,6 @@ class MoCapToRobot:
         """
 
         self.record_mapping_.estimate_end_effector(hand_markers)
-
         self.embodiment_mapping_._update_hand_base_pose(self.record_mapping_.mano2world_)
 
         ee2mocap_origin = self.transform_manager_.get_transform(
@@ -143,6 +146,28 @@ class MoCapToRobot:
         if mocap_origin2origin is not None:
             ee2mocap_origin = pt.concat(ee2mocap_origin, mocap_origin2origin)
         return ee2mocap_origin
+
+    def estimate_robot(self, hand_markers, mocap_origin2origin=None):
+        """Estimates the joint angles and end-effector pose of target system from MANO.
+
+        Parameters
+        ----------
+        hand_markers : list
+            Markers on hand in order 'hand_top', 'hand_left', 'hand_right'.
+
+        mocap_origin2origin : array, shape (4, 4)
+            Transform that will be applied to end-effector pose.
+
+        Returns
+        -------
+        ee_pose : array, shape (4, 4)
+            Pose of the end effector.
+
+        joint_angles : dict
+            Maps finger names to corresponding joint angles in the order that
+            is given in the target configuration.
+        """
+        return self.estimate_end_effector(hand_markers, mocap_origin2origin), self.estimate_joints()
 
     def estimate(self, hand_markers, finger_markers, mocap_origin2origin=None):
         """Estimate state of target system from MoCap markers.
@@ -168,7 +193,7 @@ class MoCapToRobot:
             is given in the target configuration.
         """
         self.estimate_hand(hand_markers, finger_markers)
-        return self.estimate_end_effector(mocap_origin2origin), self.estimate_joints(mocap_origin2origin)
+        return self.estimate_robot(hand_markers, mocap_origin2origin)
 
     def make_hand_artist(self, show_expected_markers=False):
         """Create artist that visualizes internal state of the hand.
