@@ -559,7 +559,7 @@ class AnimationCallback:
             artists.append(self.hand)
 
         if self.show_robot:
-            pipeline.estimate_hand()
+            pipeline.estimate_robot()
             self.robot.set_data()
             artists.append(self.robot)
 
