@@ -29,10 +29,26 @@ The currently implemented target systems are:
 
 This is the implementation of the paper
 
-Alexander Fabisch, Manuela Uliano, Dennis Marschner, Melvin Laux,
-Johannes Brust, Marco Controzzi:
-**A Modular Approach to the Embodiment of Hand Motions from Human Demonstrations**,
-https://arxiv.org/abs/2203.02778
+A. Fabisch, M. Uliano, D. Marschner, M. Laux, J. Brust and M. Controzzi,<br/>
+**A Modular Approach to the Embodiment of Hand Motions from Human Demonstrations**,<br/>
+2022 IEEE-RAS 21st International Conference on Humanoid Robots (Humanoids),
+Ginowan, Japan, 2022, pp. 801-808, doi: 10.1109/Humanoids53995.2022.10000165.
+
+It is available from [arxiv.org](https://arxiv.org/abs/2203.02778) as a preprint
+or from [IEEE](https://ieeexplore.ieee.org/document/10000165).
+
+Please cite it as
+
+```bibtex
+@INPROCEEDINGS{Fabisch2022,
+  author={Fabisch, Alexander and Uliano, Manuela and Marschner, Dennis and Laux, Melvin and Brust, Johannes and Controzzi, Marco},
+  booktitle={2022 IEEE-RAS 21st International Conference on Humanoid Robots (Humanoids)}, 
+  title={A Modular Approach to the Embodiment of Hand Motions from Human Demonstrations}, 
+  year={2022},
+  pages={801--808},
+  doi={10.1109/Humanoids53995.2022.10000165}
+}
+```
 
 ## Data
 
