@@ -222,6 +222,25 @@ class Insole(MoCapObjectMesh, InsoleMarkers):
             show_frame=show_frame)
 
 
+class InsoleFlipped(MoCapObjectMesh, InsoleMarkers):
+    """Representation of flipped insole mesh.
+
+    Parameters
+    ----------
+    show_frame : bool, optional (default: True)
+        Show frame.
+    """
+    markers2mesh = pt.transform_from(
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, -4.5])),
+        p=np.array([0.04, 0.07, 0.024 - 0.007]))
+
+    def __init__(self, show_frame=True):
+        super(InsoleFlipped, self).__init__(
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/insole.stl"),
+            mesh_color=np.array([0.37, 0.28, 0.26]),
+            show_frame=show_frame)
+
+
 class InsoleBag(MoCapObjectMesh, InsoleBagMarkers):
     """Representation of insole bag mesh.
 
@@ -477,6 +496,7 @@ class PassportBox(MoCapObjectMesh, PassportBoxMarkers):
 
 ARTISTS = {
     "insole": Insole,
+    "insole-flipped": InsoleFlipped,
     "insolebag": InsoleBag,
     "protector": Protector,
     "protector-inverted": ProtectorInverted,
