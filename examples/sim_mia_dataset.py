@@ -59,6 +59,7 @@ def main():
 
     while pb.isConnected():
         for filename in args.trajectory_files:
+            print(f"Simulating {filename}")
             dataset = RoboticHandDataset.import_from_file(filename, hand_config)
 
             for t in range(dataset.n_steps):
