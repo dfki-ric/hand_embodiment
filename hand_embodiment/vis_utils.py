@@ -236,16 +236,9 @@ class InsoleFlipped(MoCapObjectMesh, InsoleMarkers):
 
     def __init__(self, show_frame=True):
         super(InsoleFlipped, self).__init__(
-            mesh_filename=resource_filename("hand_embodiment", "model/objects/insole.stl"),
+            mesh_filename=resource_filename("hand_embodiment", "model/objects/insole_flipped.stl"),
             mesh_color=np.array([0.37, 0.28, 0.26]),
             show_frame=show_frame)
-        import open3d as o3d
-        vertices = np.asarray(self.mesh.vertices)
-        vertices[:, 2] *= -1
-        self.mesh.vertices = o3d.utility.Vector3dVector(vertices)
-        triangles = np.asarray(self.mesh.triangles)
-        triangles[:, :] = triangles[:, ::-1]
-        self.mesh.triangles = o3d.utility.Vector3iVector(triangles)
 
 
 class InsoleBag(MoCapObjectMesh, InsoleBagMarkers):
