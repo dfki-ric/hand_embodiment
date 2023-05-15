@@ -231,8 +231,8 @@ class InsoleFlipped(MoCapObjectMesh, InsoleMarkers):
         Show frame.
     """
     markers2mesh = pt.transform_from(
-        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, -4.5])),
-        p=np.array([0.04, 0.07, -0.007]))
+        R=pr.active_matrix_from_extrinsic_roll_pitch_yaw(np.deg2rad([0, 0, 0])),
+        p=np.array([0, 0, 0]))
 
     def __init__(self, show_frame=True):
         super(InsoleFlipped, self).__init__(
