@@ -17,20 +17,20 @@ finger_marker_names:
     - index_middle
     middle:
     - middle_tip
-    #- middle_middle
+    - middle_middle
     ring:
     - ring_tip
-    #- ring_middle
+    - ring_middle
     little:
     - little_tip
-    #- little_middle
+    - little_middle
 additional_markers:
 #- index_middle
-- middle_middle
-- ring_middle
-- little_middle
-- elbow
-- shoulder
+#- middle_middle
+#- ring_middle
+#- little_middle
+#- elbow
+#- shoulder
 - back_top
 - back_left
 - back_right

@@ -29,8 +29,6 @@ def parse_args():
         "--output", type=str, default="segment_%02d.csv",
         help="Output file pattern (.csv).")
     parser.add_argument(
-        "--show-mano", action="store_true", help="Show MANO mesh")
-    parser.add_argument(
         "--skip-frames", type=int, default=1,
         help="Skip this number of frames between animated frames.")
     parser.add_argument(
