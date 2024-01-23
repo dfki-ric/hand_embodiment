@@ -43,6 +43,46 @@ class InsoleMarkers:
         return pt.transform_from(R=R, p=insole_back)
 
 
+class InsoleFlippedMarkers:
+    """Information about markers of flipped insole.
+
+    Marker positions:
+
+    .. code-block:: text
+
+        IB-------------IF
+    """
+    default_marker_positions = {
+        "insole_back": np.array([0, 0, -0.022]),
+        "insole_front": np.array([0.19, 0, -0.022])
+    }
+    marker_names = tuple(default_marker_positions.keys())
+
+    @staticmethod
+    def pose_from_markers(insole_back, insole_front):
+        """Compute pose of insole.
+
+        Parameters
+        ----------
+        insole_back : array, shape (3,)
+            Position of insole back marker (IB).
+
+        insole_front : array, shape (3,)
+            Position of insole front marker (IF).
+
+        Returns
+        -------
+        pose : array, shape (4, 4)
+            Pose of the insole.
+        """
+        x_axis = pr.norm_vector(insole_front - insole_back)
+        z_axis = np.copy(pr.unitz)
+        y_axis = pr.norm_vector(pr.perpendicular_to_vectors(z_axis, x_axis))
+        z_axis = pr.norm_vector(pr.perpendicular_to_vectors(x_axis, y_axis))
+        R = np.column_stack((x_axis, y_axis, z_axis))
+        return pt.transform_from(R=R, p=insole_back)
+
+
 class InsoleBagMarkers:
     """Information about insole bag markers.
 
@@ -677,6 +717,7 @@ class PassportBoxMarkers:
 
 MOCAP_OBJECTS = {
     "insole": InsoleMarkers,
+    "insole-flipped": InsoleFlippedMarkers,
     "insolebag": InsoleBagMarkers,
     "protector": ProtectorMarkers,
     "protector-inverted": ProtectorInvertedMarkers,
