@@ -367,6 +367,11 @@ class Record:
         platform_type = self.metadata_content["platform_type"]
         filename = self.metadata_content["record_filename"]
         filename = os.path.expanduser(filename)
+        if not os.path.exists(filename) and self.metadata is not None:
+            basename = os.path.basename(filename)
+            fallback = os.path.join(os.path.dirname(self.metadata), basename)
+            if os.path.exists(fallback):
+                filename = fallback
         if platform_type == ".tsv":
             assert self.qualisys_filename is None or \
                    self.qualisys_filename == filename

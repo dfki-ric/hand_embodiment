@@ -42,6 +42,10 @@ def main():
         args.demo_file, args.segment_label, mocap_config=args.mocap_config,
         interpolate_missing_markers=args.interpolate_missing_markers)
 
+    if dataset.n_segments == 0:
+        raise SystemExit(
+            f"No segments found with label '{args.segment_label}' "
+            f"in '{args.demo_file}'.")
     segments = args.segments
     if segments is None:
         segments = list(range(dataset.n_segments))

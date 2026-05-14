@@ -54,17 +54,19 @@ Please cite it as
 
 The dataset is available at Zenodo:
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7130208.svg)](https://doi.org/10.5281/zenodo.7130208)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20180859.svg)](https://doi.org/10.5281/zenodo.20180859)
 
-We recommend to use [zenodo_get](https://gitlab.com/dvolgyes/zenodo_get) to
-download the data:
+Download and extract the dataset archive:
 
 ```bash
 pip install zenodo-get
-mkdir -p some/folder/in/which/the/data/is/located
-cd some/folder/in/which/the/data/is/located
-zenodo_get 7130208
+zenodo_get 20180859 -o /tmp/zenodo_20180859
+unzip /tmp/zenodo_20180859/hand_embodiment_dataset.zip -d raw_data
+rm -rf /tmp/zenodo_20180859
 ```
+
+This creates a `raw_data/` folder with all raw motion capture files
+(`.tsv` and `.json`).
 
 ## Documentation
 
