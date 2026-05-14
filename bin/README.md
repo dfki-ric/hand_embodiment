@@ -126,24 +126,24 @@ Script: [convert_segments.py](convert_segments.py)
 
 Example calls:
 ```bash
-python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement16.json --output dataset_16_segment_%d.csv  # not in the public dataset
-python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement23.json --output dataset_23_segment_%d.csv  # not in the public dataset
-python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement24.json --output dataset_24_segment_%d.csv  # not in the public dataset
-python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210701_april/Measurement30.json --output dataset_30_segment_%d.csv --base-frame insole  # not in the public dataset
-python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210819_april.yaml --demo-file raw_data/insole_set0.json --output insole_set0_%d.csv --base-frame insole
-python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210826_april.yaml --demo-file raw_data/small_pillow_set0.json --output small_pillow_set0_%d.csv --base-frame pillow-small --measure-time
+python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement16.json --output dataset_16_segment_%d.csv  # not in the public dataset
+python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement23.json --output dataset_23_segment_%d.csv  # not in the public dataset
+python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210616_april/metadata/Measurement24.json --output dataset_24_segment_%d.csv  # not in the public dataset
+python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20210616_april.yaml --demo-file data/20210701_april/Measurement30.json --output dataset_30_segment_%d.csv --base-frame insole  # not in the public dataset
+python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20210819_april.yaml --demo-file raw_data/insole_set0.json --output insole_set0_%d.csv --base-frame insole
+python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20210826_april.yaml --demo-file raw_data/small_pillow_set0.json --output small_pillow_set0_%d.csv --base-frame pillow-small --measure-time
 ```
 
 Grasp insole:
 ```bash
-python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210819_april.yaml --demo-file raw_data/insole_set*.json --output insole_%d.csv --base-frame insole --measure-time
-python bin/convert_segments.py shadow close --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20211105_april.yaml --demo-file raw_data/insole_set*.json --output insole_%d.csv --base-frame insole --measure-time
+python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20210819_april.yaml --demo-file raw_data/insole_set*.json --output insole_%d.csv --base-frame insole --measure-time
+python bin/convert_segments.py shadow grasp --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20211105_april.yaml --demo-file raw_data/insole_set*.json --output insole_%d.csv --base-frame insole --measure-time
 ```
 
 Grasp small pillow:
 ```bash
-python bin/convert_segments.py mia close --mia-thumb-adducted --mocap-config examples/config/markers/20210826_april.yaml --demo-file raw_data/small_pillow_set*.json --output small_pillow_%d.csv --base-frame pillow-small --measure-time
-python bin/convert_segments.py shadow close --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20211105_april.yaml --demo-file raw_data/small_pillow_set*.json --output small_pillow_%d.csv --base-frame pillow-small --measure-time
+python bin/convert_segments.py mia grasp --mia-thumb-adducted --mocap-config examples/config/markers/20210826_april.yaml --demo-file raw_data/small_pillow_set*.json --output small_pillow_%d.csv --base-frame pillow-small --measure-time
+python bin/convert_segments.py shadow grasp --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20211105_april.yaml --demo-file raw_data/small_pillow_set*.json --output small_pillow_%d.csv --base-frame pillow-small --measure-time
 ```
 
 Grasp electronic component:

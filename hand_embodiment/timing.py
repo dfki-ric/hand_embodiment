@@ -64,6 +64,9 @@ def timing_report(timeable, decimals=5, title=None):
         print(f"Timing report: {title}")
     n_measurements = len(timings)
     print(f"Number of measurements: {n_measurements}")
+    if n_measurements == 0:
+        print("=" * 80)
+        return
     average = np.mean(timings)
     print(f"Mean: {np.round(average, decimals)} s, {np.round(1.0 / average, decimals)} Hz")
     std = np.std(timings)
