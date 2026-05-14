@@ -116,6 +116,7 @@ Script: [convert_hand_trajectory.py](convert_hand_trajectory.py)
 
 Example calls:
 ```bash
+python bin/convert_hand_trajectory.py mia raw_data/insole_set0.tsv --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20210616_april.yaml --mia-thumb-adducted --output insole_set0.csv
 python bin/convert_hand_trajectory.py mia data/QualisysAprilTest/april_test_009.tsv --mia-thumb-adducted --output trajectory_009.csv  # not in the public dataset
 python bin/convert_hand_trajectory.py mia data/20220718_april/OSAI_test2.txt --mia-thumb-adducted  --mocap-config examples/config/markers/20220718_april.yaml --mano-config examples/config/mano/20220718_april.yaml --robot-config examples/config/robot/20220718_april_mia.yaml --output OSAI_test2.csv  # not in the public dataset
 ```
