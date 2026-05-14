@@ -83,7 +83,7 @@ python bin/vis_markers_to_robot.py shadow --demo-file raw_data/electronic_set0.t
 
 Flip pages of a passport:
 ```bash
-python bin/vis_markers_to_robot.py shadow --demo-file raw_data/passport_set0.tsv --mocap-config examples/config/markers/20211112_april.yaml --mano-config examples/config/mano/20211105_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --passport
+python bin/vis_markers_to_robot.py shadow --demo-file raw_data/passport_set0.tsv --mocap-config examples/config/markers/20211112_april.yaml --mano-config examples/config/mano/20211105_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --visual-objects passport
 ```
 
 Insert passport:
