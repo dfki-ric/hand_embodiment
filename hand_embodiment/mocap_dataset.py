@@ -368,6 +368,8 @@ class Record:
         filename = self.metadata_content["record_filename"]
         filename = os.path.expanduser(filename)
         if not os.path.exists(filename) and self.metadata is not None:
+            # Incorrect filepath in metadata file. Look for a file with the
+            # same name in the same folder as the metadata file.
             basename = os.path.basename(filename)
             fallback = os.path.join(os.path.dirname(self.metadata), basename)
             if os.path.exists(fallback):
