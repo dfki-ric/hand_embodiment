@@ -60,9 +60,8 @@ Download and extract the dataset archive:
 
 ```bash
 pip install zenodo-get
-zenodo_get 20180859 -o /tmp/zenodo_20180859
-unzip /tmp/zenodo_20180859/hand_embodiment_dataset.zip -d raw_data
-rm -rf /tmp/zenodo_20180859
+zenodo_get 20180859 -o /tmp/zenodo_dataset
+unzip /tmp/zenodo_dataset/hand_embodiment_dataset.zip -d raw_data
 ```
 
 This creates a `raw_data/` folder with all raw motion capture files
