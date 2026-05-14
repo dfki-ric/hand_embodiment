@@ -184,13 +184,13 @@ python bin/convert_segments.py shadow insert --mocap-config examples/config/mark
 
 Insole dataset with labels for grasp point (front, middle, back) and grasp type (spherical, pinch, lateral):
 ```bash
-python bin/convert_segments.py mia grasp_spherical_insole_middle --demo-files raw_data/insole_set*.json --label-field l2 --mocap-config examples/config/markers/20211119_april.yaml --output 2022_insole_spherical_middle_%d.csv --base-frame insole --measure-time
-python bin/convert_segments.py mia grasp_spherical_insole_front --demo-files raw_data/insole_set*.json --label-field l2 --mocap-config examples/config/markers/20210819_april.yaml --output 2022_insole_spherical_front_%d.csv --base-frame insole --measure-time
-python bin/convert_segments.py mia grasp_spherical_insole_back --demo-files raw_data/insole_set*.json --label-field l2 --mocap-config examples/config/markers/20210819_april.yaml --output 2022_insole_spherical_back_%d.csv --base-frame insole --measure-time
-python bin/convert_segments.py mia grasp_pinch_insole_back --demo-files raw_data/insole_set*.json --label-field l2 --mia-thumb-adducted --mocap-config examples/config/markers/20220328_april.yaml --output 2022_insole_pinch_back_%d.csv --base-frame insole --measure-time
-python bin/convert_segments.py mia grasp_pinch_insole_front --demo-files raw_data/insole_set*.json --label-field l2 --mia-thumb-adducted --mocap-config examples/config/markers/20220328_april.yaml --output 2022_insole_pinch_front_%d.csv --base-frame insole --measure-time
-python bin/convert_segments.py mia grasp_lateral_insole_back --demo-files raw_data/insole_set*.json --label-field l2 --mocap-config examples/config/markers/20220328_april.yaml --output 2022_insole_lateral_back_%d.csv --base-frame insole --measure-time
-python bin/convert_segments.py mia grasp_lateral_insole_front --demo-files raw_data/insole_set*.json --label-field l2 --mocap-config examples/config/markers/20220328_april.yaml --output 2022_insole_lateral_front_%d.csv --base-frame insole --measure-time
+python bin/convert_segments.py mia grasp_spherical_insole_middle_c --demo-files raw_data/insole_set*.json --label-field l2 --mocap-config examples/config/markers/20211119_april.yaml --output 2022_insole_spherical_middle_%d.csv --base-frame insole --measure-time
+python bin/convert_segments.py mia grasp_spherical_insole_front_c --demo-files raw_data/insole_set*.json --label-field l2 --mocap-config examples/config/markers/20210819_april.yaml --output 2022_insole_spherical_front_%d.csv --base-frame insole --measure-time
+python bin/convert_segments.py mia grasp_spherical_insole_back_c --demo-files raw_data/insole_set*.json --label-field l2 --mocap-config examples/config/markers/20210819_april.yaml --output 2022_insole_spherical_back_%d.csv --base-frame insole --measure-time
+python bin/convert_segments.py mia grasp_pinch_insole_back_c --demo-files raw_data/insole_set*.json --label-field l2 --mia-thumb-adducted --mocap-config examples/config/markers/20220328_april.yaml --output 2022_insole_pinch_back_%d.csv --base-frame insole --measure-time
+python bin/convert_segments.py mia grasp_pinch_insole_front_c --demo-files raw_data/insole_set*.json --label-field l2 --mia-thumb-adducted --mocap-config examples/config/markers/20220328_april.yaml --output 2022_insole_pinch_front_%d.csv --base-frame insole --measure-time
+python bin/convert_segments.py mia grasp_lateral_insole_back_c --demo-files raw_data/insole_set*.json --label-field l2 --mocap-config examples/config/markers/20220328_april.yaml --output 2022_insole_lateral_back_%d.csv --base-frame insole --measure-time
+python bin/convert_segments.py mia grasp_lateral_insole_front_c --demo-files raw_data/insole_set*.json --label-field l2 --mocap-config examples/config/markers/20220328_april.yaml --output 2022_insole_lateral_front_%d.csv --base-frame insole --measure-time
 ```
 
 ## Visualize Converted Trajectories
