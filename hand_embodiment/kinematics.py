@@ -5,6 +5,8 @@ Forward and inverse kinematics for robotic hands.
 import math
 from typing import NamedTuple, List, Optional, Callable
 
+import os
+os.environ.setdefault("XLA_FLAGS", "--xla_gpu_enable_command_buffer=")
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
@@ -599,6 +601,32 @@ class MultiChain:
         self._jax_params = _build_jax_fk_params(
             tm, joint_names, base_frame, ee_frames, self.joint_limits)
 
+        import jaxopt
+        jax_params_ = self._jax_params
+        lower_ = jnp.array(self.joint_limits[:, 0], dtype=jnp.float64)
+        upper_ = jnp.array(self.joint_limits[:, 1], dtype=jnp.float64)
+        ik_bounds_ = (lower_, upper_)
+
+        def _ik_fn(q0, des):
+            def obj(q):
+                pos = _jax_multi_chain_forward_all(jax_params_, q)
+                return jnp.sum(jnp.linalg.norm(des - pos, axis=-1))
+            result = jaxopt.LBFGSB(fun=obj, maxiter=200).run(
+                q0, bounds=ik_bounds_)
+            return result.params, result.state.value
+
+        self._jit_ik = jax.jit(_ik_fn)
+
+        def _scan_step(q_prev, des_t):
+            def obj(q):
+                pos = _jax_multi_chain_forward_all(jax_params_, q)
+                return jnp.sum(jnp.linalg.norm(des_t - pos, axis=-1))
+            q_new = jaxopt.LBFGSB(fun=obj, maxiter=200).run(
+                q_prev, bounds=ik_bounds_).params
+            return q_new, q_new
+
+        self._ik_scan_step = jax.jit(_scan_step)
+
     def forward(self, joint_angles):
         """Forward kinematics.
 
@@ -664,27 +692,15 @@ class MultiChain:
         error : float, optional
             Pose error
         """
-        if bounds is None:
-            bounds = self.joint_limits
-        import jax, jaxopt
-        lower = jnp.array(bounds[:, 0], dtype=jnp.float64)
-        upper = jnp.array(bounds[:, 1], dtype=jnp.float64)
-        des = jnp.array(desired_positions, dtype=jnp.float64)
-        jax_params = self._jax_params
-
-        def objective(q):
-            pos = _jax_multi_chain_forward_all(jax_params, q)
-            return jnp.sum(jnp.linalg.norm(des - pos, axis=-1))
-
-        solver = jaxopt.LBFGSB(fun=objective, maxiter=200)
-        result = solver.run(jnp.array(initial_joint_angles, dtype=jnp.float64),
-                            bounds=(lower, upper))
-        q_np = np.array(result.params)
+        q_np, error = self._jit_ik(
+            jnp.array(initial_joint_angles, dtype=jnp.float64),
+            jnp.array(desired_positions, dtype=jnp.float64))
+        q_np = np.array(q_np)
 
         if self.verbose >= 2:
-            print("Error: %g" % float(result.state.value))
+            print("Error: %g" % float(error))
         if return_error:
-            return q_np, float(result.state.value)
+            return q_np, float(error)
         else:
             return q_np
 

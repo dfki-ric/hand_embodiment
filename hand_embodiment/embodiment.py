@@ -116,6 +116,18 @@ class HandEmbodiment(TimeableMixin):
 
         self.verbose = verbose
 
+        self._warmup_jit()
+
+    def _warmup_jit(self):
+        """Trigger JIT compilation for all finger IK functions at init time."""
+        import jax.numpy as jnp
+        for finger_name in self.finger_names_:
+            chain = self.target_finger_chains[finger_name]
+            n_ee = len(chain.ee_frames)
+            chain._jit_ik(
+                jnp.zeros(chain.n_joints, dtype=jnp.float64),
+                jnp.zeros((n_ee, 3), dtype=jnp.float64))
+
     def solve(self, handbase2world=None, return_desired_positions=False,
               use_cached_forward_kinematics=False):
         """Solve embodiment.
@@ -318,9 +330,7 @@ class HandEmbodiment(TimeableMixin):
             Maps finger name to array of shape (T, n_joints).
         """
         import jax
-        import jaxopt
         import jax.numpy as jnp
-        from .kinematics import _jax_multi_chain_forward_all
 
         T = pose_batch.shape[0]
         desired = self._mano_fk_batch(pose_batch)  # finger → (T, n_ee, 3)
@@ -328,26 +338,9 @@ class HandEmbodiment(TimeableMixin):
         result = {}
         for finger_name in self.finger_names_:
             chain = self.target_finger_chains[finger_name]
-            jax_params = chain._jax_params
-            lower = jnp.array(chain.joint_limits[:, 0], dtype=jnp.float64)
-            upper = jnp.array(chain.joint_limits[:, 1], dtype=jnp.float64)
             des_jax = jnp.array(desired[finger_name], dtype=jnp.float64)
-
-            # Build and JIT-compile the per-step IK once per finger.
-            # jax.lax.scan: carry = previous q (warm start), xs = desired_positions
-            def make_scan_fn(jax_params_, lower_, upper_):
-                def scan_fn(q_prev, des_t):
-                    def obj(q):
-                        pos = _jax_multi_chain_forward_all(jax_params_, q)
-                        return jnp.sum(jnp.linalg.norm(des_t - pos, axis=-1))
-                    q_new = jaxopt.LBFGSB(fun=obj, maxiter=200).run(
-                        q_prev, bounds=(lower_, upper_)).params
-                    return q_new, q_new
-                return jax.jit(scan_fn)
-
-            scan_fn = make_scan_fn(jax_params, lower, upper)
             init_q = jnp.zeros(chain.n_joints, dtype=jnp.float64)
-            _, Q = jax.lax.scan(scan_fn, init_q, des_jax)
+            _, Q = jax.lax.scan(chain._ik_scan_step, init_q, des_jax)
             result[finger_name] = np.array(Q)
 
         return result
