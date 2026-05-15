@@ -50,6 +50,14 @@ class HandState:
             apply_shape_parameters(betas=self.betas, **self.shape_parameters)
         self.vertices = hand_vertices(pose=self.pose, **self.pose_parameters)
 
+        import jax
+        import jax.numpy as jnp
+        from .mano_jax import build_hand_vertices_fn
+        _fn = build_hand_vertices_fn(self.pose_parameters["kintree_table"])
+        self._hand_vertices_jax = jax.jit(_fn)
+        self._hand_vertices_jax_batch = jax.jit(
+            jax.vmap(_fn, in_axes=(None, None, None, None, 0)))
+
         color = np.array([245, 214, 175, 255]) / 255.0
         try:  # Open3D <= 0.13
             self.material = o3d.visualization.rendering.Material()
@@ -104,8 +112,12 @@ class HandState:
 
     def recompute_mesh(self, mesh2world=None, vertex_normals=True,
                        triangle_normals=True):
-        self.vertices[:, :] = hand_vertices(
-            pose=self.pose, **self.pose_parameters)
+        import jax.numpy as jnp
+        p = self.pose_parameters
+        self.vertices[:, :] = self._hand_vertices_jax(
+            jnp.array(p["J"]), jnp.array(p["weights"]),
+            jnp.array(p["v_template"]), jnp.array(p["posedirs"]),
+            jnp.array(self.pose))
         if mesh2world is not None:
             self.vertices[:, :] = self.vertices.dot(
                 mesh2world[:3, :3].T) + mesh2world[:3, 3]
@@ -231,12 +243,6 @@ def hand_vertices(J, weights, kintree_table, v_template, posedirs, pose=None):
     v_posed = v_template + posedirs.dot(lrotmin(pose))
     vertices = forward_kinematic(pose, v_posed, J, weights, kintree_table)
     return vertices
-
-
-try:
-    from .mano_fast import hand_vertices
-except ImportError:
-    pass  # using Python version
 
 
 def lrotmin(p):

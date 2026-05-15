@@ -2,9 +2,13 @@
 
 Forward and inverse kinematics for robotic hands.
 """
-import numpy as np
 import math
-import numba
+from typing import NamedTuple, List, Optional, Callable
+
+import numpy as np
+import jax
+jax.config.update("jax_enable_x64", True)
+import jax.numpy as jnp
 from pytransform3d import urdf
 from scipy.optimize import minimize
 
@@ -135,20 +139,8 @@ class FastUrdfTransformManager(urdf.UrdfTransformManager):
             joint_name, self)
 
 
-@numba.jit(nopython=True, cache=True)
 def _fast_matrix_from_axis_angle(axis, angle):
-    """Compute transformation matrix from axis-angle.
-
-    Parameters
-    ----------
-    a : array-like, shape (4,)
-        Axis of rotation and rotation angle: (x, y, z, angle)
-
-    Returns
-    -------
-    A2B : array-like, shape (4, 4)
-        Transformation matrix
-    """
+    """Compute transformation matrix from axis-angle."""
     ux, uy, uz = axis
     c = math.cos(angle)
     s = math.sin(angle)
@@ -604,6 +596,9 @@ class MultiChain:
                            for ee_frame in self.ee_frames]
         self.base_index = self.tm.nodes.index(base_frame)
 
+        self._jax_params = _build_jax_fk_params(
+            tm, joint_names, base_frame, ee_frames, self.joint_limits)
+
     def forward(self, joint_angles):
         """Forward kinematics.
 
@@ -671,23 +666,163 @@ class MultiChain:
         """
         if bounds is None:
             bounds = self.joint_limits
-        res = minimize(
-            self.ee_pos_error, initial_joint_angles,
-            (desired_positions,), method="SLSQP", bounds=bounds)
+        import jax, jaxopt
+        lower = jnp.array(bounds[:, 0], dtype=jnp.float64)
+        upper = jnp.array(bounds[:, 1], dtype=jnp.float64)
+        des = jnp.array(desired_positions, dtype=jnp.float64)
+        jax_params = self._jax_params
+
+        def objective(q):
+            pos = _jax_multi_chain_forward_all(jax_params, q)
+            return jnp.sum(jnp.linalg.norm(des - pos, axis=-1))
+
+        solver = jaxopt.LBFGSB(fun=objective, maxiter=200)
+        result = solver.run(jnp.array(initial_joint_angles, dtype=jnp.float64),
+                            bounds=(lower, upper))
+        q_np = np.array(result.params)
 
         if self.verbose >= 2:
-            print("Error: %g" % res["fun"])
+            print("Error: %g" % float(result.state.value))
         if return_error:
-            return res["x"], res["fun"]
+            return q_np, float(result.state.value)
         else:
-            return res["x"]
+            return q_np
 
 
-@numba.jit(nopython=True, cache=True)
 def pose_dist(ee2base_desired, ee2base_actual, orientation_weight, position_weight):
     ee_actual2ee_desired = np.linalg.inv(ee2base_actual).dot(ee2base_desired)
     trace = ee_actual2ee_desired[0, 0] + ee_actual2ee_desired[1, 1] + ee_actual2ee_desired[2, 2]
-    angle = math.acos(min((trace - 1.0) / 2.0, 1.0))
+    angle = math.acos(min(max((trace - 1.0) / 2.0, -1.0), 1.0))
     orientation_error = min(angle, 2.0 * math.pi - angle)
     position_error = math.sqrt(ee_actual2ee_desired[0, 3] ** 2 + ee_actual2ee_desired[1, 3] ** 2 + ee_actual2ee_desired[2, 3] ** 2)
     return orientation_weight * orientation_error + position_weight * position_error
+
+
+class JaxFKParams(NamedTuple):
+    """Static FK parameters for a kinematic chain, extracted at init time."""
+    all_path_entries: List  # one list of entries per EE frame
+    joint_limits: object    # jnp array (n_joints, 2)
+
+
+def _build_jax_fk_params(tm, joint_names, base_frame, ee_frames,
+                         joint_limits_np=None):
+    """Extract static FK parameters from pytransform3d for JAX forward kinematics.
+
+    Walks the kinematic path for each EE frame and classifies each step as a
+    variable joint (in chain) or a fixed transform (not in chain, evaluated at
+    θ=0). Virtual joints are expanded to their real joints with JAX-compatible
+    angle extractors.
+
+    Parameters
+    ----------
+    tm : FastUrdfTransformManager
+    joint_names : list of str
+    base_frame : str
+    ee_frames : list of str
+
+    Returns
+    -------
+    JaxFKParams
+    """
+    joints_by_frames = {(v[0], v[1]): k for k, v in tm._joints.items()}
+    base_idx = tm.nodes.index(base_frame)
+
+    # Build mapping: real_joint_name → (chain_idx, jax_angle_fn)
+    real_to_chain = {}
+    for i, jn in enumerate(joint_names):
+        if jn in tm.virtual_joints:
+            cb = tm.virtual_joints[jn]
+            real_joints = cb(0.0)
+            for real_jn in real_joints:
+                if hasattr(cb, 'jax_angle_for'):
+                    angle_fn = cb.jax_angle_for(real_jn)
+                else:
+                    # Fallback: use pure_callback (not differentiable)
+                    def angle_fn(v, _cb=cb, _rjn=real_jn):
+                        import jax
+                        return jax.pure_callback(
+                            lambda v_: np.float32(_cb(float(v_))[_rjn]),
+                            jnp.float32, v)
+                real_to_chain[real_jn] = (i, angle_fn)
+        else:
+            real_to_chain[jn] = (i, lambda v: v)
+
+    def build_entries(ee_frame):
+        path = tm._shortest_path(tm.nodes.index(ee_frame), base_idx)
+        entries = []
+        for a, b in zip(path[:-1], path[1:]):
+            if (a, b) in joints_by_frames:
+                jn = joints_by_frames[(a, b)]
+                _, _, child2parent, axis, _, _ = tm._joints[jn]
+                if jn in real_to_chain:
+                    chain_idx, angle_fn = real_to_chain[jn]
+                    entries.append(('joint',
+                                    jnp.array(child2parent, dtype=jnp.float64),
+                                    np.array(axis, dtype=np.float64),
+                                    chain_idx, angle_fn))
+                else:
+                    entries.append(('fixed', jnp.array(child2parent, dtype=jnp.float64)))
+            elif (a, b) in tm.transforms:
+                entries.append(('fixed', jnp.array(tm.transforms[(a, b)], dtype=jnp.float64)))
+            elif (b, a) in tm.transforms:
+                entries.append(('fixed', jnp.array(
+                    np.linalg.inv(tm.transforms[(b, a)]), dtype=jnp.float64)))
+            else:
+                raise RuntimeError(f"No transform found for path step {a!r} → {b!r}")
+        return entries
+
+    all_path_entries = [build_entries(ee) for ee in ee_frames]
+    if joint_limits_np is None:
+        joint_limits_np = np.array([tm._joints[jn][4] for jn in joint_names],
+                                   dtype=np.float64)
+    joint_limits = jnp.array(joint_limits_np, dtype=jnp.float64)
+
+    return JaxFKParams(all_path_entries=all_path_entries, joint_limits=joint_limits)
+
+
+def _rot4_jax(axis, angle):
+    """4×4 rotation matrix from axis (3-vector, unit) and angle (scalar)."""
+    ux, uy, uz = axis
+    c = jnp.cos(angle)
+    s = jnp.sin(angle)
+    ci = 1.0 - c
+    return jnp.array([
+        [ci*ux*ux + c,      ci*ux*uy - uz*s,  ci*ux*uz + uy*s,  0.0],
+        [ci*uy*ux + uz*s,   ci*uy*uy + c,     ci*uy*uz - ux*s,  0.0],
+        [ci*uz*ux - uy*s,   ci*uz*uy + ux*s,  ci*uz*uz + c,     0.0],
+        [0.0,               0.0,               0.0,               1.0],
+    ])
+
+
+def _jax_multi_chain_forward(jax_params, joint_angles, ee_idx=0):
+    """Pure JAX FK: returns position of one EE frame in base frame.
+
+    Parameters
+    ----------
+    jax_params : JaxFKParams
+    joint_angles : jnp array, shape (n_joints,)
+    ee_idx : int
+        Index into jax_params.all_path_entries selecting which EE frame.
+
+    Returns
+    -------
+    pos : jnp array, shape (3,)
+    """
+    T = jnp.eye(4, dtype=jnp.float64)
+    for entry in jax_params.all_path_entries[ee_idx]:
+        if entry[0] == 'joint':
+            _, child2parent, axis, chain_idx, angle_fn = entry
+            theta = angle_fn(joint_angles[chain_idx])
+            R4 = _rot4_jax(axis, theta)
+            step = child2parent @ R4
+        else:
+            step = entry[1]
+        T = step @ T
+    return T[:3, 3]
+
+
+def _jax_multi_chain_forward_all(jax_params, joint_angles):
+    """Returns positions of ALL EE frames stacked as (n_ee, 3)."""
+    return jnp.stack([
+        _jax_multi_chain_forward(jax_params, joint_angles, i)
+        for i in range(len(jax_params.all_path_entries))])

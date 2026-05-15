@@ -296,6 +296,116 @@ class HandEmbodiment(TimeableMixin):
         """
         return self.target_finger_chains[finger_name].forward(joint_angles)
 
+    def solve_batch(self, pose_batch, handbase2world_batch=None):
+        """Batch embodiment for T timesteps.
+
+        Uses jax.lax.scan for O(1) memory overhead: one IK solve lives in JAX
+        memory at a time. Warm-starts each step from the previous solution,
+        which helps convergence on smooth trajectories.
+
+        Parameters
+        ----------
+        pose_batch : array, shape (T, 48)
+            MANO pose parameters per timestep.
+
+        handbase2world_batch : array, shape (T, 4, 4), optional (default: None)
+            Per-timestep transforms from MANO hand base to world. Not used
+            in the current FK; provided for interface completeness.
+
+        Returns
+        -------
+        joint_angles_batch : dict
+            Maps finger name to array of shape (T, n_joints).
+        """
+        import jax
+        import jaxopt
+        import jax.numpy as jnp
+        from .kinematics import _jax_multi_chain_forward_all
+
+        T = pose_batch.shape[0]
+        desired = self._mano_fk_batch(pose_batch)  # finger → (T, n_ee, 3)
+
+        result = {}
+        for finger_name in self.finger_names_:
+            chain = self.target_finger_chains[finger_name]
+            jax_params = chain._jax_params
+            lower = jnp.array(chain.joint_limits[:, 0], dtype=jnp.float64)
+            upper = jnp.array(chain.joint_limits[:, 1], dtype=jnp.float64)
+            des_jax = jnp.array(desired[finger_name], dtype=jnp.float64)
+
+            # Build and JIT-compile the per-step IK once per finger.
+            # jax.lax.scan: carry = previous q (warm start), xs = desired_positions
+            def make_scan_fn(jax_params_, lower_, upper_):
+                def scan_fn(q_prev, des_t):
+                    def obj(q):
+                        pos = _jax_multi_chain_forward_all(jax_params_, q)
+                        return jnp.sum(jnp.linalg.norm(des_t - pos, axis=-1))
+                    q_new = jaxopt.LBFGSB(fun=obj, maxiter=200).run(
+                        q_prev, bounds=(lower_, upper_)).params
+                    return q_new, q_new
+                return jax.jit(scan_fn)
+
+            scan_fn = make_scan_fn(jax_params, lower, upper)
+            init_q = jnp.zeros(chain.n_joints, dtype=jnp.float64)
+            _, Q = jax.lax.scan(scan_fn, init_q, des_jax)
+            result[finger_name] = np.array(Q)
+
+        return result
+
+    def _mano_fk_batch(self, pose_batch):
+        """Batch MANO FK for T timesteps → desired EE positions per finger.
+
+        Parameters
+        ----------
+        pose_batch : array, shape (T, 48)
+
+        Returns
+        -------
+        desired : dict
+            finger_name → array, shape (T, n_ee, 3), in robot base frame.
+        """
+        import jax
+        import jax.numpy as jnp
+        from .mano_jax import build_hand_vertices_fn
+
+        desired = {}
+        for finger_name in self.finger_names_:
+            mfk = self.mano_finger_kinematics[finger_name]
+            fp = mfk.finger_pose_params
+            idx = mfk.finger_pose_param_indices
+
+            # Build (or reuse) a JAX FK function for this finger's sub-model
+            if not hasattr(mfk, '_jax_fk_batch'):
+                fn = build_hand_vertices_fn(fp['kintree_table'])
+                mfk._jax_fk_batch = jax.jit(
+                    jax.vmap(fn, in_axes=(None, None, None, None, 0)))
+
+            # Construct optimizer pose batch: prepend 3 zeros (root joint)
+            finger_poses = pose_batch[:, idx]               # (T, n_params)
+            T_steps = finger_poses.shape[0]
+            roots = np.zeros((T_steps, 3), dtype=np.float64)
+            opt_poses = np.concatenate([roots, finger_poses], axis=1)  # (T, n_params+3)
+
+            J = jnp.array(fp['J'], dtype=jnp.float64)
+            weights = jnp.array(fp['weights'], dtype=jnp.float64)
+            v_template = jnp.array(fp['v_template'], dtype=jnp.float64)
+            posedirs = jnp.array(fp['posedirs'], dtype=jnp.float64)
+            poses_jax = jnp.array(opt_poses, dtype=jnp.float64)
+
+            # verts_batch: (T, n_finger_vertices, 3) in MANO hand base frame
+            verts_batch = np.asarray(
+                mfk._jax_fk_batch(J, weights, v_template, posedirs, poses_jax))
+
+            # Take first n_ee vertices and transform to robot base frame
+            n_ee = len(self.target_finger_chains[finger_name].ee_frames)
+            markers = verts_batch[:, :n_ee, :]  # (T, n_ee, 3)
+
+            R = self.handbase2robotbase[:3, :3]
+            t = self.handbase2robotbase[:3, 3]
+            desired[finger_name] = markers @ R.T + t[np.newaxis, np.newaxis, :]
+
+        return desired
+
 
 def load_kinematic_model(hand_config, unscaled_visual_model=True):
     """Load kinematic model of a robotic hand.

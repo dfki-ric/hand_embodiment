@@ -120,6 +120,12 @@ class MiaVirtualThumbJoint:
             angle = self.min_angle
         return {self.real_joint_name: angle}
 
+    def jax_angle_for(self, real_joint_name):
+        import jax.numpy as jnp
+        max_a, min_a = float(self.max_angle), float(self.min_angle)
+        def fn(v): return jnp.where(v >= 0.0, max_a, min_a)
+        return fn
+
 
 manobase2miabase = pt.transform_from_exponential_coordinates(
     [-1.006, 0.865, -1.723, -0.108, 0.088, 0.011])
@@ -277,6 +283,15 @@ class ShadowVirtualF0Joint:
         return {self.first_real_joint_name: first_joint_value,
                 self.second_real_joint_name: second_joint_value}
 
+    def jax_angle_for(self, real_joint_name):
+        import jax.numpy as jnp
+        fmax = float(self.first_joint_max)
+        if real_joint_name == self.first_real_joint_name:
+            def fn(v): return jnp.clip(v, 0.0, fmax)
+        else:
+            def fn(v): return jnp.maximum(v - fmax, 0.0)
+        return fn
+
 
 manobase2shadowbase = pt.transform_from_exponential_coordinates(
     [-0.07, 1.77, -0.148, -0.309, -0.021, 0.272])
@@ -388,6 +403,12 @@ class RobotiqJoint:
                 "left_inner_finger_joint": value,
                 "right_inner_finger_joint": value}
 
+    def jax_angle_for(self, real_joint_name):
+        import jax.numpy as jnp
+        coeff = float(self(1.0)[real_joint_name])
+        def fn(v): return coeff * v
+        return fn
+
 
 manobase2robotiqbase = pt.transform_from_exponential_coordinates(
     [-0.148, 1.489, -0.881, -0.148, -0.009, 0.083])
@@ -445,6 +466,12 @@ class OffsetJoint:
 
     def __call__(self, value):
         return {self.joint_name: value + self.offset}
+
+    def jax_angle_for(self, real_joint_name):
+        import jax.numpy as jnp
+        offset = float(self.offset)
+        def fn(v): return v + offset
+        return fn
 
 
 def kinematic_model_hook_barrett(kin, **kwargs):
