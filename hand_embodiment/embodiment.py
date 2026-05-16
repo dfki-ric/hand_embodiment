@@ -176,7 +176,12 @@ class HandEmbodiment(TimeableMixin):
         at_j = jnp.array(at_np)
         lower_j = jnp.array(lower_np)
         upper_j = jnp.array(upper_np)
-        lm_lams = jnp.exp(jnp.linspace(jnp.log(0.01), jnp.log(1e-5), 10))
+        # Shadow FK Jacobian: dp/dq ~ link_length ~ 0.01-0.04 m/rad,
+        # so J^T J diagonal ~ 1e-4 to 1.6e-3.  λ_min = 1e-4 keeps us in the
+        # gradient-descent regime and prevents Newton-like overshoots (~0.4 rad)
+        # that cause oscillation.  Step clamped to 0.15 rad for stability.
+        lm_lams = jnp.exp(jnp.linspace(jnp.log(0.01), jnp.log(1e-4), 15))
+        max_step_rob = 0.15
 
         def _fk_one_ee(q, T0s_e, is_j_e, axes_e, jidx_e, at_e):
             """FK for one EE path — Python loop unrolled by JAX for fusion."""
@@ -209,6 +214,8 @@ class HandEmbodiment(TimeableMixin):
                 J = jax.jacfwd(fk)(q).reshape(-1, max_j)
                 A = J.T @ J + lam * jnp.eye(max_j, dtype=jnp.float64)
                 delta = jnp.linalg.solve(A, J.T @ r)
+                norm = jnp.linalg.norm(delta)
+                delta = jnp.where(norm > max_step_rob, delta * (max_step_rob / norm), delta)
                 return jnp.clip(q + delta, lower_f, upper_f), None
 
             q_f, _ = jax.lax.scan(lm_step, q0, lm_lams)

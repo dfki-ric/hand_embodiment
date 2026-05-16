@@ -360,6 +360,8 @@ class ManoFingerKinematics:
 
         self.last_forward_result = None
 
+        self._build_jax_inverse(action_weights)
+
     def _search_similar_vertices(self, finger_pose_param_indices, hand_state):
         # search for vertices that are influenced by the same pose parameters
         # TODO mapping to indices of weights might be correct by accident
@@ -441,6 +443,63 @@ class ManoFingerKinematics:
             pose=self._optimizer_pose, **self.finger_pose_params)
         return self.last_forward_result
 
+    def _build_jax_inverse(self, action_weights):
+        """Build and warm-up a JAX LM inverse for this finger."""
+        import jax
+        jax.config.update("jax_enable_x64", True)
+        import jax.numpy as jnp
+        from .mano_jax import build_hand_vertices_fn
+
+        pp = self.finger_pose_params
+        fwd_fn = build_hand_vertices_fn(pp["kintree_table"])
+        J_j = jnp.array(pp["J"])
+        w_j = jnp.array(pp["weights"])
+        vt_j = jnp.array(pp["v_template"])
+        pd_j = jnp.array(pp["posedirs"])
+
+        n_pose = len(self.current_pose)
+        n_markers = len(self.finger_vertex_indices)
+        aw = jnp.array(action_weights)
+
+        lower = jnp.full(n_pose, -0.4 * np.pi)
+        upper = jnp.full(n_pose, 0.4 * np.pi)
+        # MANO FK Jacobian scale: dposition/dangle ~ 0.02-0.08 m/rad,
+        # so J^T J diagonal ~ 0.001-0.006.  λ starts at 0.05 (gradient-descent
+        # steps ~0.1 rad) and decays to 0.001 for Newton-like fine convergence.
+        # Step clamped to 0.2 rad to prevent divergence for unreachable targets.
+        lm_lams = jnp.exp(jnp.linspace(jnp.log(0.05), jnp.log(0.001), 30))
+        max_step = 0.2
+
+        def _residual(pose, des):
+            # des.shape[0] is static at JIT trace time — retraces per unique shape.
+            n_des = des.shape[0]
+            full_pose = jnp.concatenate([jnp.zeros(3), pose])
+            verts = fwd_fn(J_j, w_j, vt_j, pd_j, full_pose)
+            diff = (verts[:n_des] - des).ravel()
+            pos_pos = jnp.maximum(0.0, pose)
+            neg_pos = -jnp.minimum(0.0, pose)
+            reg = jnp.array([jnp.dot(aw[0], pos_pos), jnp.dot(aw[1], neg_pos)])
+            return jnp.concatenate([diff, reg])
+
+        def _inverse_jax(pose0, des):
+            def step(pose, lam):
+                r = _residual(pose, des)
+                J = jax.jacfwd(lambda p: _residual(p, des))(pose)
+                A = J.T @ J + lam * jnp.eye(n_pose)
+                delta = jnp.linalg.solve(A, -(J.T @ r))
+                norm = jnp.linalg.norm(delta)
+                delta = jnp.where(norm > max_step, delta * (max_step / norm), delta)
+                return jnp.clip(pose + delta, lower, upper), None
+            pose_f, _ = jax.lax.scan(step, pose0, lm_lams)
+            return pose_f
+
+        self._jit_inverse = jax.jit(_inverse_jax)
+
+        # Warmup — compile once at init time so first frame is fast.
+        self._jit_inverse(
+            jnp.zeros(n_pose, dtype=jnp.float64),
+            jnp.zeros((n_markers, 3), dtype=jnp.float64))
+
     def inverse(self, position):
         """Estimate finger joint parameters from position.
 
@@ -454,9 +513,12 @@ class ManoFingerKinematics:
         current_pose : array, shape (n_finger_joints * 3,)
             Joint angles.
         """
-        res = minimize(self.finger_error, self.current_pose, args=(position,),
-                       method="SLSQP", bounds=self.bounds)  # SLSQP, COBYLA
-        self.current_pose[:] = res["x"]
+        import jax.numpy as jnp
+        pose_f = self._jit_inverse(
+            jnp.array(self.current_pose, dtype=jnp.float64),
+            jnp.array(position, dtype=jnp.float64))
+        self.current_pose[:] = np.array(pose_f)
+        self.forward(self.current_pose)
         return self.current_pose
 
 
