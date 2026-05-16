@@ -254,11 +254,11 @@ def kinematic_model_hook_shadow(kin, **kwargs):
             [0, 0, 1, 0],
             [0, 0, 0, 1]]))
     kin.tm.add_transform(
-        "little_middle", "rh_lfproximal",
+        "little_middle", "rh_lfmiddle",
         np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0.015],
-            [0, 0, 1, 0.02],
+            [0, 0, 1, 0.0],
             [0, 0, 0, 1]]))
 
 
@@ -332,6 +332,31 @@ SHADOW_HAND_CONFIG = {
             "middle": "middle_middle",
             "ring": "ring_middle",
             "little": "little_middle"
+        },
+    # Tip (index 0) weighted 10× over the intermediate marker (index 1).
+    # The Shadow's finger proportions differ from MANO, so the two targets
+    # can conflict.  High tip weight prevents the distal joints from being
+    # over-flexed to satisfy the intermediate constraint at the expense of
+    # tip accuracy, which is critical for manipulation.
+    "ee_weights":
+        {
+            "thumb":  [1.0, 0.1],
+            "index":  [1.0, 0.1],
+            "middle": [1.0, 0.1],
+            "ring":   [1.0, 0.1],
+            "little": [1.0, 0.1],
+        },
+    # Per-joint regularisation weights added to the LM Hessian diagonal.
+    # Scale is comparable to smooth_w (1e-3) and the Cartesian J^T J diagonal
+    # (~6e-4 for a 25 mm phalanx).  This discourages the MCP abduction joints
+    # (J4) from being exploited to reduce along-finger distance at the cost of
+    # orthogonal displacement.  Joint order follows "joint_names" above.
+    "joint_weights":
+        {
+            "index":  [1e-3, 0.0, 0.0],    # FFJ4, FFJ3, FFJ0
+            "middle": [1e-3, 0.0, 0.0],    # MFJ4, MFJ3, MFJ0
+            "ring":   [1e-3, 0.0, 0.0],    # RFJ4, RFJ3, RFJ0
+            "little": [0.0, 1e-3, 0.0, 0.0],  # LFJ5, LFJ4, LFJ3, LFJ0
         },
     "handbase2robotbase": manobase2shadowbase,
     "model":

@@ -116,9 +116,9 @@ class HandEmbodiment(TimeableMixin):
 
         self.verbose = verbose
 
-        self._build_vmap_ik()
+        self._build_vmap_ik(target_config)
 
-    def _build_vmap_ik(self):
+    def _build_vmap_ik(self, target_config):
         """Build and warm-up a vmapped JIT that parallelises IK over all fingers.
 
         Uses jax.vmap to vectorise the LM IK over all fingers, allowing XLA
@@ -169,6 +169,25 @@ class HandEmbodiment(TimeableMixin):
                         T0s_np[fi, ei, si] = np.array(entry[1])
                         # is_j stays False; padding identity already set
 
+        # Per-finger EE weights: (n_f, n_ee*3). ee_weights in target_config is a
+        # dict mapping finger_name -> [w_ee0, w_ee1, ...].  Weighting tip > middle
+        # (e.g. [1.0, 0.1]) makes the optimizer prioritise Cartesian tip accuracy
+        # over matching the intermediate marker, preventing over-flexion of distal
+        # joints when the finger proportions of the robot differ from MANO.
+        ee_w_config = target_config.get("ee_weights", {})
+        weights_np = np.ones((n_f, n_ee * 3))
+        for fi, fname in enumerate(self.finger_names_):
+            if fname in ee_w_config:
+                w_ee = np.asarray(ee_w_config[fname], dtype=float)  # (n_ee,)
+                weights_np[fi] = np.repeat(w_ee, 3)                 # (n_ee*3,)
+
+        jreg_cfg = target_config.get("joint_weights", {})
+        jreg_np = np.zeros((n_f, max_j))
+        for fi, fname in enumerate(self.finger_names_):
+            if fname in jreg_cfg:
+                w_j = np.asarray(jreg_cfg[fname], dtype=float)
+                jreg_np[fi, :len(w_j)] = w_j
+
         T0s_j = jnp.array(T0s_np)
         is_j_j = jnp.array(is_j_np)
         axes_j = jnp.array(axes_np)
@@ -176,6 +195,8 @@ class HandEmbodiment(TimeableMixin):
         at_j = jnp.array(at_np)
         lower_j = jnp.array(lower_np)
         upper_j = jnp.array(upper_np)
+        weights_j = jnp.array(weights_np)
+        jreg_j = jnp.array(jreg_np)
         # Shadow FK Jacobian: dp/dq ~ link_length ~ 0.01-0.04 m/rad,
         # so J^T J diagonal ~ 1e-4 to 1.6e-3.  λ_min = 1e-4 keeps us in the
         # gradient-descent regime and prevents Newton-like overshoots (~0.4 rad)
@@ -209,18 +230,31 @@ class HandEmbodiment(TimeableMixin):
                 _fk_one_ee(q, T0s_f[ei], is_j_f[ei], axes_f[ei], jidx_f[ei], at_f[ei])
                 for ei in range(n_ee)])
 
-        def _ik_finger(q0, des, T0s_f, is_j_f, axes_f, jidx_f, at_f, lower_f, upper_f):
+        def _ik_finger(q0, des, T0s_f, is_j_f, axes_f, jidx_f, at_f,
+                       lower_f, upper_f, w_f, jreg_f):
             def fk(q):
                 return _fk_finger(q, T0s_f, is_j_f, axes_f, jidx_f, at_f)
 
             def lm_step(q, lam):
                 r = (des - fk(q)).ravel()
                 J = jax.jacfwd(fk)(q).reshape(-1, max_j)
+                # Apply per-EE weights: scale residual and Jacobian rows so that
+                # J_w^T J_w = J^T W^2 J with W = diag(w_f).  This prioritises
+                # tip accuracy (high weight) over the intermediate marker (low
+                # weight) without changing the solver structure.
+                r_w = r * w_f
+                J_w = J * w_f[:, None]
+                # Per-joint regularisation: adds diag(jreg_f) to the Hessian
+                # and jreg_f*q to the gradient.  Discourages abduction joints
+                # (e.g. LFJ4) from being exploited to reduce along-finger
+                # Cartesian error at the cost of orthogonal displacement.
                 # Temporal smoothing: augments Hessian by smooth_w*I and adds
                 # smooth_w*(q-q0) to the gradient, keeping q near the previous
                 # frame's solution without stacking extra Jacobian rows.
-                A = J.T @ J + (lam + smooth_w) * jnp.eye(max_j, dtype=jnp.float64)
-                rhs = J.T @ r - smooth_w * (q - q0)
+                A = (J_w.T @ J_w
+                     + jnp.diag(jreg_f)
+                     + (lam + smooth_w) * jnp.eye(max_j, dtype=jnp.float64))
+                rhs = J_w.T @ r_w - jreg_f * q - smooth_w * (q - q0)
                 delta = jnp.linalg.solve(A, rhs)
                 norm = jnp.linalg.norm(delta)
                 delta = jnp.where(norm > max_step_rob, delta * (max_step_rob / norm), delta)
@@ -231,7 +265,8 @@ class HandEmbodiment(TimeableMixin):
 
         def _ik_all_vmap(q0s, dess):
             return jax.vmap(_ik_finger)(
-                q0s, dess, T0s_j, is_j_j, axes_j, jidx_j, at_j, lower_j, upper_j)
+                q0s, dess, T0s_j, is_j_j, axes_j, jidx_j, at_j,
+                lower_j, upper_j, weights_j, jreg_j)
 
         self._jit_ik_vmap = jax.jit(_ik_all_vmap)
         self._vmap_n_f = n_f

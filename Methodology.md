@@ -176,19 +176,52 @@ robotic hand that minimise
 
 $$\boldsymbol{r}_i^* = \operatorname*{arg\,min}_{\boldsymbol{r}_i}
   \sum_{j=1}^{2}
+  \tilde{c}_{i,j}
   \left\|f_{\tilde{\boldsymbol{\beta}},i,j}(\boldsymbol{q}_i^*) - g_{i,j}(\boldsymbol{r}_i)\right\|^2$$
 
 subject to $\tilde{\boldsymbol{r}}^{\min}_i \leq \boldsymbol{r}_i \leq \tilde{\boldsymbol{r}}^{\max}_i$,
-where $g_{i,j}$ is the forward kinematics of the robotic finger.
+where $g_{i,j}$ is the forward kinematics of the robotic finger and
+$\tilde{c}_{i,j} \geq 0$ is a per-end-effector importance weight.
 
-We apply the same LM solver structure:
+### 2.1 Importance Weighting and Joint Regularisation
 
-$$\left(\mathbf{G}_k^T \mathbf{G}_k + (\mu_k + \omega_s)\mathbf{I}\right)
+For manipulation tasks, accurate placement of the fingertip is more important
+than accurate placement of intermediate phalanx markers: an error at the tip
+directly affects contact, whereas a mid-chain error is partially compensated
+by the remaining joints.  We therefore set $\tilde{c}_{i,\text{tip}} = 1$ and
+$\tilde{c}_{i,\text{mid}} = 0.1$ for all fingers, making the tip ten times
+more influential than the middle-phalanx target.
+
+A second class of degeneracy arises from **abduction–adduction joints** (e.g.
+the Shadow's LFJ4, MCP lateral joint of the little finger): the optimizer may
+exploit a lateral degree of freedom to reduce the along-finger Cartesian
+residual at the cost of orthogonal displacement that exceeds the Cartesian
+improvement — a local minimum invisible to a purely Cartesian objective.  We
+suppress this by adding a per-joint regularisation penalty
+$\frac{1}{2}\sum_j \tilde{\omega}_j r_j^2$, with $\tilde{\omega}_{j}$ set to
+$10^{-3}$ for abduction joints and $0$ for flexion joints.
+
+Introducing the EE weight matrix
+$\mathbf{W}_i = \mathrm{diag}\!\left(\sqrt{\tilde{c}_{i,1}}\,\mathbf{1}_3,\;
+\sqrt{\tilde{c}_{i,2}}\,\mathbf{1}_3\right) \in \mathbb{R}^{6\times 6}$,
+the joint regularisation diagonal
+$\tilde{\boldsymbol{\Omega}}_i = \mathrm{diag}(\tilde{\omega}_{i,1},\ldots,\tilde{\omega}_{i,n_r})$,
+and the unweighted residual
+$\boldsymbol{e}^{(k)} = \bigl(g_{i,j}(\boldsymbol{r}^{(k)}) - \text{desired}_{i,j}\bigr).\mathrm{ravel}()$,
+the augmented LM normal equations become
+
+$$\left(\mathbf{G}_{w,k}^T \mathbf{G}_{w,k}
+    + \tilde{\boldsymbol{\Omega}}_i
+    + (\mu_k + \omega_s)\mathbf{I}\right)
   \Delta\boldsymbol{r}^{(k)}
-= \mathbf{G}_k^T \boldsymbol{e}^{(k)} - \omega_s\!\left(\boldsymbol{r}^{(k)} - \boldsymbol{r}^{(0)}\right),$$
+= \mathbf{G}_{w,k}^T \boldsymbol{e}_{w}^{(k)}
+  - \tilde{\boldsymbol{\Omega}}_i\,\boldsymbol{r}^{(k)}
+  - \omega_s\!\left(\boldsymbol{r}^{(k)} - \boldsymbol{r}^{(0)}\right),$$
 
-where $\boldsymbol{e}^{(k)} = (g_{i,j}(\boldsymbol{r}^{(k)}) - \text{desired}).\text{ravel}()$
-and $\mathbf{G}_k = \partial\, \boldsymbol{e}/\partial\,\boldsymbol{r}$ via `jax.jacfwd`.
+where $\boldsymbol{e}_{w}^{(k)} = \mathbf{W}_i\,\boldsymbol{e}^{(k)}$ and
+$\mathbf{G}_{w,k} = \mathbf{W}_i\,\mathbf{G}_k$,
+with $\mathbf{G}_k = \partial\,\boldsymbol{e}/\partial\,\boldsymbol{r}\big|_{\boldsymbol{r}^{(k)}}$
+computed via `jax.jacfwd`.
 The robotic FK $g_{i,j}$ is implemented as a pure JAX function by unrolling
 the kinematic chain (sequence of fixed transforms and axis-angle rotations)
 into a static Python loop at trace time, so the entire chain evaluates as a
@@ -197,14 +230,43 @@ single fused XLA computation.
 For the Shadow Dexterous Hand, the damping schedule uses $\mu_0 = 10^{-2}$,
 $\mu_K = 10^{-4}$, $K = 15$ iterations, with step clamp
 $\delta_{\max} = 0.15\,\text{rad}$ and temporal smoothing $\omega_s = 10^{-3}$.
-The schedule keeps $\mu_k$ above $\approx \|\mathbf{G}^T\mathbf{G}\|$ throughout,
+The schedule keeps $\mu_k$ above $\approx \|\mathbf{G}_w^T\mathbf{G}_w\|$ throughout,
 preventing Newton-like overshoots caused by the shorter link lengths of the
 robotic hand (Jacobian scale $\approx 0.01$–$0.04$ m/rad, giving
 $\mathbf{G}^T\mathbf{G} \approx 10^{-4}$–$1.6\times10^{-3}$).
 
 All fingers are solved in parallel via `jax.vmap` over a batched FK
 function parameterised by the per-finger kinematic data (joint axes,
-transforms, limits), compiled once at initialisation with `jax.jit`.
+transforms, limits, weights $\tilde{c}_{i,j}$), compiled once at
+initialisation with `jax.jit`.
+
+### 2.2 Kinematic Frame Calibration
+
+The embodiment mapping requires assigning each MANO fingertip and
+mid-phalanx target to a corresponding frame in the robot's kinematic
+model.  A mismatch in the distance between these two frames — the
+**effective finger span** — forces the IK to over- or under-flex the
+distal joints to satisfy both constraints simultaneously.
+
+For the Shadow Dexterous Hand, a span mismatch was identified for the
+little finger.  The MANO model (fitted to the dataset used) places the
+little fingertip and the middle-phalanx marker
+$\|\hat{\boldsymbol{p}}_{\text{little},\text{tip}} -
+   \hat{\boldsymbol{p}}_{\text{little},\text{mid}}\|
+= 50.8\,\mathrm{mm}$ apart.
+The original configuration anchored the mid-phalanx target frame to the
+proximal link (\texttt{rh\_lfproximal}) with a fixed offset, placing it
+$76.2\,\mathrm{mm}$ from the fingertip frame — a $50\,\%$ over-estimate.
+The IK reconciled this mismatch by hyper-flexing the joint immediately
+proximal to the tip, causing the visible little-finger curl.
+
+The corrected configuration anchors the mid-phalanx target frame to the
+middle link (\texttt{rh\_lfmiddle}), reducing the effective span to
+$51.2\,\mathrm{mm}$ and the mismatch to $0.4\,\mathrm{mm}$ ($< 1\,\%$).
+With the corrected frame, combined with tip-priority weighting
+($\tilde{c}_{\text{tip}} = 1$, $\tilde{c}_{\text{mid}} = 0.1$), the
+little finger reaches the target contact pose without pathological
+joint configurations.
 
 ---
 

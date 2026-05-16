@@ -346,6 +346,8 @@ class MarkerBasedRecordMapping(TimeableMixin):
 
         for fi, (fname, fk) in enumerate(zip(finger_names, fks)):
             if not has_markers[fi]:
+                if fk.last_forward_result is None:
+                    fk.forward(fk.current_pose)
                 continue
             pose_f = all_poses[fi]
             if not np.any(np.isnan(pose_f)):
