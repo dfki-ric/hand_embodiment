@@ -467,8 +467,11 @@ class ManoFingerKinematics:
         # so J^T J diagonal ~ 0.001-0.006.  λ starts at 0.05 (gradient-descent
         # steps ~0.1 rad) and decays to 0.001 for Newton-like fine convergence.
         # Step clamped to 0.2 rad to prevent divergence for unreachable targets.
+        # Temporal smoothing (smooth_w) penalises deviation from pose0 (the
+        # previous frame's solution), preventing jumps between local minima.
         lm_lams = jnp.exp(jnp.linspace(jnp.log(0.05), jnp.log(0.001), 30))
         max_step = 0.2
+        smooth_w = jnp.float64(2e-3)
 
         def _residual(pose, des):
             # des.shape[0] is static at JIT trace time — retraces per unique shape.
@@ -485,8 +488,11 @@ class ManoFingerKinematics:
             def step(pose, lam):
                 r = _residual(pose, des)
                 J = jax.jacfwd(lambda p: _residual(p, des))(pose)
-                A = J.T @ J + lam * jnp.eye(n_pose)
-                delta = jnp.linalg.solve(A, -(J.T @ r))
+                # Temporal smoothing: augments Hessian diagonal by smooth_w and
+                # adds smooth_w*(pose-pose0) to gradient, keeping the solution
+                # near the previous frame to prevent local-minima jumps.
+                A = J.T @ J + (lam + smooth_w) * jnp.eye(n_pose)
+                delta = jnp.linalg.solve(A, -(J.T @ r) - smooth_w * (pose - pose0))
                 norm = jnp.linalg.norm(delta)
                 delta = jnp.where(norm > max_step, delta * (max_step / norm), delta)
                 return jnp.clip(pose + delta, lower, upper), None
