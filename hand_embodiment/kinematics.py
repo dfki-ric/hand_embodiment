@@ -629,6 +629,7 @@ class MultiChain:
             error = jnp.sum(jnp.linalg.norm(des - _fk(q_final), axis=-1))
             return q_final, error
 
+        self._ik_fn = _ik_fn  # raw (un-jitted) for fusing into a larger jit
         self._jit_ik = jax.jit(_ik_fn)
 
         def _scan_step(q_prev, des_t):

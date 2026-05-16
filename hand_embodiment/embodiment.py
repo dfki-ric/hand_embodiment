@@ -116,17 +116,34 @@ class HandEmbodiment(TimeableMixin):
 
         self.verbose = verbose
 
-        self._warmup_jit()
+        self._build_fused_ik()
 
-    def _warmup_jit(self):
-        """Trigger JIT compilation for all finger IK functions at init time."""
+    def _build_fused_ik(self):
+        """Build and warm-up a single fused JIT for all finger IK solvers.
+
+        All finger LM solvers run in one XLA dispatch, allowing the GPU
+        scheduler to execute the independent lax.scan operations concurrently.
+        """
+        import jax
         import jax.numpy as jnp
-        for finger_name in self.finger_names_:
-            chain = self.target_finger_chains[finger_name]
-            n_ee = len(chain.ee_frames)
-            chain._jit_ik(
-                jnp.zeros(chain.n_joints, dtype=jnp.float64),
-                jnp.zeros((n_ee, 3), dtype=jnp.float64))
+
+        chains_list = [self.target_finger_chains[f] for f in self.finger_names_]
+        ik_fns_ = [c._ik_fn for c in chains_list]
+
+        def _ik_all_fingers(qs, dess):
+            results = []
+            for fn, q, des in zip(ik_fns_, qs, dess):
+                q_new, _ = fn(q, des)
+                results.append(q_new)
+            return results
+
+        self._jit_ik_all = jax.jit(_ik_all_fingers)
+
+        # Warmup — triggers JIT compilation for all fingers at once.
+        qs0 = [jnp.zeros(c.n_joints, dtype=jnp.float64) for c in chains_list]
+        dess0 = [jnp.zeros((len(c.ee_frames), 3), dtype=jnp.float64)
+                 for c in chains_list]
+        self._jit_ik_all(qs0, dess0)
 
     def solve(self, handbase2world=None, return_desired_positions=False,
               use_cached_forward_kinematics=False):
@@ -225,11 +242,14 @@ class HandEmbodiment(TimeableMixin):
             Desired positions of expected marker positions in frame of the
             robotic target system.
         """
-        for finger_name in self.finger_names_:
-            self.joint_angles[finger_name] = \
-                self.target_finger_chains[finger_name].inverse_position(
-                    desired_positions[finger_name],
-                    self.joint_angles[finger_name])
+        import jax.numpy as jnp
+        qs = [jnp.array(self.joint_angles[f], dtype=jnp.float64)
+              for f in self.finger_names_]
+        dess = [jnp.array(desired_positions[f], dtype=jnp.float64)
+                for f in self.finger_names_]
+        new_qs = self._jit_ik_all(qs, dess)
+        for f, q_new in zip(self.finger_names_, new_qs):
+            self.joint_angles[f] = np.array(q_new)
 
         updated_fingers = set()
         if self.coupled_joints is not None:
