@@ -616,7 +616,7 @@ class MultiChain:
         # down to 1e-4 (Gauss-Newton-like, fast near solution).
         # Scale relative to typical diag(J^T J) ~ 0.01 for finger chains in metres.
         _lm_lambdas = jnp.exp(
-            jnp.linspace(jnp.log(0.1), jnp.log(1e-4), 20))
+            jnp.linspace(jnp.log(0.01), jnp.log(1e-5), 10))
 
         def _ik_fn(q0, des):
             def step(q, lam):
