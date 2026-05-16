@@ -760,7 +760,8 @@ def _build_jax_fk_params(tm, joint_names, base_frame, ee_frames,
     joints_by_frames = {(v[0], v[1]): k for k, v in tm._joints.items()}
     base_idx = tm.nodes.index(base_frame)
 
-    # Build mapping: real_joint_name → (chain_idx, jax_angle_fn)
+    # Build mapping: real_joint_name → (chain_idx, jax_angle_fn, (scale, offset, lo, hi))
+    _IDENTITY_APARAMS = (1.0, 0.0, -np.inf, np.inf)
     real_to_chain = {}
     for i, jn in enumerate(joint_names):
         if jn in tm.virtual_joints:
@@ -776,9 +777,15 @@ def _build_jax_fk_params(tm, joint_names, base_frame, ee_frames,
                         return jax.pure_callback(
                             lambda v_: np.float32(_cb(float(v_))[_rjn]),
                             jnp.float32, v)
-                real_to_chain[real_jn] = (i, angle_fn)
+                if hasattr(cb, 'jax_angle_params_for'):
+                    aparams = cb.jax_angle_params_for(real_jn)
+                    if aparams is None:
+                        aparams = _IDENTITY_APARAMS
+                else:
+                    aparams = _IDENTITY_APARAMS
+                real_to_chain[real_jn] = (i, angle_fn, aparams)
         else:
-            real_to_chain[jn] = (i, lambda v: v)
+            real_to_chain[jn] = (i, lambda v: v, _IDENTITY_APARAMS)
 
     def build_entries(ee_frame):
         path = tm._shortest_path(tm.nodes.index(ee_frame), base_idx)
@@ -788,11 +795,11 @@ def _build_jax_fk_params(tm, joint_names, base_frame, ee_frames,
                 jn = joints_by_frames[(a, b)]
                 _, _, child2parent, axis, _, _ = tm._joints[jn]
                 if jn in real_to_chain:
-                    chain_idx, angle_fn = real_to_chain[jn]
+                    chain_idx, angle_fn, aparams = real_to_chain[jn]
                     entries.append(('joint',
                                     jnp.array(child2parent, dtype=jnp.float64),
                                     np.array(axis, dtype=np.float64),
-                                    chain_idx, angle_fn))
+                                    chain_idx, angle_fn, *aparams))
                 else:
                     entries.append(('fixed', jnp.array(child2parent, dtype=jnp.float64)))
             elif (a, b) in tm.transforms:
@@ -827,6 +834,20 @@ def _rot4_jax(axis, angle):
     ])
 
 
+def _rot4_jax_dynamic(axis, angle):
+    """4×4 rotation matrix. Works with traced JAX array axes (no Python unpacking)."""
+    ux = axis[0]; uy = axis[1]; uz = axis[2]
+    c = jnp.cos(angle); s = jnp.sin(angle); ci = 1.0 - c
+    z = jnp.zeros_like(c)
+    o = jnp.ones_like(c)
+    return jnp.stack([
+        jnp.stack([ci*ux*ux + c,    ci*ux*uy - uz*s, ci*ux*uz + uy*s, z]),
+        jnp.stack([ci*uy*ux + uz*s, ci*uy*uy + c,    ci*uy*uz - ux*s, z]),
+        jnp.stack([ci*uz*ux - uy*s, ci*uz*uy + ux*s, ci*uz*uz + c,    z]),
+        jnp.stack([z,               z,               z,               o]),
+    ])
+
+
 def _jax_multi_chain_forward(jax_params, joint_angles, ee_idx=0):
     """Pure JAX FK: returns position of one EE frame in base frame.
 
@@ -844,7 +865,7 @@ def _jax_multi_chain_forward(jax_params, joint_angles, ee_idx=0):
     T = jnp.eye(4, dtype=jnp.float64)
     for entry in jax_params.all_path_entries[ee_idx]:
         if entry[0] == 'joint':
-            _, child2parent, axis, chain_idx, angle_fn = entry
+            _, child2parent, axis, chain_idx, angle_fn = entry[0], entry[1], entry[2], entry[3], entry[4]
             theta = angle_fn(joint_angles[chain_idx])
             R4 = _rot4_jax(axis, theta)
             step = child2parent @ R4

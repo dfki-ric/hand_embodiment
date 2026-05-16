@@ -116,34 +116,117 @@ class HandEmbodiment(TimeableMixin):
 
         self.verbose = verbose
 
-        self._build_fused_ik()
+        self._build_vmap_ik()
 
-    def _build_fused_ik(self):
-        """Build and warm-up a single fused JIT for all finger IK solvers.
+    def _build_vmap_ik(self):
+        """Build and warm-up a vmapped JIT that parallelises IK over all fingers.
 
-        All finger LM solvers run in one XLA dispatch, allowing the GPU
-        scheduler to execute the independent lax.scan operations concurrently.
+        Uses jax.vmap to vectorise the LM IK over all fingers, allowing XLA
+        to fuse their FK + Jacobian + solve into a single CUDA kernel.
         """
         import jax
         import jax.numpy as jnp
+        from .kinematics import _rot4_jax_dynamic
 
         chains_list = [self.target_finger_chains[f] for f in self.finger_names_]
-        ik_fns_ = [c._ik_fn for c in chains_list]
+        n_f = len(chains_list)
+        n_ee_list = [len(c.ee_frames) for c in chains_list]
+        assert len(set(n_ee_list)) == 1, "All fingers must have the same number of EE frames for vmap"
+        n_ee = n_ee_list[0]
+        max_j = max(c.n_joints for c in chains_list)
+        max_steps = max(
+            len(entries)
+            for c in chains_list
+            for entries in c._jax_params.all_path_entries)
 
-        def _ik_all_fingers(qs, dess):
-            results = []
-            for fn, q, des in zip(ik_fns_, qs, dess):
-                q_new, _ = fn(q, des)
-                results.append(q_new)
-            return results
+        # Padded arrays: (n_f, n_ee, max_steps, ...)
+        T0s_np = np.tile(np.eye(4), (n_f, n_ee, max_steps, 1, 1))
+        is_j_np = np.zeros((n_f, n_ee, max_steps), dtype=bool)
+        axes_np = np.zeros((n_f, n_ee, max_steps, 3))
+        jidx_np = np.zeros((n_f, n_ee, max_steps), dtype=np.int32)
+        # angle_transform: (scale, offset, lo, hi) per step
+        at_np = np.zeros((n_f, n_ee, max_steps, 4))
+        at_np[:, :, :, 0] = 1.0        # scale=1
+        at_np[:, :, :, 2] = -np.inf    # lo=-inf
+        at_np[:, :, :, 3] = np.inf     # hi=+inf
+        lower_np = np.zeros((n_f, max_j))
+        upper_np = np.zeros((n_f, max_j))
 
-        self._jit_ik_all = jax.jit(_ik_all_fingers)
+        for fi, chain in enumerate(chains_list):
+            for ji in range(chain.n_joints):
+                lower_np[fi, ji] = chain.joint_limits[ji, 0]
+                upper_np[fi, ji] = chain.joint_limits[ji, 1]
+            for ei, entries in enumerate(chain._jax_params.all_path_entries):
+                for si, entry in enumerate(entries):
+                    if entry[0] == 'joint':
+                        _, c2p, axis, cidx, _, sc, off, lo, hi = entry
+                        T0s_np[fi, ei, si] = np.array(c2p)
+                        is_j_np[fi, ei, si] = True
+                        axes_np[fi, ei, si] = axis
+                        jidx_np[fi, ei, si] = cidx
+                        at_np[fi, ei, si] = [sc, off, lo, hi]
+                    else:
+                        T0s_np[fi, ei, si] = np.array(entry[1])
+                        # is_j stays False; padding identity already set
 
-        # Warmup — triggers JIT compilation for all fingers at once.
-        qs0 = [jnp.zeros(c.n_joints, dtype=jnp.float64) for c in chains_list]
-        dess0 = [jnp.zeros((len(c.ee_frames), 3), dtype=jnp.float64)
-                 for c in chains_list]
-        self._jit_ik_all(qs0, dess0)
+        T0s_j = jnp.array(T0s_np)
+        is_j_j = jnp.array(is_j_np)
+        axes_j = jnp.array(axes_np)
+        jidx_j = jnp.array(jidx_np)
+        at_j = jnp.array(at_np)
+        lower_j = jnp.array(lower_np)
+        upper_j = jnp.array(upper_np)
+        lm_lams = jnp.exp(jnp.linspace(jnp.log(0.01), jnp.log(1e-5), 10))
+
+        def _fk_one_ee(q, T0s_e, is_j_e, axes_e, jidx_e, at_e):
+            """FK for one EE path — Python loop unrolled by JAX for fusion."""
+            T_acc = jnp.eye(4, dtype=jnp.float64)
+            for si in range(max_steps):  # static loop: unrolled at trace time
+                t0 = T0s_e[si]
+                is_j = is_j_e[si]
+                ax = axes_e[si]
+                jidx = jidx_e[si]
+                at = at_e[si]
+                raw = q[jidx]
+                theta = jnp.clip(at[0] * raw + at[1], at[2], at[3])
+                R4 = _rot4_jax_dynamic(ax, theta)
+                T_joint = t0 @ R4
+                step_T = jnp.where(is_j, T_joint, t0)
+                T_acc = step_T @ T_acc
+            return T_acc[:3, 3]
+
+        def _fk_finger(q, T0s_f, is_j_f, axes_f, jidx_f, at_f):
+            return jnp.stack([
+                _fk_one_ee(q, T0s_f[ei], is_j_f[ei], axes_f[ei], jidx_f[ei], at_f[ei])
+                for ei in range(n_ee)])
+
+        def _ik_finger(q0, des, T0s_f, is_j_f, axes_f, jidx_f, at_f, lower_f, upper_f):
+            def fk(q):
+                return _fk_finger(q, T0s_f, is_j_f, axes_f, jidx_f, at_f)
+
+            def lm_step(q, lam):
+                r = (des - fk(q)).ravel()
+                J = jax.jacfwd(fk)(q).reshape(-1, max_j)
+                A = J.T @ J + lam * jnp.eye(max_j, dtype=jnp.float64)
+                delta = jnp.linalg.solve(A, J.T @ r)
+                return jnp.clip(q + delta, lower_f, upper_f), None
+
+            q_f, _ = jax.lax.scan(lm_step, q0, lm_lams)
+            return q_f
+
+        def _ik_all_vmap(q0s, dess):
+            return jax.vmap(_ik_finger)(
+                q0s, dess, T0s_j, is_j_j, axes_j, jidx_j, at_j, lower_j, upper_j)
+
+        self._jit_ik_vmap = jax.jit(_ik_all_vmap)
+        self._vmap_n_f = n_f
+        self._vmap_max_j = max_j
+        self._chains_n_joints = [c.n_joints for c in chains_list]
+
+        # Warmup
+        q0s0 = jnp.zeros((n_f, max_j), dtype=jnp.float64)
+        dess0 = jnp.zeros((n_f, n_ee, 3), dtype=jnp.float64)
+        self._jit_ik_vmap(q0s0, dess0)
 
     def solve(self, handbase2world=None, return_desired_positions=False,
               use_cached_forward_kinematics=False):
@@ -243,13 +326,21 @@ class HandEmbodiment(TimeableMixin):
             robotic target system.
         """
         import jax.numpy as jnp
-        qs = [jnp.array(self.joint_angles[f], dtype=jnp.float64)
-              for f in self.finger_names_]
-        dess = [jnp.array(desired_positions[f], dtype=jnp.float64)
-                for f in self.finger_names_]
-        new_qs = self._jit_ik_all(qs, dess)
-        for f, q_new in zip(self.finger_names_, new_qs):
-            self.joint_angles[f] = np.array(q_new)
+        n_f = self._vmap_n_f
+        max_j = self._vmap_max_j
+        n_ee = len(self.target_finger_chains[self.finger_names_[0]].ee_frames)
+        q0s = np.zeros((n_f, max_j))
+        dess = np.zeros((n_f, n_ee, 3))
+        for fi, f in enumerate(self.finger_names_):
+            nj = self._chains_n_joints[fi]
+            q0s[fi, :nj] = self.joint_angles[f]
+            dess[fi] = desired_positions[f]
+        new_qs = self._jit_ik_vmap(
+            jnp.array(q0s, dtype=jnp.float64),
+            jnp.array(dess, dtype=jnp.float64))
+        for fi, f in enumerate(self.finger_names_):
+            nj = self._chains_n_joints[fi]
+            self.joint_angles[f] = np.array(new_qs[fi, :nj])
 
         updated_fingers = set()
         if self.coupled_joints is not None:
