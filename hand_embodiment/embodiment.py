@@ -348,14 +348,19 @@ class HandEmbodiment(TimeableMixin):
         dess = np.zeros((n_f, n_ee, 3))
         for fi, f in enumerate(self.finger_names_):
             nj = self._chains_n_joints[fi]
-            q0s[fi, :nj] = self.joint_angles[f]
+            # Sanitise warm-start: NaN from a previous bad frame must not
+            # poison the temporal-smoothing term smooth_w*(q-q0).
+            q0s[fi, :nj] = np.where(
+                np.isnan(self.joint_angles[f]), 0.0, self.joint_angles[f])
             dess[fi] = desired_positions[f]
-        new_qs = self._jit_ik_vmap(
+        new_qs = np.array(self._jit_ik_vmap(
             jnp.array(q0s, dtype=jnp.float64),
-            jnp.array(dess, dtype=jnp.float64))
+            jnp.array(dess, dtype=jnp.float64)))
         for fi, f in enumerate(self.finger_names_):
             nj = self._chains_n_joints[fi]
-            self.joint_angles[f] = np.array(new_qs[fi, :nj])
+            result = new_qs[fi, :nj]
+            if not np.any(np.isnan(result)):
+                self.joint_angles[f] = result
 
         updated_fingers = set()
         if self.coupled_joints is not None:

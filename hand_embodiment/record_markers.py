@@ -520,10 +520,19 @@ class ManoFingerKinematics:
             Joint angles.
         """
         import jax.numpy as jnp
-        pose_f = self._jit_inverse(
-            jnp.array(self.current_pose, dtype=jnp.float64),
-            jnp.array(position, dtype=jnp.float64))
-        self.current_pose[:] = np.array(pose_f)
+        pos = np.asarray(position, dtype=float)
+        if np.any(np.isnan(pos)):
+            # Missing marker: hold previous solution so NaN does not propagate.
+            self.forward(self.current_pose)
+            return self.current_pose
+        # Sanitise warm-start: a previous NaN result must not poison the
+        # temporal-smoothing term smooth_w*(pose-pose0).
+        pose0 = np.where(np.isnan(self.current_pose), 0.0, self.current_pose)
+        pose_f = np.array(self._jit_inverse(
+            jnp.array(pose0, dtype=jnp.float64),
+            jnp.array(pos, dtype=jnp.float64)))
+        if not np.any(np.isnan(pose_f)):
+            self.current_pose[:] = pose_f
         self.forward(self.current_pose)
         return self.current_pose
 
