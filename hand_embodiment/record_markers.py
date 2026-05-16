@@ -481,8 +481,18 @@ class ManoFingerKinematics:
             diff = (verts[:n_des] - des).ravel()
             pos_pos = jnp.maximum(0.0, pose)
             neg_pos = -jnp.minimum(0.0, pose)
-            reg = jnp.array([jnp.dot(aw[0], pos_pos), jnp.dot(aw[1], neg_pos)])
+            # Component-wise regularisation: each DOF gets its own residual term
+            # aw[i]*max(0,±pose[i]).  Avoids the cross-coupling of the dot-product
+            # form (dot(aw, pos_pose)), which amplifies every DOF's gradient by the
+            # sum of all other DOFs — causing the thumb to over-regularise and
+            # jump between local minima despite temporal smoothing.
+            reg = jnp.concatenate([aw[0] * pos_pos, aw[1] * neg_pos])
             return jnp.concatenate([diff, reg])
+
+        def _fwd_all(pose):
+            """Return all n_markers vertex positions for cache update."""
+            full_pose = jnp.concatenate([jnp.zeros(3), pose])
+            return fwd_fn(J_j, w_j, vt_j, pd_j, full_pose)
 
         def _inverse_jax(pose0, des):
             def step(pose, lam):
@@ -497,7 +507,9 @@ class ManoFingerKinematics:
                 delta = jnp.where(norm > max_step, delta * (max_step / norm), delta)
                 return jnp.clip(pose + delta, lower, upper), None
             pose_f, _ = jax.lax.scan(step, pose0, lm_lams)
-            return pose_f
+            # Return vertices alongside pose so inverse() can update the FK
+            # cache without an extra numpy hand_vertices call.
+            return pose_f, _fwd_all(pose_f)
 
         self._jit_inverse = jax.jit(_inverse_jax)
 
@@ -523,17 +535,23 @@ class ManoFingerKinematics:
         pos = np.asarray(position, dtype=float)
         if np.any(np.isnan(pos)):
             # Missing marker: hold previous solution so NaN does not propagate.
-            self.forward(self.current_pose)
+            if self.last_forward_result is None:
+                self.forward(self.current_pose)
             return self.current_pose
         # Sanitise warm-start: a previous NaN result must not poison the
         # temporal-smoothing term smooth_w*(pose-pose0).
         pose0 = np.where(np.isnan(self.current_pose), 0.0, self.current_pose)
-        pose_f = np.array(self._jit_inverse(
+        pose_f_jax, verts_f_jax = self._jit_inverse(
             jnp.array(pose0, dtype=jnp.float64),
-            jnp.array(pos, dtype=jnp.float64)))
+            jnp.array(pos, dtype=jnp.float64))
+        pose_f = np.array(pose_f_jax)
         if not np.any(np.isnan(pose_f)):
             self.current_pose[:] = pose_f
-        self.forward(self.current_pose)
+            # Use vertices already computed inside JIT — avoids an extra
+            # numpy hand_vertices call that was the main per-frame bottleneck.
+            self.last_forward_result = np.array(verts_f_jax)
+        elif self.last_forward_result is None:
+            self.forward(self.current_pose)
         return self.current_pose
 
 
