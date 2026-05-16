@@ -17,7 +17,7 @@ if __name__ == "__main__":
         packages=find_packages(),
         package_data={"hand_embodiment": ["model/*"]},
         install_requires=["numpy", "scipy", "pytransform3d", "open3d",
-                          "pyyaml", "tqdm", "jax", "jaxopt", "jaxtransform3d",
+                          "pyyaml", "tqdm", "jax", "jaxtransform3d",
                           "pandas"],
         extras_require={
             "test": ["pytest", "pytest-cov"],

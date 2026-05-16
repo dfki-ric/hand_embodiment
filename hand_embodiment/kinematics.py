@@ -7,6 +7,9 @@ from typing import NamedTuple, List, Optional, Callable
 
 import os
 os.environ.setdefault("XLA_FLAGS", "--xla_gpu_enable_command_buffer=")
+os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
+os.environ.setdefault("JAX_COMPILATION_CACHE_DIR",
+                      os.path.expanduser("~/.cache/hand_embodiment/jax_cache"))
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
@@ -601,28 +604,35 @@ class MultiChain:
         self._jax_params = _build_jax_fk_params(
             tm, joint_names, base_frame, ee_frames, self.joint_limits)
 
-        import jaxopt
         jax_params_ = self._jax_params
         lower_ = jnp.array(self.joint_limits[:, 0], dtype=jnp.float64)
         upper_ = jnp.array(self.joint_limits[:, 1], dtype=jnp.float64)
-        ik_bounds_ = (lower_, upper_)
+        n_joints_ = self.n_joints
+
+        def _fk(q):
+            return _jax_multi_chain_forward_all(jax_params_, q)
+
+        def _gn_step(q, des):
+            """One damped Gauss-Newton step with box projection."""
+            r = (des - _fk(q)).ravel()
+            J = jax.jacfwd(_fk)(q).reshape(-1, n_joints_)
+            A = J.T @ J + 1e-4 * jnp.eye(n_joints_)
+            delta = jnp.linalg.solve(A, J.T @ r)
+            return jnp.clip(q + delta, lower_, upper_)
 
         def _ik_fn(q0, des):
-            def obj(q):
-                pos = _jax_multi_chain_forward_all(jax_params_, q)
-                return jnp.sum(jnp.linalg.norm(des - pos, axis=-1))
-            result = jaxopt.LBFGSB(fun=obj, maxiter=200).run(
-                q0, bounds=ik_bounds_)
-            return result.params, result.state.value
+            def step(q, _):
+                return _gn_step(q, des), None
+            q_final, _ = jax.lax.scan(step, q0, None, length=20)
+            error = jnp.sum(jnp.linalg.norm(des - _fk(q_final), axis=-1))
+            return q_final, error
 
         self._jit_ik = jax.jit(_ik_fn)
 
         def _scan_step(q_prev, des_t):
-            def obj(q):
-                pos = _jax_multi_chain_forward_all(jax_params_, q)
-                return jnp.sum(jnp.linalg.norm(des_t - pos, axis=-1))
-            q_new = jaxopt.LBFGSB(fun=obj, maxiter=200).run(
-                q_prev, bounds=ik_bounds_).params
+            def step(q, _):
+                return _gn_step(q, des_t), None
+            q_new, _ = jax.lax.scan(step, q_prev, None, length=20)
             return q_new, q_new
 
         self._ik_scan_step = jax.jit(_scan_step)

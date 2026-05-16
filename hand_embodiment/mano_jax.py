@@ -1,6 +1,9 @@
 """Pure JAX MANO forward kinematics — JIT and vmap compatible."""
 import os
 os.environ.setdefault("XLA_FLAGS", "--xla_gpu_enable_command_buffer=")
+os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
+os.environ.setdefault("JAX_COMPILATION_CACHE_DIR",
+                      os.path.expanduser("~/.cache/hand_embodiment/jax_cache"))
 import numpy as np
 import jax
 jax.config.update("jax_enable_x64", True)
