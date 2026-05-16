@@ -180,8 +180,12 @@ class HandEmbodiment(TimeableMixin):
         # so J^T J diagonal ~ 1e-4 to 1.6e-3.  λ_min = 1e-4 keeps us in the
         # gradient-descent regime and prevents Newton-like overshoots (~0.4 rad)
         # that cause oscillation.  Step clamped to 0.15 rad for stability.
+        # Temporal smoothing (smooth_w) penalises deviation from the previous
+        # frame's solution: adds smooth_w to the Hessian diagonal and a gradient
+        # term smooth_w*(q-q_prev), preventing jumps between local minima.
         lm_lams = jnp.exp(jnp.linspace(jnp.log(0.01), jnp.log(1e-4), 15))
         max_step_rob = 0.15
+        smooth_w = jnp.float64(1e-3)
 
         def _fk_one_ee(q, T0s_e, is_j_e, axes_e, jidx_e, at_e):
             """FK for one EE path — Python loop unrolled by JAX for fusion."""
@@ -212,8 +216,12 @@ class HandEmbodiment(TimeableMixin):
             def lm_step(q, lam):
                 r = (des - fk(q)).ravel()
                 J = jax.jacfwd(fk)(q).reshape(-1, max_j)
-                A = J.T @ J + lam * jnp.eye(max_j, dtype=jnp.float64)
-                delta = jnp.linalg.solve(A, J.T @ r)
+                # Temporal smoothing: augments Hessian by smooth_w*I and adds
+                # smooth_w*(q-q0) to the gradient, keeping q near the previous
+                # frame's solution without stacking extra Jacobian rows.
+                A = J.T @ J + (lam + smooth_w) * jnp.eye(max_j, dtype=jnp.float64)
+                rhs = J.T @ r - smooth_w * (q - q0)
+                delta = jnp.linalg.solve(A, rhs)
                 norm = jnp.linalg.norm(delta)
                 delta = jnp.where(norm > max_step_rob, delta * (max_step_rob / norm), delta)
                 return jnp.clip(q + delta, lower_f, upper_f), None
