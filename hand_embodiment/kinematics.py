@@ -612,27 +612,33 @@ class MultiChain:
         def _fk(q):
             return _jax_multi_chain_forward_all(jax_params_, q)
 
-        def _gn_step(q, des):
-            """One damped Gauss-Newton step with box projection."""
-            r = (des - _fk(q)).ravel()
-            J = jax.jacfwd(_fk)(q).reshape(-1, n_joints_)
-            A = J.T @ J + 1e-4 * jnp.eye(n_joints_)
-            delta = jnp.linalg.solve(A, J.T @ r)
-            return jnp.clip(q + delta, lower_, upper_)
+        # LM schedule: λ from 0.1 (gradient-descent-like, stable far from solution)
+        # down to 1e-4 (Gauss-Newton-like, fast near solution).
+        # Scale relative to typical diag(J^T J) ~ 0.01 for finger chains in metres.
+        _lm_lambdas = jnp.exp(
+            jnp.linspace(jnp.log(0.1), jnp.log(1e-4), 20))
 
         def _ik_fn(q0, des):
-            def step(q, _):
-                return _gn_step(q, des), None
-            q_final, _ = jax.lax.scan(step, q0, None, length=20)
+            def step(q, lam):
+                r = (des - _fk(q)).ravel()
+                J = jax.jacfwd(_fk)(q).reshape(-1, n_joints_)
+                A = J.T @ J + lam * jnp.eye(n_joints_)
+                delta = jnp.linalg.solve(A, J.T @ r)
+                return jnp.clip(q + delta, lower_, upper_), None
+            q_final, _ = jax.lax.scan(step, q0, _lm_lambdas)
             error = jnp.sum(jnp.linalg.norm(des - _fk(q_final), axis=-1))
             return q_final, error
 
         self._jit_ik = jax.jit(_ik_fn)
 
         def _scan_step(q_prev, des_t):
-            def step(q, _):
-                return _gn_step(q, des_t), None
-            q_new, _ = jax.lax.scan(step, q_prev, None, length=20)
+            def step(q, lam):
+                r = (des_t - _fk(q)).ravel()
+                J = jax.jacfwd(_fk)(q).reshape(-1, n_joints_)
+                A = J.T @ J + lam * jnp.eye(n_joints_)
+                delta = jnp.linalg.solve(A, J.T @ r)
+                return jnp.clip(q + delta, lower_, upper_), None
+            q_new, _ = jax.lax.scan(step, q_prev, _lm_lambdas)
             return q_new, q_new
 
         self._ik_scan_step = jax.jit(_scan_step)
