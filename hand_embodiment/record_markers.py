@@ -210,10 +210,78 @@ class MarkerBasedRecordMapping(TimeableMixin):
         self.markers_in_mano = {
             finger_name: None for finger_name in self.mano_finger_kinematics_}
 
+        self._build_vmap_mano_ik()
+
     def reset(self):
         """Reset current joint poses of MANO."""
         for finger_name in self.mano_finger_kinematics_:
             self.mano_finger_kinematics_[finger_name].reset()
+
+    def _build_vmap_mano_ik(self):
+        """Build a vmapped JAX LM inverse for all fingers simultaneously."""
+        import jax
+        jax.config.update("jax_enable_x64", True)
+        import jax.numpy as jnp
+        from .mano_jax import build_hand_vertices_fn
+
+        FINGER_ORDER = ["thumb", "index", "middle", "ring", "little"]
+        finger_names = [f for f in FINGER_ORDER if f in self.mano_finger_kinematics_]
+        n_f = len(finger_names)
+        fks = [self.mano_finger_kinematics_[f] for f in finger_names]
+        self._vmap_finger_names = finger_names
+        self._vmap_fks = fks
+
+        fwd_fn = build_hand_vertices_fn(fks[0].finger_pose_params["kintree_table"])
+
+        J_all = jnp.stack([jnp.array(fk.finger_pose_params["J"]) for fk in fks])
+        w_all = jnp.stack([jnp.array(fk.finger_pose_params["weights"]) for fk in fks])
+        vt_all = jnp.stack([jnp.array(fk.finger_pose_params["v_template"]) for fk in fks])
+        pd_all = jnp.stack([jnp.array(fk.finger_pose_params["posedirs"]) for fk in fks])
+        aw_all = jnp.stack([jnp.array(fk.finger_error.action_weights) for fk in fks])
+
+        n_pose = 9
+        lower = jnp.full(n_pose, -0.4 * np.pi, dtype=jnp.float64)
+        upper = jnp.full(n_pose, 0.4 * np.pi, dtype=jnp.float64)
+        lm_lams = jnp.exp(jnp.linspace(jnp.log(0.05), jnp.log(0.001), 15))
+        max_step = 0.2
+        smooth_w = jnp.float64(2e-3)
+
+        def _inverse_one(pose0, des, des_mask, J_f, w_f, vt_f, pd_f, aw_f):
+            def _fwd(p):
+                return fwd_fn(J_f, w_f, vt_f, pd_f,
+                              jnp.concatenate([jnp.zeros(3), p]))
+
+            def _residual(pose):
+                verts = _fwd(pose)
+                diff = ((verts - des) * des_mask[:, None]).ravel()
+                reg = jnp.concatenate([
+                    aw_f[0] * jnp.maximum(0.0, pose),
+                    aw_f[1] * jnp.maximum(0.0, -pose)])
+                return jnp.concatenate([diff, reg])
+
+            def step(pose, lam):
+                r = _residual(pose)
+                J = jax.jacfwd(_residual)(pose)
+                A = J.T @ J + (lam + smooth_w) * jnp.eye(n_pose, dtype=jnp.float64)
+                delta = jnp.linalg.solve(A, -(J.T @ r) - smooth_w * (pose - pose0))
+                norm = jnp.linalg.norm(delta)
+                delta = jnp.where(norm > max_step, delta * (max_step / norm), delta)
+                return jnp.clip(pose + delta, lower, upper), None
+
+            pose_f, _ = jax.lax.scan(step, pose0, lm_lams)
+            return pose_f, _fwd(pose_f)
+
+        _vmap_fn = jax.vmap(_inverse_one, in_axes=(0, 0, 0, 0, 0, 0, 0, 0))
+
+        def _batch_ik(pose0s, dess, des_masks):
+            return _vmap_fn(pose0s, dess, des_masks, J_all, w_all, vt_all, pd_all, aw_all)
+
+        self._jit_vmap_mano_inverse = jax.jit(_batch_ik)
+
+        self._jit_vmap_mano_inverse(
+            jnp.zeros((n_f, n_pose), dtype=jnp.float64),
+            jnp.zeros((n_f, 2, 3), dtype=jnp.float64),
+            jnp.ones((n_f, 2), dtype=jnp.float64))
 
     def estimate(self, hand_markers, finger_markers):
         """Estimate hand state from positions of hand markers and finger markers.
@@ -247,24 +315,45 @@ class MarkerBasedRecordMapping(TimeableMixin):
 
         self.start_measurement()
 
-        for finger_name in available_fingers:
-            fe = self.mano_finger_kinematics_[finger_name]
-            finger_pose = fe.inverse(self.markers_in_mano[finger_name])
-            self.hand_state_.pose[fe.finger_pose_param_indices] = finger_pose
+        import jax.numpy as jnp
+        finger_names = self._vmap_finger_names
+        fks = self._vmap_fks
+        n_f = len(finger_names)
+        pose0s = np.zeros((n_f, 9), dtype=float)
+        dess = np.zeros((n_f, 2, 3), dtype=float)
+        des_masks = np.zeros((n_f, 2), dtype=float)
+        has_markers = np.zeros(n_f, dtype=bool)
 
-        """# joblib parallelization, not faster because of overhead for data transfer
-        import joblib
-        def estimate_finger_pose(finger_estimator, measurement):
-            finger_pose = finger_estimator.estimate(measurement)
-            return finger_estimator.finger_pose_param_indices, finger_pose
+        for fi, (fname, fk) in enumerate(zip(finger_names, fks)):
+            pose0s[fi] = np.where(np.isnan(fk.current_pose), 0.0, fk.current_pose)
+            markers = self.markers_in_mano.get(fname)
+            if (markers is not None and fname in available_fingers
+                    and not np.any(np.isnan(markers))):
+                n_real = markers.shape[0]
+                dess[fi, :n_real] = markers
+                des_masks[fi, :n_real] = 1.0
+                if n_real < 2 and fk.last_forward_result is not None:
+                    dess[fi, n_real:] = fk.last_forward_result[n_real:]
+                has_markers[fi] = True
 
-        results = joblib.Parallel(n_jobs=-1)(
-            joblib.delayed(estimate_finger_pose)(self.finger_estimators[finger_name],
-                                                 self.finger_markers_in_mano[finger_name])
-            for finger_name in self.finger_estimators.keys())
-        for pose_indices, pose in results:
-            self.hand_state.pose[pose_indices] = pose
-        #"""
+        all_poses_jax, all_verts_jax = self._jit_vmap_mano_inverse(
+            jnp.array(pose0s, dtype=jnp.float64),
+            jnp.array(dess, dtype=jnp.float64),
+            jnp.array(des_masks, dtype=jnp.float64))
+
+        all_poses = np.array(all_poses_jax)
+        all_verts = np.array(all_verts_jax)
+
+        for fi, (fname, fk) in enumerate(zip(finger_names, fks)):
+            if not has_markers[fi]:
+                continue
+            pose_f = all_poses[fi]
+            if not np.any(np.isnan(pose_f)):
+                fk.current_pose[:] = pose_f
+                fk.last_forward_result = all_verts[fi]
+                self.hand_state_.pose[fk.finger_pose_param_indices] = pose_f
+            elif fk.last_forward_result is None:
+                fk.forward(fk.current_pose)
 
         self.stop_measurement()
         if self.verbose:
@@ -469,7 +558,7 @@ class ManoFingerKinematics:
         # Step clamped to 0.2 rad to prevent divergence for unreachable targets.
         # Temporal smoothing (smooth_w) penalises deviation from pose0 (the
         # previous frame's solution), preventing jumps between local minima.
-        lm_lams = jnp.exp(jnp.linspace(jnp.log(0.05), jnp.log(0.001), 30))
+        lm_lams = jnp.exp(jnp.linspace(jnp.log(0.05), jnp.log(0.001), 15))
         max_step = 0.2
         smooth_w = jnp.float64(2e-3)
 
