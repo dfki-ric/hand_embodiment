@@ -67,7 +67,8 @@ class HandEmbodiment(TimeableMixin):
             self, hand_state, target_config,
             use_fingers=("thumb", "index", "middle"),
             mano_finger_kinematics=None, initial_handbase2world=None,
-            only_tip=False, verbose=0, measure_time=False):
+            only_tip=False, verbose=0, measure_time=False,
+            objective='cartesian'):
         super(HandEmbodiment, self).__init__(verbose or measure_time)
 
         if isinstance(target_config, str):
@@ -115,8 +116,12 @@ class HandEmbodiment(TimeableMixin):
             "post_embodiment_hook", None)
 
         self.verbose = verbose
+        self.objective = objective
 
-        self._build_vmap_ik(target_config)
+        if objective == 'cartesian':
+            self._build_vmap_ik(target_config)
+        else:
+            self._build_vmap_mesh_ik(target_config, objective)
 
     def _build_vmap_ik(self, target_config):
         """Build and warm-up a vmapped JIT that parallelises IK over all fingers.
@@ -278,6 +283,245 @@ class HandEmbodiment(TimeableMixin):
         dess0 = jnp.zeros((n_f, n_ee, 3), dtype=jnp.float64)
         self._jit_ik_vmap(q0s0, dess0)
 
+    def _build_vmap_mesh_ik(self, target_config, objective):
+        """Build and warm-up a vmapped JIT for mesh-distance-based IK.
+
+        Computes contact surface points for each robot link in local frame
+        once at init time (Poisson-sampled), then uses jax.grad on the chosen
+        point-cloud metric to drive gradient-descent LM steps per frame.
+        """
+        import jax
+        import jax.numpy as jnp
+        import open3d as o3d
+        from .kinematics import _rot4_jax_dynamic, _build_jax_fk_params
+        from .metrics import MANO_CONTACT_SURFACE_VERTICES, CONTACT_SURFACE_VERTICES
+        from .mesh_metrics_jax import METRIC_FNS
+
+        metric_fn = METRIC_FNS[objective]
+
+        contact_surface_verts = target_config.get("contact_surface_vertices")
+        if contact_surface_verts is None:
+            raise ValueError(
+                f"target_config must include 'contact_surface_vertices' for "
+                f"objective='{objective}'. Add it to the hand config or use "
+                f"objective='cartesian'.")
+
+        chains_list = [self.target_finger_chains[f] for f in self.finger_names_]
+        n_f = len(chains_list)
+        max_j = max(c.n_joints for c in chains_list)
+
+        n_vis_list = [len(contact_surface_verts[f]) for f in self.finger_names_]
+        assert len(set(n_vis_list)) == 1, \
+            "All fingers must have the same number of contact visuals for vmap"
+        n_vis = n_vis_list[0]
+
+        max_mano_pts = max(
+            len(MANO_CONTACT_SURFACE_VERTICES[f]) for f in self.finger_names_)
+
+        # --- Extract local-frame robot contact points (one-time numpy op) ---
+        tm = self.vis_kin.tm
+        n_robot_pts = 100  # Poisson samples per visual
+        local_pts_np = np.zeros((n_f, n_vis, n_robot_pts, 3))
+
+        for fi, fname in enumerate(self.finger_names_):
+            vis_dict = contact_surface_verts[fname]
+            for vi, (vis_name, vertex_indices) in enumerate(vis_dict.items()):
+                link_name = vis_name.split(":")[1].split("/")[0]
+                mesh_obj = next(m for m in tm.visuals if m.frame == vis_name)
+
+                o3d_mesh = o3d.io.read_triangle_mesh(mesh_obj.filename)
+                verts = np.array(o3d_mesh.vertices) * mesh_obj.scale
+
+                T_vis2link = tm.get_transform(vis_name, link_name)
+                R, t = T_vis2link[:3, :3], T_vis2link[:3, 3]
+                verts_link = (R @ verts.T).T + t
+
+                tri_mesh = o3d.geometry.TriangleMesh()
+                tri_mesh.vertices = o3d.utility.Vector3dVector(verts_link)
+                triangles = np.array(o3d_mesh.triangles)
+                vertex_set = set(vertex_indices)
+                triangles_filt = np.array([
+                    tri for tri in triangles
+                    if any(v in vertex_set for v in tri)])
+                tri_mesh.triangles = o3d.utility.Vector3iVector(triangles_filt)
+
+                pc = tri_mesh.sample_points_poisson_disk(n_robot_pts)
+                local_pts_np[fi, vi] = np.array(pc.points)
+
+        # --- Build FK path arrays for each contact link ---
+        contact_link_names = []
+        for fname in self.finger_names_:
+            vis_names = list(contact_surface_verts[fname].keys())
+            contact_link_names.append([
+                vn.split(":")[1].split("/")[0] for vn in vis_names])
+
+        fk_entries_all = []
+        for fi, fname in enumerate(self.finger_names_):
+            chain = chains_list[fi]
+            per_vis = []
+            for link_name in contact_link_names[fi]:
+                params = _build_jax_fk_params(
+                    tm, chain.joint_names, self.base_frame, [link_name])
+                per_vis.append(params.all_path_entries[0])
+            fk_entries_all.append(per_vis)
+
+        link_max_steps = max(
+            len(entries)
+            for fi_entries in fk_entries_all
+            for entries in fi_entries)
+
+        T0s_link_np = np.tile(np.eye(4), (n_f, n_vis, link_max_steps, 1, 1))
+        is_j_link_np = np.zeros((n_f, n_vis, link_max_steps), dtype=bool)
+        axes_link_np = np.zeros((n_f, n_vis, link_max_steps, 3))
+        jidx_link_np = np.zeros((n_f, n_vis, link_max_steps), dtype=np.int32)
+        at_link_np = np.zeros((n_f, n_vis, link_max_steps, 4))
+        at_link_np[:, :, :, 0] = 1.0
+        at_link_np[:, :, :, 2] = -np.inf
+        at_link_np[:, :, :, 3] = np.inf
+
+        for fi, per_vis in enumerate(fk_entries_all):
+            for vi, entries in enumerate(per_vis):
+                for si, entry in enumerate(entries):
+                    if entry[0] == 'joint':
+                        _, c2p, axis, cidx, _, sc, off, lo, hi = entry
+                        T0s_link_np[fi, vi, si] = np.array(c2p)
+                        is_j_link_np[fi, vi, si] = True
+                        axes_link_np[fi, vi, si] = axis
+                        jidx_link_np[fi, vi, si] = cidx
+                        at_link_np[fi, vi, si] = [sc, off, lo, hi]
+                    else:
+                        T0s_link_np[fi, vi, si] = np.array(entry[1])
+
+        lower_np = np.zeros((n_f, max_j))
+        upper_np = np.zeros((n_f, max_j))
+        for fi, chain in enumerate(chains_list):
+            for ji in range(chain.n_joints):
+                lower_np[fi, ji] = chain.joint_limits[ji, 0]
+                upper_np[fi, ji] = chain.joint_limits[ji, 1]
+
+        jreg_cfg = target_config.get("joint_weights", {})
+        jreg_np = np.zeros((n_f, max_j))
+        for fi, fname in enumerate(self.finger_names_):
+            if fname in jreg_cfg:
+                w_j = np.asarray(jreg_cfg[fname], dtype=float)
+                jreg_np[fi, :len(w_j)] = w_j
+
+        n_mano_per_finger = np.array([
+            len(MANO_CONTACT_SURFACE_VERTICES[f]) for f in self.finger_names_],
+            dtype=np.int32)
+
+        local_pts_j = jnp.array(local_pts_np)
+        T0s_link_j = jnp.array(T0s_link_np)
+        is_j_link_j = jnp.array(is_j_link_np)
+        axes_link_j = jnp.array(axes_link_np)
+        jidx_link_j = jnp.array(jidx_link_np)
+        at_link_j = jnp.array(at_link_np)
+        lower_j = jnp.array(lower_np)
+        upper_j = jnp.array(upper_np)
+        jreg_j = jnp.array(jreg_np)
+
+        lm_lams = jnp.exp(jnp.linspace(jnp.log(0.01), jnp.log(1e-4), 15))
+        max_step_rob = 0.15
+        smooth_w = jnp.float64(1e-3)
+
+        def _fk_link_transform(q, T0s_l, is_j_l, axes_l, jidx_l, at_l):
+            T_acc = jnp.eye(4, dtype=jnp.float64)
+            for si in range(link_max_steps):
+                t0 = T0s_l[si]
+                is_j = is_j_l[si]
+                ax = axes_l[si]
+                jidx = jidx_l[si]
+                at = at_l[si]
+                raw = q[jidx]
+                theta = jnp.clip(at[0] * raw + at[1], at[2], at[3])
+                R4 = _rot4_jax_dynamic(ax, theta)
+                T_joint = t0 @ R4
+                step_T = jnp.where(is_j, T_joint, t0)
+                T_acc = step_T @ T_acc
+            return T_acc
+
+        def _robot_contact_pts_finger(q, local_pts_f, T0s_f, is_j_f, axes_f,
+                                      jidx_f, at_f):
+            def transform_vis(local_l, T0s_l, is_j_l, axes_l, jidx_l, at_l):
+                T = _fk_link_transform(q, T0s_l, is_j_l, axes_l, jidx_l, at_l)
+                return (T[:3, :3] @ local_l.T).T + T[:3, 3]  # (n_robot_pts, 3)
+
+            all_pts = jax.vmap(transform_vis)(
+                local_pts_f, T0s_f, is_j_f, axes_f, jidx_f, at_f)
+            return all_pts.reshape(-1, 3)
+
+        def _ik_finger_mesh(q0, mano_pts_f, mask_f, T0s_f, is_j_f, axes_f,
+                            jidx_f, at_f, local_pts_f, lower_f, upper_f,
+                            jreg_f):
+            def loss_fn(q):
+                robot_pts = _robot_contact_pts_finger(
+                    q, local_pts_f, T0s_f, is_j_f, axes_f, jidx_f, at_f)
+                return metric_fn(mano_pts_f, robot_pts, mask_a=mask_f)
+
+            def lm_step(q, lam):
+                grad_metric = jax.grad(loss_fn)(q)
+                grad_full = (grad_metric
+                             + jreg_f * q
+                             + smooth_w * (q - q0))
+                A = ((lam + smooth_w) * jnp.eye(max_j, dtype=jnp.float64)
+                     + jnp.diag(jreg_f))
+                delta = jnp.linalg.solve(A, -grad_full)
+                norm = jnp.linalg.norm(delta)
+                delta = jnp.where(
+                    norm > max_step_rob, delta * (max_step_rob / norm), delta)
+                return jnp.clip(q + delta, lower_f, upper_f), None
+
+            q_f, _ = jax.lax.scan(lm_step, q0, lm_lams)
+            return q_f
+
+        def _ik_all_mesh_vmap(q0s, mano_pts, masks):
+            return jax.vmap(_ik_finger_mesh)(
+                q0s, mano_pts, masks,
+                T0s_link_j, is_j_link_j, axes_link_j, jidx_link_j, at_link_j,
+                local_pts_j, lower_j, upper_j, jreg_j)
+
+        self._jit_mesh_ik_vmap = jax.jit(_ik_all_mesh_vmap)
+        self._vmap_n_f = n_f
+        self._vmap_max_j = max_j
+        self._chains_n_joints = [c.n_joints for c in chains_list]
+        self._max_mano_pts = max_mano_pts
+        self._n_mano_per_finger = n_mano_per_finger
+
+        q0s0 = jnp.zeros((n_f, max_j), dtype=jnp.float64)
+        mano_pts0 = jnp.zeros((n_f, max_mano_pts, 3), dtype=jnp.float64)
+        masks0 = jnp.ones((n_f, max_mano_pts), dtype=jnp.float64)
+        self._jit_mesh_ik_vmap(q0s0, mano_pts0, masks0)
+
+    def _get_mano_contact_pts(self):
+        """Extract current MANO contact surface points in robot base frame.
+
+        hand_mesh.vertices are in world frame (recompute_mesh applies mano2world_).
+        _update_hand_base_pose has already stored world2robotbase in the TM,
+        so we use that to bring world-frame vertices into robot base frame.
+        """
+        from .metrics import MANO_CONTACT_SURFACE_VERTICES
+        import jax.numpy as jnp
+
+        world2robotbase = self.target_kin.tm.get_transform(
+            "world", self.base_frame)
+
+        verts = np.array(self.hand_state_.hand_mesh.vertices)
+        n_f = self._vmap_n_f
+        max_mano = self._max_mano_pts
+        mano_pts_np = np.zeros((n_f, max_mano, 3))
+        masks_np = np.zeros((n_f, max_mano))
+
+        for fi, fname in enumerate(self.finger_names_):
+            idx = MANO_CONTACT_SURFACE_VERTICES[fname]
+            pts_robotbase = pt.transform(
+                world2robotbase,
+                pt.vectors_to_points(verts[idx]))[:, :3]
+            n = len(idx)
+            mano_pts_np[fi, :n] = pts_robotbase
+            masks_np[fi, :n] = 1.0
+
+        return jnp.array(mano_pts_np), jnp.array(masks_np)
+
     def solve(self, handbase2world=None, return_desired_positions=False,
               use_cached_forward_kinematics=False):
         """Solve embodiment.
@@ -373,24 +617,30 @@ class HandEmbodiment(TimeableMixin):
         ----------
         desired_positions : dict
             Desired positions of expected marker positions in frame of the
-            robotic target system.
+            robotic target system. Only used when objective='cartesian'.
         """
         import jax.numpy as jnp
         n_f = self._vmap_n_f
         max_j = self._vmap_max_j
-        n_ee = len(self.target_finger_chains[self.finger_names_[0]].ee_frames)
         q0s = np.zeros((n_f, max_j))
-        dess = np.zeros((n_f, n_ee, 3))
         for fi, f in enumerate(self.finger_names_):
             nj = self._chains_n_joints[fi]
-            # Sanitise warm-start: NaN from a previous bad frame must not
-            # poison the temporal-smoothing term smooth_w*(q-q0).
             q0s[fi, :nj] = np.where(
                 np.isnan(self.joint_angles[f]), 0.0, self.joint_angles[f])
-            dess[fi] = desired_positions[f]
-        new_qs = np.array(self._jit_ik_vmap(
-            jnp.array(q0s, dtype=jnp.float64),
-            jnp.array(dess, dtype=jnp.float64)))
+
+        if self.objective == 'cartesian':
+            n_ee = len(self.target_finger_chains[self.finger_names_[0]].ee_frames)
+            dess = np.zeros((n_f, n_ee, 3))
+            for fi, f in enumerate(self.finger_names_):
+                dess[fi] = desired_positions[f]
+            new_qs = np.array(self._jit_ik_vmap(
+                jnp.array(q0s, dtype=jnp.float64),
+                jnp.array(dess, dtype=jnp.float64)))
+        else:
+            mano_pts, masks = self._get_mano_contact_pts()
+            new_qs = np.array(self._jit_mesh_ik_vmap(
+                jnp.array(q0s, dtype=jnp.float64), mano_pts, masks))
+
         for fi, f in enumerate(self.finger_names_):
             nj = self._chains_n_joints[fi]
             result = new_qs[fi, :nj]

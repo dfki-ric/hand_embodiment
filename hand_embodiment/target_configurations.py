@@ -3,6 +3,12 @@ import numpy as np
 import pytransform3d.transformations as pt
 import pytransform3d.rotations as pr
 from pkg_resources import resource_filename
+from .metrics import (
+    SHADOW_CONTACT_SURFACE_VERTICES,
+    MIA_CONTACT_SURFACE_VERTICES,
+    ROBOTIQ_CONTACT_SURFACE_VERTICES,
+    BARRETT_CONTACT_SURFACE_VERTICES,
+)
 
 
 # Target system configurations
@@ -159,6 +165,7 @@ MIA_CONFIG = {
             "ring": "ring_middle",
             "little": "little_middle"
         },
+    "contact_surface_vertices": MIA_CONTACT_SURFACE_VERTICES,
     "handbase2robotbase": manobase2miabase,  # transform from MANO base to hand base
     "model":  # kinematic model definition
         {
@@ -358,6 +365,7 @@ SHADOW_HAND_CONFIG = {
             "ring":   [1e-3, 0.0, 0.0],    # RFJ4, RFJ3, RFJ0
             "little": [0.0, 1e-3, 0.0, 0.0],  # LFJ5, LFJ4, LFJ3, LFJ0
         },
+    "contact_surface_vertices": SHADOW_CONTACT_SURFACE_VERTICES,
     "handbase2robotbase": manobase2shadowbase,
     "model":
         {
@@ -471,6 +479,7 @@ ROBOTIQ_CONFIG = {
             "thumb": "left_finger_middle",
             "index": "right_finger_middle",
         },
+    "contact_surface_vertices": ROBOTIQ_CONTACT_SURFACE_VERTICES,
     "handbase2robotbase": manobase2robotiqbase,
     "model":
         {
@@ -607,6 +616,7 @@ BARRETT_CONFIG = {
             "index": "finger_3_middle",
             "middle": "finger_1_middle",
         },
+    "contact_surface_vertices": BARRETT_CONTACT_SURFACE_VERTICES,
     "handbase2robotbase": manobase2barrettbase,
     "model":
         {

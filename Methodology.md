@@ -270,7 +270,78 @@ joint configurations.
 
 ---
 
-## 3. Summary of Transformations
+## 3. Alternative Embodiment Objective: Inner-Surface Mesh Distances
+
+### 3.1 Motivation
+
+The Cartesian 2-point objective (tip + middle EE) used in Section 2 is a
+coarse surrogate for contact quality.  For manipulation tasks the relevant
+quantity is how well the robot's contact surface conforms to the human's —
+something that a 2-point objective cannot distinguish from a pose that merely
+passes through the same two locations.  As an alternative, the contact surface
+itself can be used as the IK objective.
+
+### 3.2 Contact Surface Definition
+
+The inner contact surface of finger $i$ is defined as a subset of mesh vertices
+
+$$
+\mathcal{S}^{\text{MANO}}_i = \{\hat{\boldsymbol{p}}_v\}_{v \in \tilde{V}_i^{\text{MANO}}} \in \mathbb{R}^{N_i \times 3}, \qquad
+\mathcal{S}^{\text{robot}}_i(\boldsymbol{r}) = \{T_{l}(\boldsymbol{r})\,\tilde{\boldsymbol{v}}_{l,k}\}_{l,k} \in \mathbb{R}^{M \times 3},
+$$
+
+where $\tilde{V}_i^{\text{MANO}}$ are predefined contact vertex indices,
+$\tilde{\boldsymbol{v}}_{l,k}$ are 100 Poisson-disk-sampled contact points on
+link $l$ in its local frame (extracted once at initialisation), and
+$T_l(\boldsymbol{r}) \in SE(3)$ is the differentiable FK transform for link $l$
+computed via the same JAX kinematic chain used in Section 2.
+
+### 3.3 Point-Cloud Distance Metrics
+
+All metrics operate on point clouds $A \in \mathbb{R}^{M\times3}$,
+$B\in\mathbb{R}^{N\times3}$ with pairwise squared distances
+$d^2_{ij} = \|a_i - b_j\|^2$:
+
+| Metric | Formula | Gradient |
+|---|---|---|
+| Chamfer | $\frac{1}{2}\!\left(\frac{1}{M}\sum_i\min_j d^2_{ij} + \frac{1}{N}\sum_j\min_i d^2_{ij}\right)$ | smooth |
+| Hausdorff | $\max\!\bigl(\max_i\min_j d_{ij},\;\max_j\min_i d_{ij}\bigr)$ | subgradient |
+| Sinkhorn / EMD | $\langle\mathbf{P}^*, \mathbf{D}\rangle$ where $\mathbf{P}^*$ is the entropic-regularised optimal transport plan | smooth |
+| Soft F-score | $-\frac{2\,\bar{P}\,\bar{R}}{\bar{P}+\bar{R}}$, $\bar{P} = \frac{1}{M}\sum_i\sigma\!\bigl(\frac{\tilde{\tau}^2-\min_j d^2_{ij}}{\tilde{\tau}}\bigr)$ (negated for minimisation) | smooth |
+
+The Sinkhorn plan is computed via the log-domain iteration
+
+$$
+\boldsymbol{f}^{(t+1)} = \varepsilon\log\tfrac{1}{M} - \varepsilon\,\mathrm{LSE}_j\!\left(\tfrac{-\mathbf{D} + \mathbf{1}\boldsymbol{g}^{(t)T}}{\varepsilon}\right), \qquad
+\boldsymbol{g}^{(t+1)} = \varepsilon\log\tfrac{1}{N} - \varepsilon\,\mathrm{LSE}_i\!\left(\tfrac{-\mathbf{D} + \boldsymbol{f}^{(t+1)}\mathbf{1}^T}{\varepsilon}\right),
+$$
+
+unrolled with `jax.lax.scan` for 50 iterations with regularisation parameter $\varepsilon = 10^{-2}$.
+
+### 3.4 Gradient-Descent LM Optimiser
+
+Because the mesh-distance objectives are scalar functions of $\boldsymbol{r}$,
+the LM normal equations reduce to gradient descent with damping.  Incorporating
+temporal smoothing and per-joint regularisation from Section 2.1:
+
+$$
+\bigl((\mu_k + \omega_s)\mathbf{I} + \tilde{\boldsymbol{\Omega}}\bigr)\,\Delta\boldsymbol{r}^{(k)}
+= -\nabla_{\boldsymbol{r}}\mathcal{L}^{(k)} - \tilde{\boldsymbol{\Omega}}\,\boldsymbol{r}^{(k)} - \omega_s\bigl(\boldsymbol{r}^{(k)} - \boldsymbol{r}^{(0)}\bigr),
+$$
+
+where $\nabla_{\boldsymbol{r}}\mathcal{L}^{(k)}$ is the gradient of the chosen
+metric computed by `jax.grad` and $\tilde{\boldsymbol{\Omega}}$ is the same
+per-joint regularisation diagonal as in Section 2.1.  The damping schedule,
+step clamp ($\|\Delta\boldsymbol{r}\| \leq 0.15$ rad), temporal smoothing
+weight, and joint regularisation are shared with the Cartesian formulation.
+
+All metric functions and the gradient-descent step are compiled once via
+`jax.jit(jax.vmap(\ldots))` and amortised over frames, matching the
+computational structure of Section 2.
+
+---
+
+## 4. Summary of Transformations
 
 The following JAX functional transforms are composed to build the final
 solver:
@@ -288,7 +359,7 @@ The resulting program contains no Python overhead in the inner loop.
 
 ---
 
-## 4. Computational Performance
+## 5. Computational Performance
 
 Measurements on an NVIDIA GPU with the Shadow Dexterous Hand as target:
 

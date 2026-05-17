@@ -5,7 +5,8 @@ from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.target_dataset import convert_mocap_to_robot
 from hand_embodiment.command_line import (
     add_hand_argument, add_configuration_arguments,
-    add_playback_control_arguments, add_frame_transform_arguments)
+    add_playback_control_arguments, add_frame_transform_arguments,
+    add_objective_argument)
 from hand_embodiment.mocap_objects import extract_mocap_origin2object_generic
 
 
@@ -25,6 +26,7 @@ def parse_args():
         "--mia-thumb-adducted", action="store_true",
         help="Adduct thumb of Mia hand.")
     add_frame_transform_arguments(parser)
+    add_objective_argument(parser)
 
     return parser.parse_args()
 
@@ -40,7 +42,8 @@ def main():
     pipeline = MoCapToRobot(
         args.hand, args.mano_config, dataset.finger_names,
         record_mapping_config=args.record_mapping_config,
-        robot_config=args.robot_config)
+        robot_config=args.robot_config,
+        objective=args.objective)
 
     if args.hand == "mia":
         angle = 1.0 if args.mia_thumb_adducted else -1.0

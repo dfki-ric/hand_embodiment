@@ -165,3 +165,19 @@ def add_artist_argument(parser):
     parser.add_argument(
         "--artist", choices=ARTISTS.keys(),
         help=f"Name of pytransform3d artist.")
+
+
+def add_objective_argument(parser):
+    """Add argument for embodiment IK objective to command line parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Command line parser
+    """
+    parser.add_argument(
+        "--objective", default="cartesian",
+        choices=["cartesian", "chamfer", "hausdorff", "sinkhorn", "fscore"],
+        help="Objective for robotic embodiment IK. 'cartesian' uses 2 EE "
+             "positions (fast). Mesh-based objectives use the full contact "
+             "surface defined in metrics.py.")

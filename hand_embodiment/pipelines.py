@@ -36,7 +36,7 @@ class MoCapToRobot:
     """
     def __init__(self, hand, mano_config, use_fingers,
                  record_mapping_config=None, verbose=0, measure_time=False,
-                 robot_config=None):
+                 robot_config=None, objective='cartesian'):
         self.hand_config_ = self._hand_config(hand, robot_config)
         mano2hand_markers, betas = load_mano_config(mano_config)
 
@@ -55,7 +55,8 @@ class MoCapToRobot:
             use_fingers=use_fingers,
             mano_finger_kinematics=self.record_mapping_.mano_finger_kinematics_,
             initial_handbase2world=self.record_mapping_.mano2world_,
-            verbose=verbose, measure_time=measure_time)
+            verbose=verbose, measure_time=measure_time,
+            objective=objective)
 
     def _hand_config(self, hand, robot_config):
         hand_config_ = TARGET_CONFIG[hand]

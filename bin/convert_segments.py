@@ -7,7 +7,7 @@ from hand_embodiment.target_dataset import convert_mocap_to_robot
 from hand_embodiment.timing import timing_report
 from hand_embodiment.command_line import (
     add_hand_argument, add_configuration_arguments,
-    add_frame_transform_arguments)
+    add_frame_transform_arguments, add_objective_argument)
 from hand_embodiment.mocap_objects import extract_mocap_origin2object_generic
 
 
@@ -43,6 +43,7 @@ def parse_args():
         "--measure-time", action="store_true",
         help="Measure time of record and embodiment mapping.")
     add_frame_transform_arguments(parser)
+    add_objective_argument(parser)
 
     return parser.parse_args()
 
@@ -56,7 +57,8 @@ def main():
     pipeline = MoCapToRobot(args.hand, args.mano_config, dataset.finger_names,
                             record_mapping_config=args.record_mapping_config,
                             robot_config=args.robot_config,
-                            measure_time=args.measure_time)
+                            measure_time=args.measure_time,
+                            objective=args.objective)
 
     total_segment_idx = 0
     for demo_file in args.demo_files:

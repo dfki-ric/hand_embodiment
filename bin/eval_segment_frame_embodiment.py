@@ -13,7 +13,8 @@ from hand_embodiment.mocap_dataset import SegmentedHandMotionCaptureDataset
 from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.vis_utils import AnimationCallback
 from hand_embodiment.command_line import (
-    add_hand_argument, add_animation_arguments, add_configuration_arguments)
+    add_hand_argument, add_animation_arguments, add_configuration_arguments,
+    add_objective_argument)
 from hand_embodiment.metrics import (
     CONTACT_SURFACE_VERTICES, distances_robot_to_mano)
 from hand_embodiment.target_configurations import TARGET_CONFIG
@@ -54,6 +55,7 @@ def parse_args():
         "--output-image", default=None,
         help="Image to which we render the configuration.")
     add_animation_arguments(parser)
+    add_objective_argument(parser)
     return parser.parse_args()
 
 
@@ -72,7 +74,8 @@ def main():
 
     pipeline = MoCapToRobot(
         args.hand, args.mano_config, finger_names,
-        record_mapping_config=args.record_mapping_config, verbose=1)
+        record_mapping_config=args.record_mapping_config, verbose=1,
+        objective=args.objective)
 
     if args.hand == "mia":
         angle = 1.0 if args.mia_thumb_adducted else -1.0
