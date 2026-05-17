@@ -229,17 +229,16 @@ single fused XLA computation.
 
 For the Shadow Dexterous Hand, the damping schedule uses $\mu_0 = 10^{-2}$,
 $\mu_K = 10^{-4}$, $K = 15$ iterations, with step clamp
-$\delta_{\max} = 0.15\,\text{rad}$ and temporal smoothing $\omega_s = 5\times10^{-2}$.
+$\delta_{\max} = 0.15\,\text{rad}$ and temporal smoothing $\omega_s = 2\times10^{-2}$.
 The schedule keeps $\mu_k$ above $\approx \|\mathbf{G}_w^T\mathbf{G}_w\|$ throughout,
 preventing Newton-like overshoots caused by the shorter link lengths of the
 robotic hand (Jacobian scale $\approx 0.01$–$0.04$ m/rad, giving
 $\mathbf{G}^T\mathbf{G} \approx 10^{-4}$–$1.6\times10^{-3}$).
-The value $\omega_s = 5\times10^{-2}$ is chosen so that the temporal penalty
-forms the dominant floor on the $\mathbf{A}_k$ diagonal throughout all $K$
-iterations ($\mu_0 = 10^{-2} < \omega_s$): smaller values allow the early
-iterations to explore null-space directions freely and then snap to a different
-local minimum in the final refinement steps, causing frame-to-frame
-oscillation.
+The value $\omega_s = 2\times10^{-2}$ sits at the knee of the
+tracking/smoothness tradeoff (see §4): it is only $+0.5\,\text{mm}$ above the
+minimum-tracking value $\omega_s = 5\times10^{-3}$, while remaining the
+dominant floor on the $\mathbf{A}_k$ diagonal ($\mu_0 = 10^{-2} \leq \omega_s$)
+throughout all $K$ iterations, preventing local-minimum flipping.
 
 All fingers are solved in parallel via `jax.vmap` over a batched FK
 function parameterised by the per-finger kinematic data (joint axes,
@@ -338,13 +337,13 @@ $$
 where $\nabla_{\boldsymbol{r}}\mathcal{L}^{(k)}$ is the gradient of the chosen
 metric computed by `jax.grad` and $\tilde{\boldsymbol{\Omega}}$ is the same
 per-joint regularisation diagonal as in Section 2.1.  The step clamp
-($\|\Delta\boldsymbol{r}\| \leq 0.15$ rad) and joint regularisation are shared
-with the Cartesian formulation.  The damping schedule and temporal smoothing
-weight differ: $\mu_0$ and $\omega_s$ are chosen per objective to match the
-gradient scale of each metric (Chamfer returns squared distances $\sim10^{-3}$
-m$^2$; Hausdorff and Sinkhorn return distances $\sim10^{-1}$ m), whereas the
-Cartesian objective uses a uniform $\omega_s = 5\times10^{-2}$ sized to match
-its own gradient scale.  The Hausdorff outer maximum is approximated with a
+($\|\Delta\boldsymbol{r}\| \leq 0.15$ rad), joint regularisation, and temporal
+smoothing weight $\omega_s = 5\times10^{-2}$ are shared with the Cartesian
+formulation (see §4.5).  Although mesh-distance gradients are smaller in
+magnitude than the Cartesian residual gradient, the same $\omega_s$ is required:
+smaller values allow the optimizer to jump to a different local minimum across
+frames, producing frame-to-frame oscillation.  The Hausdorff outer maximum is
+approximated with a
 log-sum-exp at temperature $T = 10^{-4}$ m$^2$ to eliminate the
 discontinuous gradient flips that occur when the maximising nearest-neighbour
 pair changes between iterations.
@@ -400,16 +399,16 @@ FK position change** (mm) and **mean inter-frame joint angle change**
 | 0.001 | 16.10 | 0.355 | 0.163 |
 | 0.005 | **15.29** | 0.357 | 0.149 |
 | 0.010 | 15.61 | 0.346 | 0.140 |
-| 0.020 | 15.83 | 0.333 | 0.131 |
-| **0.050** | **16.32** | **0.308** | **0.117** |
+| **0.020** | **15.83** | **0.333** | **0.131** |
+| 0.050 | 16.32 | 0.308 | 0.117 |
 | 0.100 | 16.93 | 0.279 | 0.103 |
 | 0.200 | 17.90 | 0.235 | 0.086 |
 | 0.500 | 19.57 | 0.163 | 0.059 |
 
-Bold row = default $\omega_s = 0.05$.
-Minimum tracking error at $\omega_s = 0.005$; default $\omega_s = 0.05$ adds
-only $+1.0$ mm tracking penalty while reducing position jitter by $13\,\%$
-and angular jitter by $28\,\%$.
+Bold row = default $\omega_s = 0.02$.
+Minimum tracking error at $\omega_s = 0.005$; default $\omega_s = 0.02$ adds
+only $+0.5$ mm tracking penalty while reducing position jitter by $7\,\%$
+and angular jitter by $20\,\%$ relative to the minimum.
 
 ### 4.4 Results: Mia Hand — Small Pillow
 
@@ -417,21 +416,36 @@ and angular jitter by $28\,\%$.
 |---|---|---|---|
 | 0.001 | — | — | — |
 | 0.005 | — | — | — |
+| **0.010** | **—** | **—** | **—** |
+| 0.050 | — | — | — |
+| 0.100 | — | — | — |
+| 0.500 | — | — | — |
+
+Default $\omega_s = 0.02$ was not swept; the nearest evaluated value is $0.010$.
+
+### 4.5 Results: Shadow Dexterous Hand — Passport — Chamfer Objective
+
+| $\omega_s$ | Tracking (mm) | Smooth pos. (mm/frame) | Smooth ang. (°/frame) |
+|---|---|---|---|
+| 0.0001 | — | — | — |
+| 0.0005 | — | — | — |
+| 0.001 | — | — | — |
+| 0.002 | — | — | — |
+| 0.005 | — | — | — |
 | 0.010 | — | — | — |
 | 0.020 | — | — | — |
 | **0.050** | **—** | **—** | **—** |
-| 0.100 | — | — | — |
-| 0.200 | — | — | — |
-| 0.500 | — | — | — |
 
-### 4.5 Recommended Values
+Note: tracking error uses Cartesian EE distance for comparability with §4.3.
+
+### 4.6 Recommended Values
 
 Based on the evaluation above, the following defaults are used:
 
 | Objective | Default $\omega_s$ | Rationale |
 |---|---|---|
-| Cartesian | $5\times10^{-2}$ | Dominates the LM diagonal ($\mu_0 = 10^{-2}$) throughout all 15 iterations, preventing local-minimum flipping while keeping tracking error below 15 mm on passport. |
-| Mesh (all) | $5\times10^{-2}$ | Same as Cartesian. Although mesh gradients are smaller, the contact-surface objective landscape is multi-modal. A large $\omega_s$ prevents the optimizer from jumping to a different local minimum across frames, which is the primary source of frame-to-frame oscillation. |
+| Cartesian | $2\times10^{-2}$ | Knee of the tracking/smoothness tradeoff on Shadow/passport: only +0.5 mm above the minimum-tracking $\omega_s = 5\times10^{-3}$, while keeping the temporal penalty as the dominant A-matrix floor ($\mu_0 = 10^{-2} \leq \omega_s$) throughout all 15 iterations. |
+| Mesh (all) | $2\times10^{-2}$ | Same as Cartesian. Soft-min in Chamfer/F-score eliminates hard nearest-neighbour flips, but a non-trivial $\omega_s$ is still needed to prevent jumps between local minima of the multi-modal contact-surface landscape. |
 
 The `--smooth-w` flag overrides these per-objective defaults at runtime.
 

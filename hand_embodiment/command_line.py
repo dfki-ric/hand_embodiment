@@ -210,6 +210,6 @@ def add_objective_argument(parser):
     parser.add_argument(
         "--smooth-w", type=float, default=None,
         help="Temporal smoothing weight ω_s for the robotic IK. Overrides "
-             "the per-objective default (0.05 for all objectives). Larger "
+             "the per-objective default (0.02 for all objectives). Larger "
              "values keep joints closer to the previous frame at the cost "
              "of tracking lag.")

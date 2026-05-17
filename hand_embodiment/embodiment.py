@@ -215,14 +215,14 @@ class HandEmbodiment(TimeableMixin):
         # so J^T J diagonal ~ 1e-4 to 1.6e-3.  λ_min = 1e-4 keeps us in the
         # gradient-descent regime and prevents Newton-like overshoots (~0.4 rad)
         # that cause oscillation.  Step clamped to 0.15 rad for stability.
-        # smooth_w = 0.05 makes the temporal penalty the floor on the A-matrix
-        # diagonal for all 15 LM iterations (λ_max = 0.01 << 0.05), preventing
-        # the optimizer from freely exploring null-space directions in early
-        # iterations and then snapping back to a different local minimum.
+        # smooth_w = 0.02 sits at the knee of the tracking/smoothness tradeoff:
+        # only +0.54 mm above the minimum-tracking ω_s=0.005, while still well
+        # above the jittery end of the range.  λ_max = 0.01 < 0.02 so the
+        # temporal penalty remains the A-matrix floor throughout all 15 iterations.
         lm_lams = jnp.exp(jnp.linspace(jnp.log(0.01), jnp.log(1e-4), 15))
         max_step_rob = 0.15
         # smooth_w default for cartesian objective
-        self._default_smooth_w = 0.05
+        self._default_smooth_w = 0.02
 
         def _fk_one_ee(q, T0s_e, is_j_e, axes_e, jidx_e, at_e):
             """FK for one EE path — Python loop unrolled by JAX for fusion."""
@@ -448,7 +448,7 @@ class HandEmbodiment(TimeableMixin):
         # Same default as Cartesian: soft-min eliminates gradient flips, but a
         # non-trivial smooth_w still prevents the optimizer from jumping to a
         # different local minimum of the now-continuous but multi-modal landscape.
-        self._default_smooth_w = 0.05
+        self._default_smooth_w = 0.02
 
         def _fk_link_transform(q, T0s_l, is_j_l, axes_l, jidx_l, at_l):
             T_acc = jnp.eye(4, dtype=jnp.float64)
