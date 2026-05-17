@@ -327,14 +327,17 @@ class MarkerBasedRecordMapping(TimeableMixin):
         for fi, (fname, fk) in enumerate(zip(finger_names, fks)):
             pose0s[fi] = np.where(np.isnan(fk.current_pose), 0.0, fk.current_pose)
             markers = self.markers_in_mano.get(fname)
-            if (markers is not None and fname in available_fingers
-                    and not np.any(np.isnan(markers))):
+            if markers is not None and fname in available_fingers:
                 n_real = markers.shape[0]
-                dess[fi, :n_real] = markers
-                des_masks[fi, :n_real] = 1.0
+                for mi in range(n_real):
+                    if not np.any(np.isnan(markers[mi])):
+                        dess[fi, mi] = markers[mi]
+                        des_masks[fi, mi] = 1.0
+                        has_markers[fi] = True
+                    elif fk.last_forward_result is not None:
+                        dess[fi, mi] = fk.last_forward_result[mi]
                 if n_real < 2 and fk.last_forward_result is not None:
                     dess[fi, n_real:] = fk.last_forward_result[n_real:]
-                has_markers[fi] = True
 
         all_poses_jax, all_verts_jax = self._jit_vmap_mano_inverse(
             jnp.array(pose0s, dtype=jnp.float64),
