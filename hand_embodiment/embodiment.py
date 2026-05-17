@@ -206,12 +206,13 @@ class HandEmbodiment(TimeableMixin):
         # so J^T J diagonal ~ 1e-4 to 1.6e-3.  λ_min = 1e-4 keeps us in the
         # gradient-descent regime and prevents Newton-like overshoots (~0.4 rad)
         # that cause oscillation.  Step clamped to 0.15 rad for stability.
-        # Temporal smoothing (smooth_w) penalises deviation from the previous
-        # frame's solution: adds smooth_w to the Hessian diagonal and a gradient
-        # term smooth_w*(q-q_prev), preventing jumps between local minima.
+        # smooth_w = 0.05 makes the temporal penalty the floor on the A-matrix
+        # diagonal for all 15 LM iterations (λ_max = 0.01 << 0.05), preventing
+        # the optimizer from freely exploring null-space directions in early
+        # iterations and then snapping back to a different local minimum.
         lm_lams = jnp.exp(jnp.linspace(jnp.log(0.01), jnp.log(1e-4), 15))
         max_step_rob = 0.15
-        smooth_w = jnp.float64(1e-3)
+        smooth_w = jnp.float64(0.05)
 
         def _fk_one_ee(q, T0s_e, is_j_e, axes_e, jidx_e, at_e):
             """FK for one EE path — Python loop unrolled by JAX for fusion."""

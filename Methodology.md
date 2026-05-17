@@ -229,11 +229,17 @@ single fused XLA computation.
 
 For the Shadow Dexterous Hand, the damping schedule uses $\mu_0 = 10^{-2}$,
 $\mu_K = 10^{-4}$, $K = 15$ iterations, with step clamp
-$\delta_{\max} = 0.15\,\text{rad}$ and temporal smoothing $\omega_s = 10^{-3}$.
+$\delta_{\max} = 0.15\,\text{rad}$ and temporal smoothing $\omega_s = 5\times10^{-2}$.
 The schedule keeps $\mu_k$ above $\approx \|\mathbf{G}_w^T\mathbf{G}_w\|$ throughout,
 preventing Newton-like overshoots caused by the shorter link lengths of the
 robotic hand (Jacobian scale $\approx 0.01$–$0.04$ m/rad, giving
 $\mathbf{G}^T\mathbf{G} \approx 10^{-4}$–$1.6\times10^{-3}$).
+The value $\omega_s = 5\times10^{-2}$ is chosen so that the temporal penalty
+forms the dominant floor on the $\mathbf{A}_k$ diagonal throughout all $K$
+iterations ($\mu_0 = 10^{-2} < \omega_s$): smaller values allow the early
+iterations to explore null-space directions freely and then snap to a different
+local minimum in the final refinement steps, causing frame-to-frame
+oscillation.
 
 All fingers are solved in parallel via `jax.vmap` over a batched FK
 function parameterised by the per-finger kinematic data (joint axes,
@@ -331,9 +337,17 @@ $$
 
 where $\nabla_{\boldsymbol{r}}\mathcal{L}^{(k)}$ is the gradient of the chosen
 metric computed by `jax.grad` and $\tilde{\boldsymbol{\Omega}}$ is the same
-per-joint regularisation diagonal as in Section 2.1.  The damping schedule,
-step clamp ($\|\Delta\boldsymbol{r}\| \leq 0.15$ rad), temporal smoothing
-weight, and joint regularisation are shared with the Cartesian formulation.
+per-joint regularisation diagonal as in Section 2.1.  The step clamp
+($\|\Delta\boldsymbol{r}\| \leq 0.15$ rad) and joint regularisation are shared
+with the Cartesian formulation.  The damping schedule and temporal smoothing
+weight differ: $\mu_0$ and $\omega_s$ are chosen per objective to match the
+gradient scale of each metric (Chamfer returns squared distances $\sim10^{-3}$
+m$^2$; Hausdorff and Sinkhorn return distances $\sim10^{-1}$ m), whereas the
+Cartesian objective uses a uniform $\omega_s = 5\times10^{-2}$ sized to match
+its own gradient scale.  The Hausdorff outer maximum is approximated with a
+log-sum-exp at temperature $T = 10^{-4}$ m$^2$ to eliminate the
+discontinuous gradient flips that occur when the maximising nearest-neighbour
+pair changes between iterations.
 
 All metric functions and the gradient-descent step are compiled once via
 `jax.jit(jax.vmap(\ldots))` and amortised over frames, matching the
