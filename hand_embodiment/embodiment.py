@@ -420,7 +420,17 @@ class HandEmbodiment(TimeableMixin):
         upper_j = jnp.array(upper_np)
         jreg_j = jnp.array(jreg_np)
 
-        lm_lams = jnp.exp(jnp.linspace(jnp.log(0.01), jnp.log(1e-4), 15))
+        # Chamfer (m²) gradients are ~1e-4; Hausdorff/Sinkhorn (m) are ~10x
+        # larger, so they need proportionally larger damping to keep steps
+        # below max_step_rob without clamping every iteration.
+        _lam_ranges = {
+            'chamfer':   (0.01,  1e-4),
+            'hausdorff': (0.1,   1e-3),
+            'sinkhorn':  (0.1,   1e-3),
+            'fscore':    (0.01,  1e-4),
+        }
+        lam_start, lam_end = _lam_ranges.get(objective, (0.01, 1e-4))
+        lm_lams = jnp.exp(jnp.linspace(jnp.log(lam_start), jnp.log(lam_end), 15))
         max_step_rob = 0.15
         smooth_w = jnp.float64(1e-3)
 
