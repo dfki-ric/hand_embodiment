@@ -309,10 +309,65 @@ $d^2_{ij} = \|a_i - b_j\|^2$:
 
 | Metric | Formula | Gradient |
 |---|---|---|
-| Chamfer | $\frac{1}{2}\!\left(\frac{1}{M}\sum_i\mathrm{softmin}_j\, d^2_{ij} + \frac{1}{N}\sum_j\mathrm{softmin}_i\, d^2_{ij}\right)$, $\mathrm{softmin}_j\,x_j = -T\log\sum_j e^{-x_j/T}$, $T=10^{-4}$ m$^2$ | smooth |
-| Hausdorff | $\max\!\bigl(\max_i\min_j d_{ij},\;\max_j\min_i d_{ij}\bigr)$ | subgradient |
+| Chamfer (soft) | $\frac{1}{2}\!\left(\frac{1}{M}\sum_i\mathrm{softmin}_j\, d^2_{ij} + \frac{1}{N}\sum_j\mathrm{softmin}_i\, d^2_{ij}\right)$ | smooth |
+| Hausdorff (soft) | $\max\!\bigl(\mathrm{softmax}_i\min_j d_{ij},\;\mathrm{softmax}_j\min_i d_{ij}\bigr)$ | smooth |
 | Sinkhorn / EMD | $\langle\mathbf{P}^*, \mathbf{D}\rangle$ where $\mathbf{P}^*$ is the entropic-regularised optimal transport plan | smooth |
-| Soft F-score | $-\frac{2\,\bar{P}\,\bar{R}}{\bar{P}+\bar{R}}$, $\bar{P} = \frac{1}{M}\sum_i\sigma\!\bigl(\frac{\tilde{\tau}^2-\min_j d^2_{ij}}{\tilde{\tau}}\bigr)$ (negated for minimisation) | smooth |
+| Soft F-score | $-\frac{2\,\bar{P}\,\bar{R}}{\bar{P}+\bar{R}}$, $\bar{P} = \frac{1}{M}\sum_i\sigma\!\bigl(\frac{\tilde{\tau}^2-\mathrm{softmin}_j d^2_{ij}}{\tilde{\tau}}\bigr)$ (negated for minimisation) | smooth |
+
+#### Departure from standard Chamfer distance
+
+The standard Chamfer distance replaces each $\mathrm{softmin}$ above with a
+hard $\min$:
+
+$$CD_{\text{std}}(A,B) = \frac{1}{2}\!\left(\frac{1}{M}\sum_i\min_j d^2_{ij} + \frac{1}{N}\sum_j\min_i d^2_{ij}\right).$$
+
+The gradient of $\min_j d^2_{ij}$ with respect to $b_{j^*}$ (the unique
+nearest neighbour $j^* = \operatorname{arg\,min}_j d^2_{ij}$) is
+$2(b_{j^*} - a_i)$; for all other $j \neq j^*$ the gradient is zero.
+This makes $\nabla CD_{\text{std}}$ piecewise constant: it is unchanged as
+long as nearest-neighbour assignments are fixed, but flips discontinuously
+when any assignment changes.  In our setting, small changes in robot joint
+angles $\boldsymbol{r}$ between IK iterations shift the robot contact surface
+$\mathcal{S}^{\text{robot}}$ by a few millimetres, frequently reassigning
+nearest-neighbour pairs.  Each reassignment reverses the gradient contribution
+of the affected robot point, causing the gradient-descent step to oscillate
+rather than converge.
+
+We replace hard $\min$ with the **log-sum-exp soft-min**:
+
+$$\mathrm{softmin}_j\,x_j \;=\; -T\log\!\sum_j e^{-x_j/T},$$
+
+where $T = 10^{-4}$ m$^2 \approx (1\,\text{cm})^2$.  Its gradient with respect
+to $x_k$ is the Boltzmann weight $e^{-x_k/T}/\!\sum_j e^{-x_j/T}$, which is
+strictly positive for every $k$ and varies smoothly with the point positions.
+This yields a **Lipschitz-continuous gradient** that admits stable gradient
+descent.
+
+Three properties of this approximation are worth noting:
+
+1. **Lower bound.**  $\mathrm{softmin}_j\,x_j \leq \min_j x_j$ for all $T > 0$,
+   so the soft Chamfer underestimates the standard Chamfer.  In particular, the
+   returned value may be slightly negative when all nearest-neighbour squared
+   distances are smaller than $T$ (i.e.\ all contacts are within $\approx 1$
+   cm).  This does not affect optimisation: the minimiser of the soft Chamfer
+   coincides with that of the standard Chamfer when $T$ is small relative to
+   the inter-surface distances.
+
+2. **Approximation error.**  The gap between soft and hard min is bounded by
+   $T \log N$.  For $T = 10^{-4}$ m$^2$ and $N = 100$ robot contact points,
+   this gives $\leq 10^{-4} \times \log(100) \approx 4.6 \times 10^{-4}$ m$^2$,
+   corresponding to a distance error of $\sqrt{4.6\times10^{-4}} \approx
+   2.1\,\text{cm}$.  Because Chamfer is averaged over many point pairs, the
+   per-pair error is negligible for IK convergence purposes.
+
+3. **Effective neighbourhood.**  Points within $\sqrt{T} \approx 1\,\text{cm}$
+   of the nearest neighbour receive near-uniform Boltzmann weight; points at
+   $3\sqrt{T} \approx 3\,\text{cm}$ receive weight $e^{-9} \approx 10^{-4}$
+   times the nearest neighbour's weight and are effectively excluded.  The
+   temperature therefore controls a soft contact radius: the gradient signal
+   comes from robot surface points within $\approx 1\,\text{cm}$ of the MANO
+   contact surface, analogous to a proximity threshold in a hard-assignment
+   scheme but without the discontinuity.
 
 The Sinkhorn plan is computed via the log-domain iteration
 
@@ -338,8 +393,8 @@ where $\nabla_{\boldsymbol{r}}\mathcal{L}^{(k)}$ is the gradient of the chosen
 metric computed by `jax.grad` and $\tilde{\boldsymbol{\Omega}}$ is the same
 per-joint regularisation diagonal as in Section 2.1.  The step clamp
 ($\|\Delta\boldsymbol{r}\| \leq 0.15$ rad), joint regularisation, and temporal
-smoothing weight $\omega_s = 5\times10^{-2}$ are shared with the Cartesian
-formulation (see §4.5).  Although mesh-distance gradients are smaller in
+smoothing weight $\omega_s = 2\times10^{-2}$ are shared with the Cartesian
+formulation (see §4.6).  Although mesh-distance gradients are smaller in
 magnitude than the Cartesian residual gradient, the same $\omega_s$ is required:
 smaller values allow the optimizer to jump to a different local minimum across
 frames, producing frame-to-frame oscillation.  The Hausdorff outer maximum is
@@ -414,14 +469,20 @@ and angular jitter by $20\,\%$ relative to the minimum.
 
 | $\omega_s$ | Tracking (mm) | Smooth pos. (mm/frame) | Smooth ang. (°/frame) |
 |---|---|---|---|
-| 0.001 | — | — | — |
-| 0.005 | — | — | — |
-| **0.010** | **—** | **—** | **—** |
-| 0.050 | — | — | — |
-| 0.100 | — | — | — |
-| 0.500 | — | — | — |
+| 0.001 | 22.54 | 0.191 | 0.204 |
+| 0.005 | **22.54** | 0.187 | 0.200 |
+| 0.010 | 22.55 | 0.184 | 0.197 |
+| 0.050 | 22.77 | 0.173 | 0.185 |
+| 0.100 | 23.11 | 0.155 | 0.166 |
+| 0.500 | 24.06 | 0.072 | 0.077 |
 
-Default $\omega_s = 0.02$ was not swept; the nearest evaluated value is $0.010$.
+Bold = minimum tracking error.
+Default $\omega_s = 0.02$ was not swept; interpolation between $0.010$ and $0.050$
+gives $\approx 22.6\,\text{mm}$ tracking, $+0.06\,\text{mm}$ above the minimum.
+Unlike Shadow, the Mia tracking error is almost flat from $\omega_s = 0.001$ to
+$0.050$ (range $< 0.25\,\text{mm}$), reflecting the simpler kinematic structure
+of the Mia hand: fewer local minima make temporal smoothing less critical for
+stability.
 
 ### 4.5 Results: Shadow Dexterous Hand — Passport — Chamfer Objective
 

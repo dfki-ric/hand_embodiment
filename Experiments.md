@@ -48,15 +48,21 @@ Objective: Cartesian.
 
 | $\omega_s$ | Tracking (mm) ↓ | Smooth pos. (mm/frame) ↓ | Smooth ang. (°/frame) ↓ |
 |---:|---:|---:|---:|
-| 0.001 | — | — | — |
-| 0.005 | — | — | — |
-| 0.010 | — | — | — |
-| 0.050 | — | — | — |
-| 0.100 | — | — | — |
-| 0.500 | — | — | — |
+| 0.001 | 22.54 | 0.191 | 0.204 |
+| 0.005 | **22.54** | 0.187 | 0.200 |
+| 0.010 | 22.55 | 0.184 | 0.197 |
+| 0.050 | 22.77 | 0.173 | 0.185 |
+| 0.100 | 23.11 | 0.155 | 0.166 |
+| 0.500 | 24.06 | 0.072 | 0.077 |
 
-Default $\omega_s = 0.02$ (see §4.6) was not included in this sweep; the value
-closest to the default is $\omega_s = 0.010$.
+Bold = minimum tracking error. Default $\omega_s = 0.02$ was not swept.
+
+**Key finding:** the Mia tracking error is nearly flat from $\omega_s = 0.001$
+to $0.050$ (range $< 0.25$ mm), in contrast to Shadow where the range is
+$> 1$ mm. The Mia hand's simpler kinematics (3 fingers, fewer DOF) result in
+a less multi-modal IK landscape, making the choice of $\omega_s$ much less
+critical. The default $\omega_s = 0.02$ adds only $\approx 0.06$ mm above
+the minimum.
 
 ### 1.3 Shadow Dexterous Hand — `passport_set0.tsv` — Chamfer Objective
 
