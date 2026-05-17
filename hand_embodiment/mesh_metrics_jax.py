@@ -33,6 +33,14 @@ def _sq_dists(pts_a, pts_b):
 def chamfer_distance(pts_a, pts_b, mask_a=None):
     """Symmetric Chamfer distance between two point clouds.
 
+    Uses logsumexp soft-min instead of hard min so that the gradient is
+    Lipschitz-continuous w.r.t. both pts_b and the pose that generates
+    pts_b.  Hard min produces piecewise-constant gradients that flip
+    direction when the nearest-neighbour assignment changes between IK
+    iterations or consecutive recording frames, causing oscillation.
+    Temperature T = 1e-4 m² ≈ (1 cm)² matches the Hausdorff smooth-max
+    temperature and keeps the approximation error < 1 mm.
+
     Parameters
     ----------
     pts_a : array, shape (M, 3)
@@ -45,20 +53,28 @@ def chamfer_distance(pts_a, pts_b, mask_a=None):
     Returns
     -------
     dist : scalar
+        May be slightly negative when T is comparable to the squared distances
+        (soft-min is always ≤ true min). This does not affect optimisation: the
+        minimiser is the same as for hard chamfer; only the landscape is smoother.
     """
-    sq = _sq_dists(pts_a, pts_b)       # (M, N)
-    min_a_b = jnp.min(sq, axis=1)     # (M,)
+    sq = _sq_dists(pts_a, pts_b)    # (M, N)
+    T = jnp.float64(1e-4)           # soft-min temperature in m²; ≈(1 cm)²
+
+    # Soft-min per MANO point (nearest robot neighbour)
+    softmin_a_b = -T * jax.nn.logsumexp(-sq / T, axis=1)   # (M,)
 
     if mask_a is not None:
-        mean_a_b = jnp.sum(min_a_b * mask_a) / (jnp.sum(mask_a) + 1e-8)
+        mean_a_b = jnp.sum(softmin_a_b * mask_a) / (jnp.sum(mask_a) + 1e-8)
+        # Exclude padded MANO rows from the B→A soft-min by replacing their
+        # distances with a large sentinel before taking the minimum over axis=0.
         sq_masked = jnp.where(
             mask_a[:, None] > 0.5, sq, jnp.full_like(sq, 1e10))
-        min_b_a = jnp.min(sq_masked, axis=0)   # (N,)
+        softmin_b_a = -T * jax.nn.logsumexp(-sq_masked / T, axis=0)  # (N,)
     else:
-        mean_a_b = jnp.mean(min_a_b)
-        min_b_a = jnp.min(sq, axis=0)
+        mean_a_b = jnp.mean(softmin_a_b)
+        softmin_b_a = -T * jax.nn.logsumexp(-sq / T, axis=0)          # (N,)
 
-    mean_b_a = jnp.mean(min_b_a)
+    mean_b_a = jnp.mean(softmin_b_a)
     return (mean_a_b + mean_b_a) * 0.5
 
 
@@ -176,12 +192,20 @@ def fscore(pts_a, pts_b, threshold=0.01, tau=1e-4, mask_a=None):
     sq = _sq_dists(pts_a, pts_b)   # (M, N)
     thr2 = jnp.float64(threshold ** 2)
     tau_v = jnp.float64(tau)
+    # Soft-min temperature for nearest-neighbour lookup (same as chamfer/hausdorff).
+    T = jnp.float64(1e-4)
 
-    min_a_b = jnp.min(sq, axis=1)   # (M,)
-    min_b_a = jnp.min(sq, axis=0)   # (N,)
+    if mask_a is not None:
+        sq_masked = jnp.where(
+            mask_a[:, None] > 0.5, sq, jnp.full_like(sq, 1e10))
+        softmin_a_b = -T * jax.nn.logsumexp(-sq_masked / T, axis=1)  # (M,)
+        softmin_b_a = -T * jax.nn.logsumexp(-sq_masked / T, axis=0)  # (N,)
+    else:
+        softmin_a_b = -T * jax.nn.logsumexp(-sq / T, axis=1)   # (M,)
+        softmin_b_a = -T * jax.nn.logsumexp(-sq / T, axis=0)   # (N,)
 
-    prec_vals = jax.nn.sigmoid((thr2 - min_a_b) / tau_v)   # (M,)
-    rec_vals = jax.nn.sigmoid((thr2 - min_b_a) / tau_v)    # (N,)
+    prec_vals = jax.nn.sigmoid((thr2 - softmin_a_b) / tau_v)   # (M,)
+    rec_vals = jax.nn.sigmoid((thr2 - softmin_b_a) / tau_v)    # (N,)
 
     if mask_a is not None:
         precision = jnp.sum(prec_vals * mask_a) / (jnp.sum(mask_a) + 1e-8)

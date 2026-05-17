@@ -445,7 +445,10 @@ class HandEmbodiment(TimeableMixin):
         lam_start, lam_end = _lam_ranges.get(objective, (0.01, 1e-4))
         lm_lams = jnp.exp(jnp.linspace(jnp.log(lam_start), jnp.log(lam_end), 15))
         max_step_rob = 0.15
-        self._default_smooth_w = 1e-3  # default for mesh objectives
+        # Same default as Cartesian: soft-min eliminates gradient flips, but a
+        # non-trivial smooth_w still prevents the optimizer from jumping to a
+        # different local minimum of the now-continuous but multi-modal landscape.
+        self._default_smooth_w = 0.05
 
         def _fk_link_transform(q, T0s_l, is_j_l, axes_l, jidx_l, at_l):
             T_acc = jnp.eye(4, dtype=jnp.float64)

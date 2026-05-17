@@ -310,7 +310,7 @@ $d^2_{ij} = \|a_i - b_j\|^2$:
 
 | Metric | Formula | Gradient |
 |---|---|---|
-| Chamfer | $\frac{1}{2}\!\left(\frac{1}{M}\sum_i\min_j d^2_{ij} + \frac{1}{N}\sum_j\min_i d^2_{ij}\right)$ | smooth |
+| Chamfer | $\frac{1}{2}\!\left(\frac{1}{M}\sum_i\mathrm{softmin}_j\, d^2_{ij} + \frac{1}{N}\sum_j\mathrm{softmin}_i\, d^2_{ij}\right)$, $\mathrm{softmin}_j\,x_j = -T\log\sum_j e^{-x_j/T}$, $T=10^{-4}$ m$^2$ | smooth |
 | Hausdorff | $\max\!\bigl(\max_i\min_j d_{ij},\;\max_j\min_i d_{ij}\bigr)$ | subgradient |
 | Sinkhorn / EMD | $\langle\mathbf{P}^*, \mathbf{D}\rangle$ where $\mathbf{P}^*$ is the entropic-regularised optimal transport plan | smooth |
 | Soft F-score | $-\frac{2\,\bar{P}\,\bar{R}}{\bar{P}+\bar{R}}$, $\bar{P} = \frac{1}{M}\sum_i\sigma\!\bigl(\frac{\tilde{\tau}^2-\min_j d^2_{ij}}{\tilde{\tau}}\bigr)$ (negated for minimisation) | smooth |
@@ -431,8 +431,7 @@ Based on the evaluation above, the following defaults are used:
 | Objective | Default $\omega_s$ | Rationale |
 |---|---|---|
 | Cartesian | $5\times10^{-2}$ | Dominates the LM diagonal ($\mu_0 = 10^{-2}$) throughout all 15 iterations, preventing local-minimum flipping while keeping tracking error below 15 mm on passport. |
-| Mesh (Chamfer, F-score) | $10^{-3}$ | Mesh gradients are $\sim100\times$ smaller than Cartesian; the same floor effect is achieved at proportionally smaller $\omega_s$. |
-| Mesh (Hausdorff, Sinkhorn) | $10^{-3}$ | Same reasoning; larger damping $\mu_0 = 10^{-1}$ already provides stability. |
+| Mesh (all) | $5\times10^{-2}$ | Same as Cartesian. Although mesh gradients are smaller, the contact-surface objective landscape is multi-modal. A large $\omega_s$ prevents the optimizer from jumping to a different local minimum across frames, which is the primary source of frame-to-frame oscillation. |
 
 The `--smooth-w` flag overrides these per-objective defaults at runtime.
 
