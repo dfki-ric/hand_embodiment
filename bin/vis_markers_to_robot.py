@@ -9,7 +9,8 @@ from hand_embodiment.pipelines import MoCapToRobot
 from hand_embodiment.vis_utils import AnimationCallback
 from hand_embodiment.command_line import (
     add_hand_argument, add_animation_arguments, add_configuration_arguments,
-    add_playback_control_arguments, add_objective_argument)
+    add_playback_control_arguments, add_objective_argument,
+    add_adapt_handbase_arguments)
 from hand_embodiment.target_configurations import TARGET_CONFIG
 
 
@@ -35,6 +36,7 @@ def parse_args():
         help="Measure time of record and embodiment mapping.")
     add_animation_arguments(parser)
     add_objective_argument(parser)
+    add_adapt_handbase_arguments(parser)
     return parser.parse_args()
 
 
@@ -49,11 +51,23 @@ def main():
 
     finger_names = list(set(dataset.finger_names).intersection(
         set(TARGET_CONFIG[args.hand]["ee_frames"].keys())))
+
+    # Derive per-recording cache path from demo file
+    import os
+    demo_base = os.path.splitext(args.demo_file)[0]
+    handbase_cache = f"{demo_base}_handbase_cache.json" if args.adapt_handbase else None
+
     pipeline = MoCapToRobot(args.hand, args.mano_config, finger_names,
                             record_mapping_config=args.record_mapping_config,
                             verbose=1, measure_time=args.measure_time,
                             robot_config=args.robot_config,
-                            objective=args.objective)
+                            objective=args.objective,
+                            smooth_w=args.smooth_w,
+                            adapt_handbase=args.adapt_handbase,
+                            adapt_lr=args.adapt_lr,
+                            adapt_reg=args.adapt_reg,
+                            adapt_max_m=args.adapt_max_m,
+                            handbase_cache=handbase_cache)
 
     if args.hand == "mia":
         angle = 1.0 if args.mia_thumb_adducted else -1.0
@@ -77,6 +91,10 @@ def main():
             pipeline.clear_timings()
             if fig.visualizer.poll_events():
                 time.sleep(5)
+
+    if args.adapt_handbase and handbase_cache is not None:
+        pipeline.save_handbase_cache(handbase_cache)
+        print(f"Saved adapted handbase2robotbase to {handbase_cache}")
 
     fig.show()
 

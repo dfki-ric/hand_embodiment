@@ -86,6 +86,31 @@ Flip pages of a passport:
 python bin/vis_markers_to_robot.py shadow --demo-file raw_data/passport_set0.tsv --mocap-config examples/config/markers/20211112_april.yaml --mano-config examples/config/mano/20211105_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --visual-objects passport
 ```
 
+Using mesh-based IK objectives (Chamfer/Hausdorff/Sinkhorn/F-score) instead of the default Cartesian 2-point objective:
+```bash
+python bin/vis_markers_to_robot.py shadow --demo-file raw_data/passport_set0.tsv --mocap-config examples/config/markers/20211112_april.yaml --mano-config examples/config/mano/20211105_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --objective chamfer
+python bin/vis_markers_to_robot.py mia --demo-file raw_data/small_pillow_set0.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --record-mapping-config examples/config/record_mapping/20210826_april.yaml --mia-thumb-adducted --objective hausdorff
+```
+
+Tuning temporal smoothing weight (default: 0.05 for Cartesian, 1e-3 for mesh objectives):
+```bash
+python bin/vis_markers_to_robot.py shadow --demo-file raw_data/passport_set0.tsv --mocap-config examples/config/markers/20211112_april.yaml --mano-config examples/config/mano/20211105_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --smooth-w 0.1
+```
+
+Adaptive hand-base calibration (slowly corrects systematic translation offset during the recording; result is cached per-recording and reloaded on the next run):
+```bash
+python bin/vis_markers_to_robot.py shadow --demo-file raw_data/passport_set0.tsv --mocap-config examples/config/markers/20211112_april.yaml --mano-config examples/config/mano/20211105_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --adapt-handbase
+# Cache is saved to raw_data/passport_set0_handbase_cache.json automatically.
+# Adjust adaptation speed (default: --adapt-lr 0.001 --adapt-reg 0.0001 --adapt-max-m 0.05):
+python bin/vis_markers_to_robot.py shadow --demo-file raw_data/passport_set0.tsv --mocap-config examples/config/markers/20211112_april.yaml --mano-config examples/config/mano/20211105_april.yaml --record-mapping-config examples/config/record_mapping/20211105_april.yaml --adapt-handbase --adapt-lr 0.0005 --adapt-max-m 0.03
+```
+
+Seed Robotics RH8D:
+```bash
+python bin/vis_markers_to_robot.py rh8d --demo-file raw_data/insole_set0.tsv --mocap-config examples/config/markers/20210819_april.yaml --mano-config examples/config/mano/20210616_april.yaml --visual-objects insole --show-mano
+python bin/vis_markers_to_robot.py rh8d --demo-file raw_data/small_pillow_set0.tsv --mocap-config examples/config/markers/20210826_april.yaml --mano-config examples/config/mano/20210610_april.yaml --visual-objects pillow-small
+```
+
 Insert passport:
 ```bash
 python bin/vis_markers_to_robot.py mia --demo-file raw_data/passport_box_set2.tsv --mocap-config examples/config/markers/20211217_april.yaml --mano-config examples/config/mano/20211105_april.yaml --visual-objects passport-closed passport-box --mia-thumb-adducted
@@ -227,7 +252,44 @@ Script: [vis_extended_hand_model.py](vis_extended_hand_model.py)
 Example calls:
 ```bash
 python bin/vis_extended_hand_model.py mia
+python bin/vis_extended_hand_model.py rh8d
 python bin/vis_extended_hand_model.py --hide-visuals --show-focus --show-contact-vertices shadow_hand
 python bin/vis_extended_hand_model.py --hide-visuals --show-contact-vertices --write-vertex-indices barrett
 python bin/vis_extended_hand_model.py --hide-visuals --show-contact-vertices --highlight-stored-vertices barrett
+```
+
+## Evaluate Smoothing Weight
+
+Script: [eval_smooth_w.py](eval_smooth_w.py)
+
+Sweeps `--smooth-w` across a grid and reports per-frame tracking error (MANO EE → robot FK distance) and temporal smoothness (mean |Δ position| and |Δ joint angle| between successive frames). Helps choose the optimal balance between tracking accuracy and smooth motion.
+
+Shadow hand, passport task (Cartesian objective):
+```bash
+python bin/eval_smooth_w.py shadow \
+  --demo-file raw_data/passport_set0.tsv \
+  --mocap-config examples/config/markers/20211112_april.yaml \
+  --mano-config examples/config/mano/20211105_april.yaml \
+  --record-mapping-config examples/config/record_mapping/20211105_april.yaml
+```
+
+Mia hand, small pillow task (Cartesian objective):
+```bash
+python bin/eval_smooth_w.py mia \
+  --demo-file raw_data/small_pillow_set0.tsv \
+  --mocap-config examples/config/markers/20210826_april.yaml \
+  --mano-config examples/config/mano/20210610_april.yaml \
+  --record-mapping-config examples/config/record_mapping/20210826_april.yaml \
+  --mia-thumb-adducted
+```
+
+Shadow hand with Chamfer objective:
+```bash
+python bin/eval_smooth_w.py shadow \
+  --demo-file raw_data/passport_set0.tsv \
+  --mocap-config examples/config/markers/20211112_april.yaml \
+  --mano-config examples/config/mano/20211105_april.yaml \
+  --record-mapping-config examples/config/record_mapping/20211105_april.yaml \
+  --objective chamfer \
+  --smooth-w-values 0.0001 0.001 0.005 0.01 0.05 0.1
 ```

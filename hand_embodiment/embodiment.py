@@ -68,7 +68,9 @@ class HandEmbodiment(TimeableMixin):
             use_fingers=("thumb", "index", "middle"),
             mano_finger_kinematics=None, initial_handbase2world=None,
             only_tip=False, verbose=0, measure_time=False,
-            objective='cartesian'):
+            objective='cartesian', smooth_w=None,
+            adapt_handbase=False, adapt_lr=1e-3, adapt_reg=1e-4,
+            adapt_max_m=0.05):
         super(HandEmbodiment, self).__init__(verbose or measure_time)
 
         if isinstance(target_config, str):
@@ -82,7 +84,13 @@ class HandEmbodiment(TimeableMixin):
                     make_finger_kinematics(self.hand_state_, finger_name)
         else:
             self.mano_finger_kinematics = mano_finger_kinematics
-        self.handbase2robotbase = target_config["handbase2robotbase"]
+        self.handbase2robotbase = np.array(target_config["handbase2robotbase"])
+        self._adapt_handbase = adapt_handbase
+        self._adapt_lr = adapt_lr
+        self._adapt_reg = adapt_reg
+        self._adapt_max_m = adapt_max_m
+        if adapt_handbase:
+            self._handbase2robotbase_init = np.array(self.handbase2robotbase)
         for finger_name in use_fingers:
             assert finger_name in self.mano_finger_kinematics
 
@@ -117,6 +125,7 @@ class HandEmbodiment(TimeableMixin):
 
         self.verbose = verbose
         self.objective = objective
+        self.smooth_w = smooth_w  # None → use built-in per-objective default
 
         if objective == 'cartesian':
             self._build_vmap_ik(target_config)
@@ -212,7 +221,8 @@ class HandEmbodiment(TimeableMixin):
         # iterations and then snapping back to a different local minimum.
         lm_lams = jnp.exp(jnp.linspace(jnp.log(0.01), jnp.log(1e-4), 15))
         max_step_rob = 0.15
-        smooth_w = jnp.float64(0.05)
+        # smooth_w default for cartesian objective
+        self._default_smooth_w = 0.05
 
         def _fk_one_ee(q, T0s_e, is_j_e, axes_e, jidx_e, at_e):
             """FK for one EE path — Python loop unrolled by JAX for fusion."""
@@ -237,7 +247,7 @@ class HandEmbodiment(TimeableMixin):
                 for ei in range(n_ee)])
 
         def _ik_finger(q0, des, T0s_f, is_j_f, axes_f, jidx_f, at_f,
-                       lower_f, upper_f, w_f, jreg_f):
+                       lower_f, upper_f, w_f, jreg_f, sw):
             def fk(q):
                 return _fk_finger(q, T0s_f, is_j_f, axes_f, jidx_f, at_f)
 
@@ -254,13 +264,13 @@ class HandEmbodiment(TimeableMixin):
                 # and jreg_f*q to the gradient.  Discourages abduction joints
                 # (e.g. LFJ4) from being exploited to reduce along-finger
                 # Cartesian error at the cost of orthogonal displacement.
-                # Temporal smoothing: augments Hessian by smooth_w*I and adds
-                # smooth_w*(q-q0) to the gradient, keeping q near the previous
+                # Temporal smoothing: augments Hessian by sw*I and adds
+                # sw*(q-q0) to the gradient, keeping q near the previous
                 # frame's solution without stacking extra Jacobian rows.
                 A = (J_w.T @ J_w
                      + jnp.diag(jreg_f)
-                     + (lam + smooth_w) * jnp.eye(max_j, dtype=jnp.float64))
-                rhs = J_w.T @ r_w - jreg_f * q - smooth_w * (q - q0)
+                     + (lam + sw) * jnp.eye(max_j, dtype=jnp.float64))
+                rhs = J_w.T @ r_w - jreg_f * q - sw * (q - q0)
                 delta = jnp.linalg.solve(A, rhs)
                 norm = jnp.linalg.norm(delta)
                 delta = jnp.where(norm > max_step_rob, delta * (max_step_rob / norm), delta)
@@ -269,10 +279,11 @@ class HandEmbodiment(TimeableMixin):
             q_f, _ = jax.lax.scan(lm_step, q0, lm_lams)
             return q_f
 
-        def _ik_all_vmap(q0s, dess):
+        def _ik_all_vmap(q0s, dess, sw):
+            sw_f = jnp.broadcast_to(sw, (n_f,))
             return jax.vmap(_ik_finger)(
                 q0s, dess, T0s_j, is_j_j, axes_j, jidx_j, at_j,
-                lower_j, upper_j, weights_j, jreg_j)
+                lower_j, upper_j, weights_j, jreg_j, sw_f)
 
         self._jit_ik_vmap = jax.jit(_ik_all_vmap)
         self._vmap_n_f = n_f
@@ -282,7 +293,8 @@ class HandEmbodiment(TimeableMixin):
         # Warmup
         q0s0 = jnp.zeros((n_f, max_j), dtype=jnp.float64)
         dess0 = jnp.zeros((n_f, n_ee, 3), dtype=jnp.float64)
-        self._jit_ik_vmap(q0s0, dess0)
+        sw0 = jnp.float64(self._default_smooth_w)
+        self._jit_ik_vmap(q0s0, dess0, sw0)
 
     def _build_vmap_mesh_ik(self, target_config, objective):
         """Build and warm-up a vmapped JIT for mesh-distance-based IK.
@@ -433,7 +445,7 @@ class HandEmbodiment(TimeableMixin):
         lam_start, lam_end = _lam_ranges.get(objective, (0.01, 1e-4))
         lm_lams = jnp.exp(jnp.linspace(jnp.log(lam_start), jnp.log(lam_end), 15))
         max_step_rob = 0.15
-        smooth_w = jnp.float64(1e-3)
+        self._default_smooth_w = 1e-3  # default for mesh objectives
 
         def _fk_link_transform(q, T0s_l, is_j_l, axes_l, jidx_l, at_l):
             T_acc = jnp.eye(4, dtype=jnp.float64)
@@ -463,7 +475,7 @@ class HandEmbodiment(TimeableMixin):
 
         def _ik_finger_mesh(q0, mano_pts_f, mask_f, T0s_f, is_j_f, axes_f,
                             jidx_f, at_f, local_pts_f, lower_f, upper_f,
-                            jreg_f):
+                            jreg_f, sw):
             def loss_fn(q):
                 robot_pts = _robot_contact_pts_finger(
                     q, local_pts_f, T0s_f, is_j_f, axes_f, jidx_f, at_f)
@@ -473,8 +485,8 @@ class HandEmbodiment(TimeableMixin):
                 grad_metric = jax.grad(loss_fn)(q)
                 grad_full = (grad_metric
                              + jreg_f * q
-                             + smooth_w * (q - q0))
-                A = ((lam + smooth_w) * jnp.eye(max_j, dtype=jnp.float64)
+                             + sw * (q - q0))
+                A = ((lam + sw) * jnp.eye(max_j, dtype=jnp.float64)
                      + jnp.diag(jreg_f))
                 delta = jnp.linalg.solve(A, -grad_full)
                 norm = jnp.linalg.norm(delta)
@@ -485,11 +497,12 @@ class HandEmbodiment(TimeableMixin):
             q_f, _ = jax.lax.scan(lm_step, q0, lm_lams)
             return q_f
 
-        def _ik_all_mesh_vmap(q0s, mano_pts, masks):
+        def _ik_all_mesh_vmap(q0s, mano_pts, masks, sw):
+            sw_f = jnp.broadcast_to(sw, (n_f,))
             return jax.vmap(_ik_finger_mesh)(
                 q0s, mano_pts, masks,
                 T0s_link_j, is_j_link_j, axes_link_j, jidx_link_j, at_link_j,
-                local_pts_j, lower_j, upper_j, jreg_j)
+                local_pts_j, lower_j, upper_j, jreg_j, sw_f)
 
         self._jit_mesh_ik_vmap = jax.jit(_ik_all_mesh_vmap)
         self._vmap_n_f = n_f
@@ -501,7 +514,8 @@ class HandEmbodiment(TimeableMixin):
         q0s0 = jnp.zeros((n_f, max_j), dtype=jnp.float64)
         mano_pts0 = jnp.zeros((n_f, max_mano_pts, 3), dtype=jnp.float64)
         masks0 = jnp.ones((n_f, max_mano_pts), dtype=jnp.float64)
-        self._jit_mesh_ik_vmap(q0s0, mano_pts0, masks0)
+        sw0 = jnp.float64(self._default_smooth_w)
+        self._jit_mesh_ik_vmap(q0s0, mano_pts0, masks0, sw0)
 
     def _get_mano_contact_pts(self):
         """Extract current MANO contact surface points in robot base frame.
@@ -534,7 +548,7 @@ class HandEmbodiment(TimeableMixin):
         return jnp.array(mano_pts_np), jnp.array(masks_np)
 
     def solve(self, handbase2world=None, return_desired_positions=False,
-              use_cached_forward_kinematics=False):
+              use_cached_forward_kinematics=False, smooth_w=None):
         """Solve embodiment.
 
         Internally we rely on the attribute hand_state_ to be updated
@@ -569,7 +583,9 @@ class HandEmbodiment(TimeableMixin):
         self.start_measurement()
 
         desired_positions = self._mano_forward_kinematics(use_cached_forward_kinematics)
-        self._robotic_hand_inverse_kinematics(desired_positions)
+        self._robotic_hand_inverse_kinematics(desired_positions, smooth_w=smooth_w)
+        if self._adapt_handbase:
+            self._adapt_handbase_step(desired_positions)
         self._update_hand_base_pose(handbase2world)
 
         self.stop_measurement()
@@ -586,6 +602,34 @@ class HandEmbodiment(TimeableMixin):
             return self.joint_angles, desired_positions
         else:
             return self.joint_angles
+
+    def _adapt_handbase_step(self, desired_positions):
+        """Slowly update the translation of handbase2robotbase to reduce systematic IK error.
+
+        Computes mean residual (fk - desired) across all EE frames and
+        shifts the translation component of handbase2robotbase toward the FK
+        solution, with strong regularisation toward the initial value.
+        Clipped to at most adapt_max_m displacement from the initial value.
+        """
+        residuals = []
+        for f in self.finger_names_:
+            fk_Ts = self.target_finger_chains[f].forward(self.joint_angles[f])
+            fk_pos = np.array([T[:3, 3] for T in fk_Ts])
+            desired = desired_positions[f]
+            n = min(len(fk_pos), len(desired))
+            residuals.append(fk_pos[:n] - desired[:n])
+
+        mean_residual = np.mean(np.vstack(residuals), axis=0)  # (3,)
+
+        t = self.handbase2robotbase[:3, 3]
+        t_init = self._handbase2robotbase_init[:3, 3]
+        t_new = t + self._adapt_lr * mean_residual - self._adapt_reg * (t - t_init)
+
+        disp = t_new - t_init
+        disp_norm = np.linalg.norm(disp)
+        if disp_norm > self._adapt_max_m:
+            disp = disp * (self._adapt_max_m / disp_norm)
+        self.handbase2robotbase[:3, 3] = t_init + disp
 
     def _mano_forward_kinematics(self, use_cached_forward_kinematics):
         """MANO forward kinematics.
@@ -621,7 +665,7 @@ class HandEmbodiment(TimeableMixin):
             desired_positions[finger_name] = markers_in_robotbase[:n_ee_frames]
         return desired_positions
 
-    def _robotic_hand_inverse_kinematics(self, desired_positions):
+    def _robotic_hand_inverse_kinematics(self, desired_positions, smooth_w=None):
         """Robotic hand inverse kinematics.
 
         Parameters
@@ -629,6 +673,10 @@ class HandEmbodiment(TimeableMixin):
         desired_positions : dict
             Desired positions of expected marker positions in frame of the
             robotic target system. Only used when objective='cartesian'.
+
+        smooth_w : float, optional
+            Temporal smoothing weight override. If None, uses self.smooth_w
+            (or the per-objective default).
         """
         import jax.numpy as jnp
         n_f = self._vmap_n_f
@@ -639,6 +687,11 @@ class HandEmbodiment(TimeableMixin):
             q0s[fi, :nj] = np.where(
                 np.isnan(self.joint_angles[f]), 0.0, self.joint_angles[f])
 
+        effective_sw = smooth_w if smooth_w is not None else self.smooth_w
+        sw = jnp.float64(
+            effective_sw if effective_sw is not None
+            else self._default_smooth_w)
+
         if self.objective == 'cartesian':
             n_ee = len(self.target_finger_chains[self.finger_names_[0]].ee_frames)
             dess = np.zeros((n_f, n_ee, 3))
@@ -646,11 +699,12 @@ class HandEmbodiment(TimeableMixin):
                 dess[fi] = desired_positions[f]
             new_qs = np.array(self._jit_ik_vmap(
                 jnp.array(q0s, dtype=jnp.float64),
-                jnp.array(dess, dtype=jnp.float64)))
+                jnp.array(dess, dtype=jnp.float64),
+                sw))
         else:
             mano_pts, masks = self._get_mano_contact_pts()
             new_qs = np.array(self._jit_mesh_ik_vmap(
-                jnp.array(q0s, dtype=jnp.float64), mano_pts, masks))
+                jnp.array(q0s, dtype=jnp.float64), mano_pts, masks, sw))
 
         for fi, f in enumerate(self.finger_names_):
             nj = self._chains_n_joints[fi]

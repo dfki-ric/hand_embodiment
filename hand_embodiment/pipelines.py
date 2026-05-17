@@ -1,4 +1,8 @@
 """Pipelines are high-level interfaces that map human data to robotic hands."""
+import json
+import os
+
+import numpy as np
 import pytransform3d.transformations as pt
 import yaml
 
@@ -36,8 +40,11 @@ class MoCapToRobot:
     """
     def __init__(self, hand, mano_config, use_fingers,
                  record_mapping_config=None, verbose=0, measure_time=False,
-                 robot_config=None, objective='cartesian'):
+                 robot_config=None, objective='cartesian', smooth_w=None,
+                 adapt_handbase=False, adapt_lr=1e-3, adapt_reg=1e-4,
+                 adapt_max_m=0.05, handbase_cache=None):
         self.hand_config_ = self._hand_config(hand, robot_config)
+        self._handbase_cache = handbase_cache
         mano2hand_markers, betas = load_mano_config(mano_config)
 
         if record_mapping_config is not None:
@@ -50,13 +57,46 @@ class MoCapToRobot:
             record_mapping_config=record_mapping_config,
             use_fingers=use_fingers, verbose=verbose,
             measure_time=measure_time)
+        if handbase_cache is not None and os.path.isfile(handbase_cache):
+            self._load_handbase_cache(handbase_cache)
         self.embodiment_mapping_ = HandEmbodiment(
             self.record_mapping_.hand_state_, self.hand_config_,
             use_fingers=use_fingers,
             mano_finger_kinematics=self.record_mapping_.mano_finger_kinematics_,
             initial_handbase2world=self.record_mapping_.mano2world_,
             verbose=verbose, measure_time=measure_time,
-            objective=objective)
+            objective=objective, smooth_w=smooth_w,
+            adapt_handbase=adapt_handbase, adapt_lr=adapt_lr,
+            adapt_reg=adapt_reg, adapt_max_m=adapt_max_m)
+
+    def save_handbase_cache(self, path=None):
+        """Save adapted handbase2robotbase to a JSON cache file.
+
+        Parameters
+        ----------
+        path : str, optional
+            File path. Defaults to self._handbase_cache if set.
+        """
+        path = path or self._handbase_cache
+        if path is None:
+            raise ValueError("No cache path specified.")
+        T = self.embodiment_mapping_.handbase2robotbase
+        data = {"handbase2robotbase": pt.exponential_coordinates_from_transform(T).tolist()}
+        if hasattr(self.embodiment_mapping_, '_handbase2robotbase_init'):
+            T_init = self.embodiment_mapping_._handbase2robotbase_init
+            data["original_handbase2robotbase"] = (
+                pt.exponential_coordinates_from_transform(T_init).tolist())
+        with open(path, "w") as f:
+            json.dump(data, f, indent=2)
+
+    def _load_handbase_cache(self, path):
+        """Load handbase2robotbase from a JSON cache file into hand_config_."""
+        with open(path, "r") as f:
+            data = json.load(f)
+        if "handbase2robotbase" in data:
+            self.hand_config_["handbase2robotbase"] = \
+                pt.transform_from_exponential_coordinates(
+                    np.array(data["handbase2robotbase"]))
 
     def _hand_config(self, hand, robot_config):
         hand_config_ = TARGET_CONFIG[hand]

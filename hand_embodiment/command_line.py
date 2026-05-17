@@ -167,6 +167,32 @@ def add_artist_argument(parser):
         help=f"Name of pytransform3d artist.")
 
 
+def add_adapt_handbase_arguments(parser):
+    """Add arguments for adaptive handbase2robotbase to command line parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Command line parser
+    """
+    parser.add_argument(
+        "--adapt-handbase", action="store_true",
+        help="Slowly adapt the translation of handbase2robotbase during the "
+             "recording to reduce systematic IK offset. Result is cached per "
+             "recording and reloaded on the next run.")
+    parser.add_argument(
+        "--adapt-lr", type=float, default=1e-3,
+        help="Learning rate for handbase translation adaptation (m per frame).")
+    parser.add_argument(
+        "--adapt-reg", type=float, default=1e-4,
+        help="Regularisation strength pulling the adapted translation back "
+             "toward the initial value.")
+    parser.add_argument(
+        "--adapt-max-m", type=float, default=0.05,
+        help="Maximum allowed displacement (metres) from the initial "
+             "handbase2robotbase translation.")
+
+
 def add_objective_argument(parser):
     """Add argument for embodiment IK objective to command line parser.
 
@@ -181,3 +207,9 @@ def add_objective_argument(parser):
         help="Objective for robotic embodiment IK. 'cartesian' uses 2 EE "
              "positions (fast). Mesh-based objectives use the full contact "
              "surface defined in metrics.py.")
+    parser.add_argument(
+        "--smooth-w", type=float, default=None,
+        help="Temporal smoothing weight ω_s for the robotic IK. Overrides "
+             "the per-objective default (0.05 for Cartesian, 1e-3 for mesh "
+             "objectives). Larger values keep joints closer to the previous "
+             "frame at the cost of tracking lag.")

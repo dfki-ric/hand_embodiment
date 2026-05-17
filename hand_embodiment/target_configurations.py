@@ -8,6 +8,7 @@ from .metrics import (
     MIA_CONTACT_SURFACE_VERTICES,
     ROBOTIQ_CONTACT_SURFACE_VERTICES,
     BARRETT_CONTACT_SURFACE_VERTICES,
+    RH8D_CONTACT_SURFACE_VERTICES,
 )
 
 
@@ -635,6 +636,151 @@ BARRETT_CONFIG = {
 
 
 ###############################################################################
+# Seed Robotics RH8D hand
+###############################################################################
+
+def kinematic_model_hook_rh8d(kin, **kwargs):
+    """Extends kinematic model to include links for embodiment mapping."""
+    default_offsets = {
+        ("thumb_tip", "Thumb_Distal"): [0.005, 0.005, -0.015],
+        ("thumb_middle", "Thumb_Methacarpal"): [0.005, 0.01, 0.01],
+        ("index_tip", "Index_Distal"): [-0.005, 0.008, -0.015],
+        ("index_middle", "Index_Proximal"): [-0.005, 0.01, 0.01],
+        ("middle_tip", "Middle_Distal"): [-0.005, 0.008, -0.015],
+        ("middle_middle", "Middle_Proximal"): [-0.005, 0.01, 0.01],
+        ("ring_tip", "Ring_Distal"): [-0.005, 0.008, -0.015],
+        ("ring_middle", "Ring_Proximal"): [-0.005, 0.01, 0.01],
+        ("little_tip", "Small_Distal"): [-0.005, 0.008, -0.015],
+        ("little_middle", "Small_Proximal"): [-0.005, 0.01, 0.01],
+    }
+
+    for key in default_offsets:
+        new_frame, existing_frame = key
+        position = kwargs.get(f"{new_frame}_to_{existing_frame}", default_offsets[key])
+        new_frame2existing_frame = np.eye(4)
+        new_frame2existing_frame[:3, 3] = position
+        kin.tm.add_transform(new_frame, existing_frame, new_frame2existing_frame)
+
+
+class RH8DVirtualFingerJoint:
+    """Virtual joint for enforcing 1 DOF per 3 joints on a finger.
+
+    The first joint will revolve first, as far as possible to reach the
+    desired position, up to its maximum. Then the second joint will add to
+    the first joint's maximum revolution if necessary, up to its maximum.
+    Finally, the third joint will do the same.
+    """
+
+    def __init__(self, first_real_joint_name, second_real_joint_name,
+                 third_real_joint_name):
+        self.first_real_joint_name = first_real_joint_name
+        self.second_real_joint_name = second_real_joint_name
+        self.third_real_joint_name = third_real_joint_name
+
+    def make_virtual_joint(self, joint_name, tm):
+        self.first_limits = tm.get_joint_limits(self.first_real_joint_name)
+        self.second_limits = tm.get_joint_limits(self.second_real_joint_name)
+        self.third_limits = tm.get_joint_limits(self.third_real_joint_name)
+        joint_range = (self.third_limits[1] - self.third_limits[0]
+                       + self.second_limits[1] - self.second_limits[0]
+                       + self.first_limits[1] - self.first_limits[0])
+        return (joint_name + "_from", joint_name + "_to", np.eye(4),
+                np.array([0, 0, 0]), (0, joint_range), "revolute")
+
+    def __call__(self, value):
+        first_joint_target = value
+        first_joint_value = min(
+            max(first_joint_target, self.first_limits[0]), self.first_limits[1])
+        second_joint_target = first_joint_target - first_joint_value
+        second_joint_value = min(
+            max(second_joint_target, self.second_limits[0]),
+            self.second_limits[1])
+        third_joint_target = second_joint_target - second_joint_value
+        third_joint_value = min(
+            max(third_joint_target, self.third_limits[0]), self.third_limits[1])
+        return {self.first_real_joint_name: first_joint_value,
+                self.second_real_joint_name: second_joint_value,
+                self.third_real_joint_name: third_joint_value}
+
+
+mano_base_to_rh8d_base = pt.transform_from_exponential_coordinates(
+    [0.123, 1.705, 0.167, -0.207, 0.017, 0.193])
+
+RH8D_CONFIG = {
+    "joint_names": {
+        "thumb": ["Thumb_axis--palm", "virtual_joint_thumb"],
+        "index": ["virtual_joint_index"],
+        "middle": ["virtual_joint_middle"],
+        "ring": ["virtual_joint_ring"],
+        "little": ["virtual_joint_little"],
+    },
+    "base_frame": "base:1",
+    "ee_frames": {
+        "thumb": "thumb_tip",
+        "index": "index_tip",
+        "middle": "middle_tip",
+        "ring": "ring_tip",
+        "little": "little_tip"
+    },
+    "intermediate_frames": {
+        "thumb": "thumb_middle",
+        "index": "index_middle",
+        "middle": "middle_middle",
+        "ring": "ring_middle",
+        "little": "little_middle"
+    },
+    "handbase2robotbase": mano_base_to_rh8d_base,
+    "model": {
+        "urdf": resource_filename(
+            "hand_embodiment",
+            "model/seed_robotics_rh8d/RH8DR.urdf"
+        ),
+        "package_dir": resource_filename(
+            "hand_embodiment",
+            "model/seed_robotics_rh8d/"
+        ),
+        "kinematic_model_hook": kinematic_model_hook_rh8d
+    },
+    "virtual_joints_callbacks": {
+        "virtual_joint_thumb": RH8DVirtualFingerJoint(
+            "Thumb_Methacarpal--Thumb_axis",
+            "Thumb_Proximal--Thumb_Methacarpal",
+            "Thumb_Distal--Thumb_Proximal"),
+        "virtual_joint_index": RH8DVirtualFingerJoint(
+            "Index_Proximal--palm",
+            "Index_Middle--Index_Proximal",
+            "Index_Distal--Index_Middle"),
+        "virtual_joint_middle": RH8DVirtualFingerJoint(
+            "Middle_Proximal--palm",
+            "Middle_Middle--Middle_Proximal",
+            "Middle_Distal--Middle_Middle"),
+        "virtual_joint_ring": RH8DVirtualFingerJoint(
+            "Ring_Proximal--palm",
+            "Ring_Middle--Ring_Proximal",
+            "Ring_Distal--Ring_Middle"),
+        "virtual_joint_little": RH8DVirtualFingerJoint(
+            "Small_Proximal--palm",
+            "Small_Middle--Small_Proximal",
+            "Small_Distal--Small_Middle"),
+    },
+    # ring and little are controlled by the same actuator but do not
+    # necessarily have the same angle, especially following extension
+    "coupled_joints": [
+        ("ring", "virtual_joint_ring"),
+        ("little", "virtual_joint_little"),
+    ],
+    "actuators": {
+        "r_th_adduction": "Thumb_axis--palm",
+        "r_th_flexion": "virtual_joint_thumb",
+        "r_ix_flexion": "virtual_joint_index",
+        "r_middle_flexion": "virtual_joint_middle",
+        "r_ring_ltl_flexion": "virtual_joint_ring",
+    },
+    "contact_surface_vertices": RH8D_CONTACT_SURFACE_VERTICES,
+}
+
+
+###############################################################################
 # Selection
 ###############################################################################
 
@@ -645,4 +791,5 @@ TARGET_CONFIG = {
     "robotiq": ROBOTIQ_CONFIG,
     "robotiq_2f_140": ROBOTIQ_CONFIG,
     "barrett": BARRETT_CONFIG,
+    "rh8d": RH8D_CONFIG,
 }
