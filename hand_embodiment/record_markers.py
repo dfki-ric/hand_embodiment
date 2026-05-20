@@ -226,15 +226,7 @@ class MarkerBasedRecordMapping(TimeableMixin):
         finger_markers : dict (str to array-like)
             Positions of markers on fingers.
         """
-        current_hand_markers2world = estimate_hand_pose(*hand_markers)
-        if np.any(np.isnan(current_hand_markers2world)):
-            warnings.warn(
-                "[MarkerBasedRecordMapping] Cannot estimate hand pose. "
-                "Detected NaN.")
-        else:
-            self.current_hand_markers2world = current_hand_markers2world
-        self.mano2world_ = pt.concat(
-            self.mano2hand_markers_, self.current_hand_markers2world)
+        self.estimate_end_effector(hand_markers)
 
         available_fingers = self.finger_names_.intersection(
             finger_markers.keys())
@@ -272,6 +264,19 @@ class MarkerBasedRecordMapping(TimeableMixin):
                   f"{self.last_timing():.4f} s")
 
         self.hand_state_.recompute_mesh(self.mano2world_)
+
+    def estimate_end_effector(self, hand_markers):
+        current_hand_markers2world = estimate_hand_pose(*hand_markers)
+        if np.any(np.isnan(current_hand_markers2world)):
+            warnings.warn(
+                "[MarkerBasedRecordMapping] Cannot estimate hand pose. "
+                "Detected NaN.")
+        else:
+            self.current_hand_markers2world = current_hand_markers2world
+        self.mano2world_ = pt.concat(
+            self.mano2hand_markers_, self.current_hand_markers2world)
+
+        # self.hand_state_.recompute_mesh(self.mano2world_)
 
 
 def estimate_hand_pose(hand_top, hand_left, hand_right):

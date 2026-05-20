@@ -48,6 +48,7 @@ def main():
 
     finger_names = list(set(dataset.finger_names).intersection(
         set(TARGET_CONFIG[args.hand]["ee_frames"].keys())))
+    print(finger_names)
     pipeline = MoCapToRobot(args.hand, args.mano_config, finger_names,
                             record_mapping_config=args.record_mapping_config,
                             verbose=1, measure_time=args.measure_time,
